@@ -41,10 +41,19 @@ public class ProdutoRepository : IProdutoRepository
 		produto.AlterarPreco(produtoExistente.Preco);
 		produto.AdicionarEstoque(produtoExistente.Estoque);
 		
+		await _context.SaveChangesAsync();
+		
 	}
 
-	public Task DeleteAsync(Guid id)
+	public async Task DeleteAsync(Guid id)
 	{
-		throw new NotImplementedException();
+		var produto = await _context.Produtos.SingleOrDefaultAsync(p => p.Id == id);
+		if (produto is null)
+		{
+			throw new Exception("Produto nao encontrado");
+		}
+
+		_context.Remove(produto);
+		await _context.SaveChangesAsync();
 	}
 }

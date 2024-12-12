@@ -1,5 +1,7 @@
-using GerenciadorDePedidos.Core.DTOs;
-using GerenciadorDePedidos.Core.Entities;
+using GerenciadorDePedidos.Application.Commands;
+using GerenciadorDePedidos.Application.Commands.CreateProduto;
+using GerenciadorDePedidos.Application.Commands.DeleteProduto;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GerenciadorDePedidos.API.Controllers;
@@ -8,6 +10,13 @@ namespace GerenciadorDePedidos.API.Controllers;
 [Route("api/produto")]
 public class ProdutoController : ControllerBase
 {
+	private readonly IMediator _mediator;
+
+	public ProdutoController(IMediator mediator)
+	{
+		_mediator = mediator;
+	}
+
 	[HttpGet]
 	public IActionResult GetAll(string? query)
 	{
@@ -22,20 +31,23 @@ public class ProdutoController : ControllerBase
 	}
 
 	[HttpPost]
-	public IActionResult Post([FromBody] CriarProdutoDTO criarProduto)
+	public async Task<IActionResult> Post([FromBody] CreateProdutoCommand command)
 	{
-		return CreatedAtAction(nameof(GetById), new { id = criarProduto }, criarProduto);
+		var produtoId = await _mediator.Send(command);
+		return CreatedAtAction(nameof(GetById), new { id = produtoId }, command);
 	}
 
 	[HttpPut("atualizar-produto/{id}")]
-	public IActionResult Put(Guid id, Produto produto)
+	public async Task<IActionResult> Put(Guid id, [FromBody] UpdateProdutoCommand command)
 	{
+		await _mediator.Send(command);
 		return NoContent();
 	}
 
 	[HttpDelete("remover-produto/{id}")]
-	public IActionResult Delete(Guid id)
+	public async Task<IActionResult> Delete(DeleteProdutoCommand command)
 	{
-		return Ok("Produto deletado com sucesso.");
+		await _mediator.Send(command);
+		return Ok("Produto removido com sucesso");
 	}
 }

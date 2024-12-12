@@ -1,4 +1,9 @@
+using System.Reflection;
+using GerenciadorDePedidos.Application.Commands.CreateProduto;
+using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Infrastructure.Persistence;
+using GerenciadorDePedidos.Infrastructure.Persistence.Repositories;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +19,13 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<GerenciadorDePedidosDbContext>(opt =>
 	opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
+builder.Services.AddScoped<IPedidoRepository, PedidoRepository>();
+builder.Services.AddMediatR(cfg =>
+{
+	cfg.RegisterServicesFromAssemblies([typeof(Program).Assembly, typeof(CreateProdutoCommandHandler).Assembly]);
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

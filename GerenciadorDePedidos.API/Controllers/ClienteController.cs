@@ -1,4 +1,8 @@
+using GerenciadorDePedidos.Application.Commands.CreateCliente;
+using GerenciadorDePedidos.Application.Commands.DeleteCliente;
+using GerenciadorDePedidos.Application.Commands.UpdateCliente;
 using GerenciadorDePedidos.Core.Entities;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GerenciadorDePedidos.API.Controllers;
@@ -7,6 +11,12 @@ namespace GerenciadorDePedidos.API.Controllers;
 [Route("api/cliente")]
 public class ClienteController : ControllerBase
 {
+	private readonly IMediator _mediator;
+
+	public ClienteController(IMediator mediator)
+	{
+		_mediator = mediator;
+	}
 
 	[HttpGet]
 	public IActionResult GetAll(string? query)
@@ -22,20 +32,23 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpPost]
-	public IActionResult Post([FromBody] Cliente cliente)
+	public async Task<IActionResult> Post([FromBody] CreateClienteCommand command)
 	{
-		return CreatedAtAction(nameof(GetById), new { id = cliente.Id }, cliente);
+		var clienteId = await _mediator.Send(command);
+		return CreatedAtAction(nameof(GetById), new { id = clienteId}, command);
 	}
 
 	[HttpPut("atualizar-cliente{id}")]
-	public IActionResult Put(Guid id, [FromBody] Cliente cliente)
+	public async Task<IActionResult> Put(Guid id, [FromBody] UpdateClienteCommand command)
 	{
+		var clienteId = await _mediator.Send(command);
 		return NoContent();
 	}
 
 	[HttpDelete("deletar-cliente{id}")]
-	public IActionResult Delete(Guid id)
+	public async Task<IActionResult> Delete(DeleteClienteCommand command)
 	{
+		await _mediator.Send(command);
 		return Ok("Cliente deletado com sucesso");
 	}
 }
