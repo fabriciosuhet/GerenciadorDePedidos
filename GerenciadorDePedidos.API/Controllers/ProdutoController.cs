@@ -9,7 +9,7 @@ namespace GerenciadorDePedidos.API.Controllers;
 public class ProdutoController : ControllerBase
 {
 	[HttpGet]
-	public IActionResult Get(string? query)
+	public IActionResult GetAll(string? query)
 	{
 		return Ok();
 	}

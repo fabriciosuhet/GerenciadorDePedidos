@@ -27,7 +27,7 @@ public class PedidoController : ControllerBase
 	}
 
 	[HttpPut("atualizar-pedido/{id}")]
-	public IActionResult Put(Guid id, Pedido pedido)
+	public IActionResult Put(Guid id, [FromBody] Pedido pedido)
 	{
 		return Ok();
 	}

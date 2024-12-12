@@ -14,7 +14,6 @@ public class Cliente : BaseEntity
 		
 	}
 	
-
 	public Cliente(string nomeCompleto, string email, string telefone)
 	{
 		NomeCompleto = nomeCompleto;
@@ -22,5 +21,15 @@ public class Cliente : BaseEntity
 		Telefone = telefone;
 		
 		Pedidos = new List<Pedido>();
+	}
+
+	public void AlterarEmail(string email)
+	{
+		Email = email;
+	}
+
+	public void AlterarTelefone(string telefone)
+	{
+		Telefone = telefone;
 	}
 }

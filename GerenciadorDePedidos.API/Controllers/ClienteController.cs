@@ -22,13 +22,13 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpPost]
-	public IActionResult Post(Cliente cliente)
+	public IActionResult Post([FromBody] Cliente cliente)
 	{
 		return CreatedAtAction(nameof(GetById), new { id = cliente.Id }, cliente);
 	}
 
 	[HttpPut("atualizar-cliente{id}")]
-	public IActionResult Put(Guid id, Cliente cliente)
+	public IActionResult Put(Guid id, [FromBody] Cliente cliente)
 	{
 		return NoContent();
 	}

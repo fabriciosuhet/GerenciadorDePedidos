@@ -14,6 +14,4 @@ public class Pedido : BaseEntity
 		ItensPedidos = new List<ItemPedido>();
 		Total = 0;
 	}
-	
-	
 }

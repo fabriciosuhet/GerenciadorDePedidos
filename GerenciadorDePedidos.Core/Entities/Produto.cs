@@ -30,4 +30,15 @@ public class Produto : BaseEntity
 		}
 		Estoque += quantidade;
 	}
+
+	public void AlterarNome(string nome)
+	{
+		Nome = nome;
+	}
+
+	public void AlterarPreco(decimal preco)
+	{
+		Preco = preco;
+	}
+	
 }
