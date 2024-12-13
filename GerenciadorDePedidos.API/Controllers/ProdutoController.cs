@@ -1,6 +1,8 @@
 using GerenciadorDePedidos.Application.Commands;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
 using GerenciadorDePedidos.Application.Commands.DeleteProduto;
+using GerenciadorDePedidos.Application.Queries.GetAllProdutos;
+using GerenciadorDePedidos.Application.Queries.GetProduto;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,16 +20,21 @@ public class ProdutoController : ControllerBase
 	}
 
 	[HttpGet]
-	public IActionResult GetAll(string? query)
+	public async Task<IActionResult> GetAll(string? query)
 	{
-		return Ok();
+		var getAllProdutos = new GetAllProdutosQuery(query);
+		var produtos = await _mediator.Send(getAllProdutos);
+		if (produtos is null) return NotFound();
+		return Ok(produtos);
 	}
 
 	[HttpGet("{id}")]
-	public IActionResult GetById(Guid id)
+	public async Task<IActionResult> GetById(Guid id)
 	{
-		// NotFound();
-		return Ok();
+		var getProdutoById = new GetProdutoQuery(id);
+		var produto = await _mediator.Send(getProdutoById);
+		if(produto is null) return NotFound();
+		return Ok(produto);
 	}
 
 	[HttpPost]

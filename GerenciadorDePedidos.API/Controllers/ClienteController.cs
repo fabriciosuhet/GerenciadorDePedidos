@@ -1,6 +1,8 @@
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
 using GerenciadorDePedidos.Application.Commands.DeleteCliente;
 using GerenciadorDePedidos.Application.Commands.UpdateCliente;
+using GerenciadorDePedidos.Application.Queries.GetAllClientes;
+using GerenciadorDePedidos.Application.Queries.GetCliente;
 using GerenciadorDePedidos.Core.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -19,16 +21,23 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpGet]
-	public IActionResult GetAll(string? query)
+	public async Task<IActionResult> GetAll(string? query)
 	{
-		// return NotFound();
-		return Ok();
+		var getAllClientes = new GetAllClientesQuery(query);
+		var clientes = await _mediator.Send(getAllClientes);
+		if (clientes is null) return NotFound();
+		return Ok(clientes);
+		
 	}
 
 	[HttpGet("{id}")]
-	public IActionResult GetById(Guid id)
+	public async Task<IActionResult> GetById(Guid id)
 	{
-		return Ok();
+		var getClienteById = new GetClienteQuery(id);
+		var cliente = await _mediator.Send(getClienteById);
+		if (cliente is null) return NotFound();
+		return Ok(cliente);
+		
 	}
 
 	[HttpPost]
@@ -41,7 +50,7 @@ public class ClienteController : ControllerBase
 	[HttpPut("atualizar-cliente{id}")]
 	public async Task<IActionResult> Put(Guid id, [FromBody] UpdateClienteCommand command)
 	{
-		var clienteId = await _mediator.Send(command);
+		await _mediator.Send(command);
 		return NoContent();
 	}
 

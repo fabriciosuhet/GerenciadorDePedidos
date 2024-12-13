@@ -14,4 +14,9 @@ public class Pedido : BaseEntity
 		ItensPedidos = new List<ItemPedido>();
 		Total = 0;
 	}
+
+	public void TotalPedido(int quantidade, decimal precoUnitario)
+	{
+		Total += quantidade * precoUnitario;
+	}
 }
