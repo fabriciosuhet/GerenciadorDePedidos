@@ -22,7 +22,7 @@ public class CreateClineteCommandValidator : AbstractValidator<CreateClienteComm
 
 	public bool SenhaValida(string senha)
 	{
-		var regex = new Regex(@"^(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$");
+		var regex = new Regex(@"^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$");
 		return regex.IsMatch(senha);
 	}
 	

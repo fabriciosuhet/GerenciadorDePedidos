@@ -63,4 +63,10 @@ public class ClienteRepository : IClienteRepository
 		_context.Remove(clienteExistente);
 		await _context.SaveChangesAsync();
 	}
+
+	public async Task<Cliente?> GetUserByEmailAndPasswordAsync(string email, string passwordHash)
+	{
+		return await _context.Clientes
+			.SingleOrDefaultAsync(c => c.Email.Equals(email) && c.Senha.Equals(passwordHash));
+	}
 }

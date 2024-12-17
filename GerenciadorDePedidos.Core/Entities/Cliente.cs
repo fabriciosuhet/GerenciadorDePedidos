@@ -40,3 +40,4 @@ public class Cliente : BaseEntity
 		Telefone = telefone;
 	}
 }
+

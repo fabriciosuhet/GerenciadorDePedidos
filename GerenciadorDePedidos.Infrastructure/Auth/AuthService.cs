@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using GerenciadorDePedidos.Core.Services;
 using Microsoft.Extensions.Configuration;
@@ -37,5 +38,22 @@ public class AuthService : IAuthService
 		var stringToken = tokenHandler.WriteToken(token);
 		
 		return stringToken;
+	}
+
+	public string ComputeSha256Hash(string password)
+	{
+		using (SHA256 sha256Hashg = SHA256.Create())
+		{
+			// Compute hash - retorna byte array
+			byte[] bytes = sha256Hashg.ComputeHash(Encoding.UTF8.GetBytes(password));
+			
+			// Converte byte array em string
+			StringBuilder builder = new StringBuilder();
+			for (int i = 0; i < bytes.Length; i++)
+			{
+				builder.Append(bytes[i].ToString("x2"));
+			}
+			return builder.ToString();
+		}
 	}
 }

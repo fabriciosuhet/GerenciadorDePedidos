@@ -1,5 +1,6 @@
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
 using GerenciadorDePedidos.Application.Commands.DeleteCliente;
+using GerenciadorDePedidos.Application.Commands.LoginCliente;
 using GerenciadorDePedidos.Application.Commands.UpdateCliente;
 using GerenciadorDePedidos.Application.Queries.GetAllClientes;
 using GerenciadorDePedidos.Application.Queries.GetCliente;
@@ -58,5 +59,13 @@ public class ClienteController : ControllerBase
 	{
 		await _mediator.Send(command);
 		return Ok("Cliente deletado com sucesso");
+	}
+
+	[HttpPut("login")]
+	public async Task<IActionResult> Login([FromBody] LoginClienteCommand command)
+	{
+		var loginClienteViewModel = await _mediator.Send(command);
+		if (loginClienteViewModel == null) return BadRequest();
+		return Ok(loginClienteViewModel);
 	}
 }

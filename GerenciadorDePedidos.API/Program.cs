@@ -1,4 +1,3 @@
-using System.Reflection;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using GerenciadorDePedidos.API.Filters;
@@ -9,7 +8,6 @@ using GerenciadorDePedidos.Core.Services;
 using GerenciadorDePedidos.Infrastructure.Auth;
 using GerenciadorDePedidos.Infrastructure.Persistence;
 using GerenciadorDePedidos.Infrastructure.Persistence.Repositories;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

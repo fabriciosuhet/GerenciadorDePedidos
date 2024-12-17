@@ -10,4 +10,5 @@ public interface IClienteRepository
 	Task AddAsync(Cliente cliente);
 	Task UpdateAsync(Guid id, Cliente cliente);
 	Task DeleteAsync(Guid id);
+	Task<Cliente?> GetUserByEmailAndPasswordAsync(string email, string passwordHash);
 }

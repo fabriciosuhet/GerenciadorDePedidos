@@ -7,7 +7,6 @@ public class ValidationFilter : IActionFilter
 {
 	public void OnActionExecuting(ActionExecutingContext context)
 	{
-		throw new NotImplementedException();
 	}
 
 	public void OnActionExecuted(ActionExecutedContext context)
