@@ -4,13 +4,16 @@ using GerenciadorDePedidos.Application.Commands.LoginCliente;
 using GerenciadorDePedidos.Application.Commands.UpdateCliente;
 using GerenciadorDePedidos.Application.Queries.GetAllClientes;
 using GerenciadorDePedidos.Application.Queries.GetCliente;
+using GerenciadorDePedidos.Core.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GerenciadorDePedidos.API.Controllers;
 
 [ApiController]
 [Route("api/cliente")]
+[Authorize]
 public class ClienteController : ControllerBase
 {
 	private readonly IMediator _mediator;
@@ -41,6 +44,7 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpPost]
+	[AllowAnonymous]
 	public async Task<IActionResult> Post([FromBody] CreateClienteCommand command)
 	{
 		var clienteId = await _mediator.Send(command);
@@ -48,6 +52,8 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpPut("atualizar-cliente{id}")]
+	[Authorize(Roles = nameof(Role.Admin))]
+	[Authorize(Roles = nameof(Role.Usuario))]
 	public async Task<IActionResult> Put(Guid id, [FromBody] UpdateClienteCommand command)
 	{
 		await _mediator.Send(command);
@@ -55,6 +61,7 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpDelete("deletar-cliente{id}")]
+	[Authorize(Roles = nameof(Role.Admin))]
 	public async Task<IActionResult> Delete(DeleteClienteCommand command)
 	{
 		await _mediator.Send(command);
@@ -62,6 +69,7 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpPut("login")]
+	[AllowAnonymous]
 	public async Task<IActionResult> Login([FromBody] LoginClienteCommand command)
 	{
 		var loginClienteViewModel = await _mediator.Send(command);
