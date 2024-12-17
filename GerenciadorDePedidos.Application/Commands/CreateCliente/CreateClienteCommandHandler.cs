@@ -15,7 +15,7 @@ public class CreateClienteCommandHandler : IRequestHandler<CreateClienteCommand,
 
 	public async Task<Guid> Handle(CreateClienteCommand request, CancellationToken cancellationToken)
 	{
-		var cliente = new Cliente(request.NomeCompleto, request.Email, request.Telefone);
+		var cliente = new Cliente(request.NomeCompleto, request.Email, request.Telefone, request.Senha, request.Role);
 		await _clienteRepository.AddAsync(cliente);
 		return cliente.Id;
 	}

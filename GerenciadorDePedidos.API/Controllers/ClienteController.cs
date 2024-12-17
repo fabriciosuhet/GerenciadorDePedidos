@@ -3,7 +3,6 @@ using GerenciadorDePedidos.Application.Commands.DeleteCliente;
 using GerenciadorDePedidos.Application.Commands.UpdateCliente;
 using GerenciadorDePedidos.Application.Queries.GetAllClientes;
 using GerenciadorDePedidos.Application.Queries.GetCliente;
-using GerenciadorDePedidos.Core.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,4 +1,8 @@
-using GerenciadorDePedidos.Core.Entities;
+using GerenciadorDePedidos.Application.Commands.CreatePedido;
+using GerenciadorDePedidos.Application.Commands.DeletePedido;
+using GerenciadorDePedidos.Application.Queries.GetAllPedidos;
+using GerenciadorDePedidos.Application.Queries.GetPedido;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GerenciadorDePedidos.API.Controllers;
@@ -7,34 +11,35 @@ namespace GerenciadorDePedidos.API.Controllers;
 [Route("api/pedido")]
 public class PedidoController : ControllerBase
 {
+	private readonly IMediator _mediator;
+	
 	[HttpGet]
-	public IActionResult GetAll(string? query)
+	public async Task<IActionResult> GetAll(string? query)
 	{
-		// NotFound();
-		return Ok();
+		var getAllPedidos = new GetAllPedidosQuery(query);
+		var pedidos = await _mediator.Send(getAllPedidos);
+		return Ok(pedidos);
 	}
 
 	[HttpGet("{id}")]
-	public IActionResult GetById(Guid id)
+	public async Task<IActionResult> GetById(Guid id)
 	{
-		return Ok();
+		var getPedidoById = new GetPedidoQuery(id);
+		var pedido = await _mediator.Send(getPedidoById);
+		return Ok(pedido);
 	}
 
 	[HttpPost]
-	public IActionResult Post([FromBody] Pedido pedido)
+	public async Task<IActionResult> Post([FromBody] CreatePedidoCommand command)
 	{
-		return CreatedAtAction(nameof(GetById), new {id = pedido.Id}, pedido);
+		var pedidoId = await _mediator.Send(command);
+		return CreatedAtAction(nameof(GetById), new {id = pedidoId}, command);
 	}
-
-	[HttpPut("atualizar-pedido/{id}")]
-	public IActionResult Put(Guid id, [FromBody] Pedido pedido)
-	{
-		return Ok();
-	}
-
+	
 	[HttpDelete("deletar-pedido/{id}")]
-	public IActionResult Delete(Guid id)
+	public async Task<IActionResult> Delete(DeletePedidoCommand command)
 	{
+		await _mediator.Send(command);
 		return Ok("pedido deletado com sucesso");
 	}
 	
