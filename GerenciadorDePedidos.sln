@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GerenciadorDePedidos.Core",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GerenciadorDePedidos.Infrastructure", "GerenciadorDePedidos.Infrastructure\GerenciadorDePedidos.Infrastructure.csproj", "{0982F3A1-522B-4902-9E13-3E034D4ECA0B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GerenciadorDePedidos.UnitTests", "GerenciadorDePedidos.UnitTests\GerenciadorDePedidos.UnitTests.csproj", "{C9125BF4-64C8-47EE-8178-9FBB2A11937B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{0982F3A1-522B-4902-9E13-3E034D4ECA0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0982F3A1-522B-4902-9E13-3E034D4ECA0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0982F3A1-522B-4902-9E13-3E034D4ECA0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9125BF4-64C8-47EE-8178-9FBB2A11937B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9125BF4-64C8-47EE-8178-9FBB2A11937B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9125BF4-64C8-47EE-8178-9FBB2A11937B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9125BF4-64C8-47EE-8178-9FBB2A11937B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

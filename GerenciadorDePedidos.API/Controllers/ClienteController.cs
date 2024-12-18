@@ -45,6 +45,7 @@ public class ClienteController : ControllerBase
 
 	[HttpPost]
 	[AllowAnonymous]
+	// Cadastro de Cliente
 	public async Task<IActionResult> Post([FromBody] CreateClienteCommand command)
 	{
 		var clienteId = await _mediator.Send(command);
