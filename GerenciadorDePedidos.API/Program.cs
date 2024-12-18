@@ -41,6 +41,16 @@ builder.Services.AddMediatR(cfg =>
 	cfg.RegisterServicesFromAssemblies([typeof(Program).Assembly, typeof(CreateProdutoCommandHandler).Assembly]);
 });
 
+builder.Services.AddCors(opt =>
+{
+	opt.AddPolicy("AllowAll", builder =>
+	{
+		builder.AllowAnyOrigin()
+			.AllowAnyMethod()
+			.AllowAnyHeader();
+	});
+});
+
 builder.Services.AddSwaggerGen(c =>
 {
 	c.SwaggerDoc("v1", new OpenApiInfo {Title = "GerenciadorDePedidos.API", Version =  "v1"});
