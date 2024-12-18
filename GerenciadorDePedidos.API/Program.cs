@@ -26,8 +26,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// builder.Services.AddDbContext<GerenciadorDePedidosDbContext>(opt =>
+// 	opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+
 builder.Services.AddDbContext<GerenciadorDePedidosDbContext>(opt =>
-	opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+	opt.UseInMemoryDatabase(connectionString));
 
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
