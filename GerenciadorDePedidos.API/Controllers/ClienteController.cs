@@ -33,7 +33,7 @@ public class ClienteController : ControllerBase
 		
 	}
 
-	[HttpGet("{id}")]
+	[HttpGet("{id:guid}")]
 	public async Task<IActionResult> GetById(Guid id)
 	{
 		var getClienteById = new GetClienteQuery(id);
@@ -52,7 +52,7 @@ public class ClienteController : ControllerBase
 		return CreatedAtAction(nameof(GetById), new { id = clienteId}, command);
 	}
 
-	[HttpPut("atualizar-cliente{id}")]
+	[HttpPut("atualizar-cliente{id:guid}")]
 	[Authorize(Roles = nameof(Role.Admin))]
 	[Authorize(Roles = nameof(Role.Usuario))]
 	public async Task<IActionResult> Put(Guid id, [FromBody] UpdateClienteCommand command)
@@ -61,7 +61,7 @@ public class ClienteController : ControllerBase
 		return NoContent();
 	}
 
-	[HttpDelete("deletar-cliente{id}")]
+	[HttpDelete("deletar-cliente{id:guid}")]
 	[Authorize(Roles = nameof(Role.Admin))]
 	public async Task<IActionResult> Delete(DeleteClienteCommand command)
 	{
