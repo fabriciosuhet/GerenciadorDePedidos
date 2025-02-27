@@ -2,11 +2,14 @@ using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Application.Commands.DeletePedido;
 using GerenciadorDePedidos.Application.Queries.GetAllPedidos;
 using GerenciadorDePedidos.Application.Queries.GetPedido;
+using GerenciadorDePedidos.Core.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GerenciadorDePedidos.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/pedido")]
 public class PedidoController : ControllerBase
@@ -14,6 +17,7 @@ public class PedidoController : ControllerBase
 	private readonly IMediator _mediator;
 	
 	[HttpGet]
+	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetAll(string? query)
 	{
 		var getAllPedidos = new GetAllPedidosQuery(query);
@@ -22,6 +26,7 @@ public class PedidoController : ControllerBase
 	}
 
 	[HttpGet("{id}")]
+	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetById(Guid id)
 	{
 		var getPedidoById = new GetPedidoQuery(id);
@@ -30,13 +35,15 @@ public class PedidoController : ControllerBase
 	}
 
 	[HttpPost]
+	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> Post([FromBody] CreatePedidoCommand command)
 	{
 		var pedidoId = await _mediator.Send(command);
 		return CreatedAtAction(nameof(GetById), new {id = pedidoId}, command);
 	}
 	
-	[HttpDelete("deletar-pedido/{id}")]
+	[HttpDelete("deletar-pedido/{id:guid}")]
+	[Authorize(Roles = $"{nameof(Role.Admin)}")]
 	public async Task<IActionResult> Delete(DeletePedidoCommand command)
 	{
 		await _mediator.Send(command);

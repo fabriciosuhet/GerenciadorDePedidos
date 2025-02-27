@@ -4,6 +4,7 @@ using GerenciadorDePedidos.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(GerenciadorDePedidosDbContext))]
-    partial class GerenciadorDePedidosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250227235755_Update table preco and preco unitario")]
+    partial class Updatetableprecoandprecounitario
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

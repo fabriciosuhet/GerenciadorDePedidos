@@ -16,5 +16,9 @@ public class ItemPedidoConfiguration : IEntityTypeConfiguration<ItemPedido>
 			.WithMany()
 			.HasForeignKey(ip => ip.ProdutoId)
 			.OnDelete(DeleteBehavior.Restrict);
+
+		builder
+			.Property(p => p.PrecoUnitario)
+			.HasColumnType("decimal(15, 2)");
 	}
 }

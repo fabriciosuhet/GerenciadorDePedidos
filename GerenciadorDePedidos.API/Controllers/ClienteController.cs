@@ -24,6 +24,7 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpGet]
+	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetAll(string? query)
 	{
 		var getAllClientes = new GetAllClientesQuery(query);
@@ -34,6 +35,7 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpGet("{id:guid}")]
+	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetById(Guid id)
 	{
 		var getClienteById = new GetClienteQuery(id);
@@ -44,7 +46,7 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpPost]
-	[AllowAnonymous]
+	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	// Cadastro de Cliente
 	public async Task<IActionResult> Post([FromBody] CreateClienteCommand command)
 	{
@@ -53,15 +55,14 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpPut("atualizar-cliente{id:guid}")]
-	[Authorize(Roles = nameof(Role.Admin))]
-	[Authorize(Roles = nameof(Role.Usuario))]
+	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> Put(Guid id, [FromBody] UpdateClienteCommand command)
 	{
 		await _mediator.Send(command);
 		return NoContent();
 	}
 
-	[HttpDelete("deletar-cliente{id:guid}")]
+	[HttpDelete("deletar-cliente/{id:guid}")]
 	[Authorize(Roles = nameof(Role.Admin))]
 	public async Task<IActionResult> Delete(DeleteClienteCommand command)
 	{
@@ -70,7 +71,7 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpPut("login")]
-	[AllowAnonymous]
+	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> Login([FromBody] LoginClienteCommand command)
 	{
 		var loginClienteViewModel = await _mediator.Send(command);

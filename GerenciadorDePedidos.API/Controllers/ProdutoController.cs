@@ -24,8 +24,7 @@ public class ProdutoController : ControllerBase
 	}
 
 	[HttpGet]
-	[Authorize(Roles = nameof(Role.Admin))]
-	[Authorize(Roles = nameof(Role.Usuario))]
+	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetAll(string? query)
 	{
 		var getAllProdutos = new GetAllProdutosQuery(query);
@@ -34,9 +33,8 @@ public class ProdutoController : ControllerBase
 		return Ok(produtos);
 	}
 
-	[HttpGet("{id}")]
-	[Authorize(Roles = nameof(Role.Admin))]
-	[Authorize(Roles = nameof(Role.Usuario))]
+	[HttpGet("{id:guid}")]
+	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetById(Guid id)
 	{
 		var getProdutoById = new GetProdutoQuery(id);
@@ -53,7 +51,7 @@ public class ProdutoController : ControllerBase
 		return CreatedAtAction(nameof(GetById), new { id = produtoId }, command);
 	}
 
-	[HttpPut("atualizar-produto/{id}")]
+	[HttpPut("atualizar-produto/{id:guid}")]
 	[Authorize(Roles = nameof(Role.Admin))]
 	public async Task<IActionResult> Put(Guid id, [FromBody] UpdateProdutoCommand command)
 	{
@@ -61,7 +59,7 @@ public class ProdutoController : ControllerBase
 		return NoContent();
 	}
 
-	[HttpDelete("remover-produto/{id}")]
+	[HttpDelete("remover-produto/{id:guid}")]
 	[Authorize(Roles = nameof(Role.Admin))]
 	public async Task<IActionResult> Delete(DeleteProdutoCommand command)
 	{
