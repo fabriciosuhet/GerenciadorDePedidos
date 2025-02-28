@@ -1,3 +1,4 @@
+using System.Net;
 using FluentValidation;
 using GerenciadorDePedidos.API.Filters;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;

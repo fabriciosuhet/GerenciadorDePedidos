@@ -11,9 +11,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GerenciadorDePedidos.UnitTests", "GerenciadorDePedidos.UnitTests\GerenciadorDePedidos.UnitTests.csproj", "{C9125BF4-64C8-47EE-8178-9FBB2A11937B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3B479170-9656-4F02-8FC0-539BC7BAEE7C}"
-	ProjectSection(SolutionItems) = preProject
-		compose.yaml = compose.yaml
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
