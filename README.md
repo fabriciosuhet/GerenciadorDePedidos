@@ -33,7 +33,9 @@ Siga os passos abaixo para configurar e executar a aplicação:
    git clone https://github.com/fabriciosuhet/GerenciadorDePedidos.git
    cd GerenciadorDePedidos
 
-2. **Construa e inicie os containers com Docker Compose O docker-compose irá criar os containers para o MySQL e a aplicação.**
+### A FAZER AINDA ⚠️
+
+2. ⚠️**Construa e inicie os containers com Docker Compose O docker-compose irá criar os containers para o MySQL e a aplicação.**
    ```bash
    docker-compose up --build
 
@@ -41,18 +43,18 @@ Siga os passos abaixo para configurar e executar a aplicação:
   - Construir a aplicação e o container do MySQL.
   - Iniciar os containers e configurar a aplicação para rodar.
 
-3. **Acesse a aplicação** Após o Docker terminar de subir os containers, você poderá acessar a API na seguinte URL:
+3. ⚠️**Acesse a aplicação** Após o Docker terminar de subir os containers, você poderá acessar a API na seguinte URL:
    ```bash
    http://localhost:8080
    
 - A API estará disponível e pronta para ser consumida.
 
-4. **Realize as migrações (Se aplicável)** Caso o seu banco de dados precise de migrações, você pode executar o seguinte comando para aplicar as migrações:
+4. ⚠️**Realize as migrações (Se aplicável)** Caso o seu banco de dados precise de migrações, você pode executar o seguinte comando para aplicar as migrações:
    ```bash
    docker exec -it gerenciadordepedidos_api dotnet ef database update
    
 
-### Como Parar os Containers
+### ⚠️Como Parar os Containers
   ```bash
   docker-compose-down
 ```
