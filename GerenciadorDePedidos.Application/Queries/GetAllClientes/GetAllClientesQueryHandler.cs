@@ -14,7 +14,7 @@ public class GetAllClientesQueryHandler : IRequestHandler<GetAllClientesQuery, L
 
 	public async Task<List<ClienteViewModel>> Handle(GetAllClientesQuery request, CancellationToken cancellationToken)
 	{
-		var cliente = await _clienteRepository.GetAllAsync();
+		var cliente = await _clienteRepository.GetAllAsync(request.Query);
 		var clienteViewModel = cliente
 			.Select(c => new ClienteViewModel(c.Id, c.NomeCompleto, c.Email, c.Telefone))
 			.ToList();

@@ -4,7 +4,7 @@ namespace GerenciadorDePedidos.Core.Repositories;
 
 public interface IProdutoRepository
 {
-	Task<List<Produto>> GetAllAsync();
+	Task<List<Produto>> GetAllAsync(string? query);
 	Task<Produto?> GetByIdAsync(Guid id);
 	Task AddAsync(Produto produto);
 	Task UpdateAsync(Guid id,Produto produto);

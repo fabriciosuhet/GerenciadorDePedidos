@@ -7,7 +7,7 @@ public class GetAllClientesQuery : IRequest<List<ClienteViewModel>>
 {
 	public string? Query { get; private set; }
 
-	public GetAllClientesQuery(string query)
+	public GetAllClientesQuery(string? query)
 	{
 		Query = query;
 	}

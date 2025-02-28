@@ -4,7 +4,7 @@ namespace GerenciadorDePedidos.Core.Repositories;
 
 public interface IClienteRepository
 {
-	Task<List<Cliente>> GetAllAsync();
+	Task<List<Cliente>> GetAllAsync(string? query);
 	Task<Cliente?> GetByIdAsync(Guid id);
 	Task<Cliente?> GetDetailsByIdAsync(Guid id);
 	Task AddAsync(Cliente cliente);

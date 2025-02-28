@@ -13,9 +13,10 @@ public class ProdutoRepository : IProdutoRepository
 		_context = context;
 	}
 
-	public async Task<List<Produto>> GetAllAsync()
+	public async Task<List<Produto>> GetAllAsync(string? query)
 	{
-		return await _context.Produtos.ToListAsync();
+		return await _context.Produtos.Where(p => string.IsNullOrEmpty(query) || p.Nome.Contains(query))
+			.ToListAsync();
 	}
 
 	public async Task<Produto?> GetByIdAsync(Guid id)

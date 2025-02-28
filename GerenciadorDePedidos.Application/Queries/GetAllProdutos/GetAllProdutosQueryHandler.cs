@@ -15,7 +15,7 @@ public class GetAllProdutosQueryHandler : IRequestHandler<GetAllProdutosQuery, L
 
 	public async Task<List<ProdutoViewModel>> Handle(GetAllProdutosQuery request, CancellationToken cancellationToken)
 	{
-		var produto = await _produtoRepository.GetAllAsync();
+		var produto = await _produtoRepository.GetAllAsync(request.Query);
 		var produtoViewModel = produto
 			.Select(p => new ProdutoViewModel(p.Id, p.Nome, p.Preco, p.Estoque))
 			.ToList();

@@ -71,7 +71,7 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpPut("login")]
-	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
+	[AllowAnonymous]
 	public async Task<IActionResult> Login([FromBody] LoginClienteCommand command)
 	{
 		var loginClienteViewModel = await _mediator.Send(command);
