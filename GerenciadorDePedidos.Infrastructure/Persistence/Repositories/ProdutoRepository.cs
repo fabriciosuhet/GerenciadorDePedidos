@@ -38,10 +38,6 @@ public class ProdutoRepository : IProdutoRepository
 			throw new Exception("Produto nao encontrado");
 		}
 		
-		produto.AlterarNome(produtoExistente.Nome);
-		produto.AlterarPreco(produtoExistente.Preco);
-		produto.AdicionarEstoque(produtoExistente.Estoque);
-		
 		await _context.SaveChangesAsync();
 		
 	}

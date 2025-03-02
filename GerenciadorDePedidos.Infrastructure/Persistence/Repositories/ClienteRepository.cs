@@ -29,6 +29,8 @@ public class ClienteRepository : IClienteRepository
 		return await _context.Clientes
 			.Include(c => c.Pedidos)
 			.ThenInclude(p => p.ItensPedidos)
+			.ThenInclude(ip => ip.Produto)
+			.AsNoTracking()
 			.SingleOrDefaultAsync(c => c.Id == id);
 	}
 

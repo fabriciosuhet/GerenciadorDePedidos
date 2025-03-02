@@ -15,8 +15,7 @@ public class UpdateProdutoCommandHandler : IRequestHandler<UpdateProdutoCommand,
 	public async Task<Unit> Handle(UpdateProdutoCommand request, CancellationToken cancellationToken)
 	{
 		var produto =  await _produtoRepository.GetByIdAsync(request.Id);
-		produto.AlterarNome(request.Nome);
-		produto.AlterarPreco(request.Preco);
+		produto.AlterarDados(request.Nome, request.Preco, request.Estoque);
 		await _produtoRepository.UpdateAsync(request.Id, produto);
 		return Unit.Value;
 	}

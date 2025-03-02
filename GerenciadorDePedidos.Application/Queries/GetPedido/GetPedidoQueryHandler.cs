@@ -1,11 +1,12 @@
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Queries.GetPedido;
 
-public class GetPedidoQueryHandler : IRequestHandler<GetPedidoQuery, PedidoViewModel>
+public class GetPedidoQueryHandler : IRequestHandler<GetPedidoQuery, PedidoRespondeDTO>
 {
 	private readonly IPedidoRepository _pedidoRepository;
 
@@ -14,15 +15,29 @@ public class GetPedidoQueryHandler : IRequestHandler<GetPedidoQuery, PedidoViewM
 		_pedidoRepository = pedidoRepository;
 	}
 
-	public async Task<PedidoViewModel> Handle(GetPedidoQuery request, CancellationToken cancellationToken)
+	public async Task<PedidoRespondeDTO> Handle(GetPedidoQuery request, CancellationToken cancellationToken)
 	{
 		var pedido = await _pedidoRepository.GetByIdAsync(request.Id);
 		if (pedido is null) return null;
-		var pedidoViewModel = new PedidoViewModel(
-			pedido.ItensPedidos,
-			pedido.Total
-		);
-		return pedidoViewModel;
+
+		return new PedidoRespondeDTO
+		{
+			Id = pedido.Id,
+			DataPedido = pedido.DataPedido,
+			Total = pedido.Total,
+			ClienteId = pedido.ClienteId,
+			ClienteNome = pedido.Cliente.NomeCompleto,
+			ItensPedidos = pedido.ItensPedidos.Select(i => new ItemPedidoResponseDTO
+			{
+				Id = i.Id,
+				ProdutoId = i.ProdutoId,
+				ProdutoNome = i.Produto.Nome,
+				Quantidade = i.Quantidade,
+				PrecoUnitario = i.PrecoUnitario,
+				Total = i.Total,
+
+			}).ToList()
+		};
 
 	}
 }

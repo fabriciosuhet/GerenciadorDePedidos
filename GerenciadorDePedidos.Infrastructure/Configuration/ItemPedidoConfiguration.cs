@@ -20,5 +20,9 @@ public class ItemPedidoConfiguration : IEntityTypeConfiguration<ItemPedido>
 		builder
 			.Property(p => p.PrecoUnitario)
 			.HasColumnType("decimal(15, 2)");
+		
+		builder
+			.Property(p => p.Total)
+			.HasColumnType("decimal(15, 2)");
 	}
 }

@@ -15,7 +15,11 @@ namespace GerenciadorDePedidos.API.Controllers;
 public class PedidoController : ControllerBase
 {
 	private readonly IMediator _mediator;
-	
+	public PedidoController(IMediator mediator)
+	{
+		_mediator = mediator;
+	}
+
 	[HttpGet]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetAll(string? query)
@@ -25,12 +29,15 @@ public class PedidoController : ControllerBase
 		return Ok(pedidos);
 	}
 
-	[HttpGet("{id}")]
+	[HttpGet("{id:guid}")]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetById(Guid id)
 	{
 		var getPedidoById = new GetPedidoQuery(id);
 		var pedido = await _mediator.Send(getPedidoById);
+		if (pedido is null)
+			return NotFound();
+		
 		return Ok(pedido);
 	}
 
@@ -49,5 +56,7 @@ public class PedidoController : ControllerBase
 		await _mediator.Send(command);
 		return Ok("pedido deletado com sucesso");
 	}
+
+	
 	
 }

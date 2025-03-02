@@ -4,6 +4,7 @@ using GerenciadorDePedidos.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(GerenciadorDePedidosDbContext))]
-    partial class GerenciadorDePedidosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250302144249_Add small change in entitiy pedido")]
+    partial class Addsmallchangeinentitiypedido
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -74,7 +77,7 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("Total")
-                        .HasColumnType("decimal(15, 2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.HasKey("Id");
 

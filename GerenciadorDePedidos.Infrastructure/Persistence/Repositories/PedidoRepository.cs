@@ -20,7 +20,12 @@ public class PedidoRepository : IPedidoRepository
 
 	public async Task<Pedido?> GetByIdAsync(Guid id)
 	{
-		return await _context.Pedidos.SingleOrDefaultAsync(p => p.Id == id);
+		return await _context.Pedidos
+			.Include(p => p.ItensPedidos)
+			.ThenInclude(i => i.Produto)
+			.Include(p => p.Cliente)
+			.AsNoTracking()
+			.SingleOrDefaultAsync(p => p.Id == id);
 	}
 
 	public async Task AddAsync(Pedido pedido)

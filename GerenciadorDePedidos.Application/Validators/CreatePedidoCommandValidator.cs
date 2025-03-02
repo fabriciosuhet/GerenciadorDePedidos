@@ -8,9 +8,19 @@ public class CreatePedidoCommandValidator : AbstractValidator<CreatePedidoComman
 {
 	public CreatePedidoCommandValidator()
 	{
-		RuleFor(p => p.Total)
-			.GreaterThan(0).WithMessage("O valor deve ser maior que 0")
+		RuleFor(p => p.ClienteId)
+			.NotEmpty()
+			.WithMessage("O ID do cliente nao pode ser vazio ou nulo");
+
+		RuleFor(p => p.ItensPedidos)
 			.NotNull()
-			.WithMessage("O valor nao pode ser nulo");
+			.WithMessage("A lista de pedidos nao pode ser nula")
+			.NotEmpty()
+			.WithMessage("A lista de itens pedidos deve conter pelo menos um item");
+
+		RuleForEach(p => p.ItensPedidos)
+			.SetValidator(new ItemPedidoDtoValidator());
 	}
+	
+	
 }
