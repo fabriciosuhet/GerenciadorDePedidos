@@ -60,7 +60,7 @@ Siga os passos abaixo para configurar e executar a aplicação:
 ```
 
 ### Diagrama Banco de Dados
-![Diagrama banco de dados](https://i.imgur.com/rLA3iEi.png)
+![Diagrama banco de dados](https://i.imgur.com/6TiOzMV.png)
 
 ### Documentação API Swagger
 ![Imagem da documentação no Swagger](https://i.imgur.com/3eE2ubm.png)
