@@ -15,7 +15,7 @@ public class CreatePedidoCommandHandler : IRequestHandler<CreatePedidoCommand, G
 
 	public async Task<Guid> Handle(CreatePedidoCommand request, CancellationToken cancellationToken)
 	{
-		var pedido = new Pedido();
+		var pedido = new Pedido(request.ItensPedidos, request.Total, request.ClienteId);
 		await _pedidoRepository.AddAsync(pedido);
 		return pedido.Id;
 	}

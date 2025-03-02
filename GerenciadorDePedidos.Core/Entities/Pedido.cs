@@ -9,12 +9,15 @@ public class Pedido : BaseEntity
 	public Guid ClienteId { get; private set; }
 	public Cliente Cliente { get; private set; }
 	
-	public Pedido()
+	protected Pedido(){}
+	
+	public Pedido(List<ItemPedido> itensPedidos, decimal total, Guid clienteId)
 	{
-		ItensPedidos = new List<ItemPedido>();
-		Total = 0;
+		ItensPedidos = itensPedidos;
+		Total = total;
+		ClienteId = clienteId;
 	}
-
+	
 	public void TotalPedido(int quantidade, decimal precoUnitario)
 	{
 		Total += quantidade * precoUnitario;

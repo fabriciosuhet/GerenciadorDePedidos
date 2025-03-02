@@ -11,8 +11,7 @@ public class Cliente : BaseEntity
 	public Role Role { get; private set; }
 	
 	public Guid PedidoId { get; private set; }
-	
-	public List<Pedido> Pedidos  { get; private set; }
+	public List<Pedido> Pedidos  { get; private set; } = new List<Pedido>();
 
 	public Cliente()
 	{
@@ -26,8 +25,6 @@ public class Cliente : BaseEntity
 		Telefone = telefone;
 		Senha = senha;
 		Role = role;
-		
-		Pedidos = new List<Pedido>();
 	}
 
 	public void AlterarEmail(string email)

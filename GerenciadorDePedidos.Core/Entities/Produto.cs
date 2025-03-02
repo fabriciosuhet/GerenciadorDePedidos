@@ -17,7 +17,7 @@ public class Produto : BaseEntity
 	{
 		if (quantidade <= 0)
 		{
-			throw new Exception("O valor não pode ser menor ou igual a 0");
+			throw new ArgumentException("O valor não pode ser menor ou igual a 0");
 		}
 		Estoque -= quantidade;
 	}
@@ -26,7 +26,7 @@ public class Produto : BaseEntity
 	{
 		if (quantidade <= 0)
 		{
-			throw new Exception("O valor não pode ser menor ou igual a 0");
+			throw new ArgumentException("O valor não pode ser menor ou igual a 0");
 		}
 		Estoque += quantidade;
 	}
