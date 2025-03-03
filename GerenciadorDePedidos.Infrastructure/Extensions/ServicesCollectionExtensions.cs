@@ -15,6 +15,7 @@ public static class ServicesCollectionExtensions
 		services.AddScoped<IClienteRepository, ClienteRepository>();
 		services.AddScoped<IProdutoRepository, ProdutoRepository>();
 		services.AddScoped<IPedidoRepository, PedidoRepository>();
+		services.AddScoped<IMovimentacaoEstoqueRepository, MovimentacaoEstoqueRepository>();
 		return services;
 	}
 

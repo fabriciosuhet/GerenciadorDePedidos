@@ -22,10 +22,12 @@ public class GetClienteQueryHandler : IRequestHandler<GetClienteQuery, ClienteDe
 		var pedidosDto = cliente.Pedidos.Select(p => new PedidoRespondeDTO
 		{
 			Id = p.Id,
-			DataPedido = p.DataPedido,
+			DataPedido = TimeZoneInfo.ConvertTimeFromUtc(p.DataPedido,
+				TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time")),
 			Total = p.Total,
 			ClienteId = p.ClienteId,
 			ClienteNome = p.Cliente.NomeCompleto,
+			Status = p.Status,
 			ItensPedidos = p.ItensPedidos.Select(ip => new ItemPedidoResponseDTO
 			{
 				Id = ip.Id,

@@ -15,8 +15,9 @@ public class ClienteRepository : IClienteRepository
 
 	public async Task<List<Cliente>> GetAllAsync(string? query)
 	{
-		return await _context.Clientes.Where(c =>  string.IsNullOrEmpty(query) || c.Email.Contains(query) || c.NomeCompleto.Contains(query))
-			.ToListAsync();
+		return await _context.Clientes.Where(c => string.IsNullOrEmpty(query) ||
+		                                          c.Email.Contains(query) ||
+		                                          c.NomeCompleto.Contains(query)).ToListAsync();
 	}
 
 	public async Task<Cliente?> GetByIdAsync(Guid id)

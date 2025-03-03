@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.Core.Entities;
+using GerenciadorDePedidos.Core.Enums;
 using Xunit;
 using Assert = NUnit.Framework.Assert;
 
@@ -16,7 +17,7 @@ public class PedidoTests
 		var dataPedido = DateTime.UtcNow;
 		
 		// Act (Agir)
-		var pedido = new Pedido(itensPedidos, total, clienteId, dataPedido);
+		var pedido = new Pedido(itensPedidos, total, clienteId, dataPedido, Status.Pendente);
 		
 		// Assert (Verificar)
 		Assert.IsEmpty(pedido.ItensPedidos);
@@ -30,7 +31,7 @@ public class PedidoTests
 	public void ConstrutorPadrao_DeveInicilizarListaDePedidosNaoNula()
 	{
 		// Arrange e Act
-		var pedido = new Pedido(new List<ItemPedido>(), 0m, Guid.NewGuid(), DateTime.UtcNow);
+		var pedido = new Pedido(new List<ItemPedido>(), 0m, Guid.NewGuid(), DateTime.UtcNow, Status.Pendente);
 		
 		// Assert
 		Assert.NotNull(pedido.ItensPedidos);
@@ -40,7 +41,7 @@ public class PedidoTests
 	public void TotalPedidos_DeveAtualizarTotalCorretamente()
 	{
 		// Arrange
-		var pedido = new Pedido(new List<ItemPedido>(), 0m, Guid.NewGuid(), DateTime.UtcNow);
+		var pedido = new Pedido(new List<ItemPedido>(), 0m, Guid.NewGuid(), DateTime.UtcNow, Status.Pendente);
 		var quantidade = 10;
 		var precoUnitario = 50m;
 		var totalEsperado = quantidade * precoUnitario;

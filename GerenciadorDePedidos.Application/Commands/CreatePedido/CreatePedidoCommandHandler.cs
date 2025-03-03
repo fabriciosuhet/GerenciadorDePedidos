@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.Core.Entities;
+using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
@@ -36,7 +37,7 @@ public class CreatePedidoCommandHandler : IRequestHandler<CreatePedidoCommand, G
 		}
 
 		var total = itens.Sum(item => item.Total);
-		var pedido = new Pedido(itens, total, request.ClienteId, DateTime.UtcNow);
+		var pedido = new Pedido(itens, total, request.ClienteId, DateTime.UtcNow, request.Status);
 		
 		await _pedidoRepository.AddAsync(pedido);
 		return pedido.Id;

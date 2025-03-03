@@ -4,6 +4,7 @@ using GerenciadorDePedidos.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(GerenciadorDePedidosDbContext))]
-    partial class GerenciadorDePedidosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250303181740_Add status in entitie Pedido")]
+    partial class AddstatusinentitiePedido
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,36 +88,6 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                     b.ToTable("ItensPedidos");
                 });
 
-            modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.MovimentacaoEstoque", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("ClienteId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("DataMovimentacao")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("ProdutoId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("Quantidade")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TipoMovimentacao")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClienteId");
-
-                    b.HasIndex("ProdutoId");
-
-                    b.ToTable("MovimentacaoEstoques");
-                });
-
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Pedido", b =>
                 {
                     b.Property<Guid>("Id")
@@ -176,25 +149,6 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                     b.Navigation("Produto");
                 });
 
-            modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.MovimentacaoEstoque", b =>
-                {
-                    b.HasOne("GerenciadorDePedidos.Core.Entities.Cliente", "Cliente")
-                        .WithMany("MovimentacaoEstoque")
-                        .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GerenciadorDePedidos.Core.Entities.Produto", "Produto")
-                        .WithMany("MovimentacaoEstoque")
-                        .HasForeignKey("ProdutoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Cliente");
-
-                    b.Navigation("Produto");
-                });
-
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Pedido", b =>
                 {
                     b.HasOne("GerenciadorDePedidos.Core.Entities.Cliente", "Cliente")
@@ -208,19 +162,12 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Cliente", b =>
                 {
-                    b.Navigation("MovimentacaoEstoque");
-
                     b.Navigation("Pedidos");
                 });
 
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Pedido", b =>
                 {
                     b.Navigation("ItensPedidos");
-                });
-
-            modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Produto", b =>
-                {
-                    b.Navigation("MovimentacaoEstoque");
                 });
 #pragma warning restore 612, 618
         }

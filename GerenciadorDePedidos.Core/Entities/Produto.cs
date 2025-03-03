@@ -5,6 +5,7 @@ public class Produto : BaseEntity
 	public string Nome { get; private set; }
 	public decimal Preco { get; private set; } 
 	public int Estoque { get; private set; }
+	public ICollection<MovimentacaoEstoque> MovimentacaoEstoque { get; private set; } = new List<MovimentacaoEstoque>();
 
 	public Produto(string nome, decimal preco, int estoque)
 	{
@@ -15,19 +16,11 @@ public class Produto : BaseEntity
 
 	public void RemoverEstoque(int quantidade)
 	{
-		if (quantidade <= 0)
-		{
-			throw new ArgumentException("O valor não pode ser menor ou igual a 0");
-		}
 		Estoque -= quantidade;
 	}
 
 	public void AdicionarEstoque(int quantidade)
 	{
-		if (quantidade <= 0)
-		{
-			throw new ArgumentException("O valor não pode ser menor ou igual a 0");
-		}
 		Estoque += quantidade;
 	}
 

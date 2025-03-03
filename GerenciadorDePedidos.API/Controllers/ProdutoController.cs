@@ -3,7 +3,9 @@ using GerenciadorDePedidos.Application.Commands.AdicionarPedidoEstoque;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
 using GerenciadorDePedidos.Application.Commands.DeleteProduto;
 using GerenciadorDePedidos.Application.Commands.RemoverProdutoEstoque;
+using GerenciadorDePedidos.Application.Queries.GetAllMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetAllProdutos;
+using GerenciadorDePedidos.Application.Queries.GetMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetProduto;
 using GerenciadorDePedidos.Core.Enums;
 using MediatR;
@@ -34,6 +36,27 @@ public class ProdutoController : ControllerBase
 		if (produtos is null) return NotFound();
 		return Ok(produtos);
 	}
+
+	[HttpGet("movimentacao-estoque")]
+	[Authorize(Roles = $"{nameof(Role.Admin)}")]
+	public async Task<IActionResult> GetAllMovimentacaoEstoque(string? query)
+	{
+		var getAllMovimentacoes = new GetAllMovimentacaoEstoqueQuery(query);
+		var movimentacoes = await _mediator.Send(getAllMovimentacoes);
+		if (movimentacoes is null) return NotFound("Movimentacoes nao encontradas");
+		return Ok(movimentacoes);
+	}
+
+	[HttpGet("movimentacao-estoque/{id:guid}")]
+	[Authorize(Roles = $"{nameof(Role.Admin)}")]
+	public async Task<IActionResult> GetMovimentacaoEstoque(Guid id)
+	{
+		var getMovimentacao = new GetMovimentacaoEstoqueQuery(id);
+		var movimentacao = await _mediator.Send(getMovimentacao);
+		if (movimentacao is null) return NotFound("Movimentacao nao encontrada");
+		return Ok(movimentacao);
+	}
+	
 
 	[HttpGet("{id:guid}")]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]

@@ -18,6 +18,7 @@ public class GerenciadorDePedidosDbContext : DbContext
 	public DbSet<ItemPedido> ItensPedidos { get; set; }
 	public DbSet<Pedido> Pedidos { get; set; }
 	public DbSet<Produto> Produtos { get; set; }
+	public DbSet<MovimentacaoEstoque> MovimentacaoEstoques { get; set; }
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{

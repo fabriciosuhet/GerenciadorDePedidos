@@ -23,10 +23,12 @@ public class GetPedidoQueryHandler : IRequestHandler<GetPedidoQuery, PedidoRespo
 		return new PedidoRespondeDTO
 		{
 			Id = pedido.Id,
-			DataPedido = pedido.DataPedido,
+			DataPedido = TimeZoneInfo.ConvertTimeFromUtc(pedido.DataPedido,
+				TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time")),
 			Total = pedido.Total,
 			ClienteId = pedido.ClienteId,
 			ClienteNome = pedido.Cliente.NomeCompleto,
+			Status = pedido.Status,
 			ItensPedidos = pedido.ItensPedidos.Select(i => new ItemPedidoResponseDTO
 			{
 				Id = i.Id,
