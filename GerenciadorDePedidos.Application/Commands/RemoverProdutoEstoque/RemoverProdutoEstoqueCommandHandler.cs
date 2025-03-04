@@ -34,7 +34,7 @@ public class RemoverProdutoEstoqueCommandHandler : IRequestHandler<RemoverProdut
 		
 		produto.RemoverEstoque(request.Quantidade);
 
-		var movimentacaoEstoque = new MovimentacaoEstoque(request.Quantidade, Tipo.Remocao, request.ProdutoId);
+		var movimentacaoEstoque = new MovimentacaoEstoque(request.Quantidade, Tipo.Remocao, request.ProdutoId, request.ClienteId);
 		
 		await _movimentacaoEstoqueRepository.AddAsync(movimentacaoEstoque);
 		await _repository.UpdateAsync(produto.Id, produto);

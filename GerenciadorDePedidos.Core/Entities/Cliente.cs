@@ -11,7 +11,7 @@ public class Cliente : BaseEntity
 	public Role Role { get; private set; }
 	
 	public Guid PedidoId { get; private set; }
-	public IEnumerable<MovimentacaoEstoque> MovimentacaoEstoque { get; set; }
+	public List<MovimentacaoEstoque> MovimentacaoEstoque { get; set; } = new List<MovimentacaoEstoque>();
 	public List<Pedido> Pedidos  { get; private set; } = new List<Pedido>();
 
 	public Cliente()

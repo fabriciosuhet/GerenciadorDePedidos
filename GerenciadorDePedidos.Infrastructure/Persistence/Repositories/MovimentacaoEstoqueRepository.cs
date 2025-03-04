@@ -49,7 +49,8 @@ public class MovimentacaoEstoqueRepository : IMovimentacaoEstoqueRepository
 	{
 		return await _context.MovimentacaoEstoques
 			.Include(me => me.Produto)
+			.Include(m => m.Cliente)
 			.AsNoTracking()
-			.SingleOrDefaultAsync(me => me.Id == id);
+			.FirstOrDefaultAsync(me => me.Id == id);
 	}
 }

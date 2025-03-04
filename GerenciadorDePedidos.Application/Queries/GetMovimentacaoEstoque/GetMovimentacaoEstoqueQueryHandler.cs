@@ -23,6 +23,7 @@ public class GetMovimentacaoEstoqueQueryHandler : IRequestHandler<GetMovimentaca
 			Id = movimentacaoEstoque.Id,
 			ProdutoId = movimentacaoEstoque.ProdutoId,
 			ProdutoNome = movimentacaoEstoque.Produto.Nome,
+			ClienteNome = movimentacaoEstoque.Cliente.NomeCompleto,
 			Data = TimeZoneInfo.ConvertTimeFromUtc(movimentacaoEstoque.DataMovimentacao, fusoHorarioBrasilia),
 			Quantidade = movimentacaoEstoque.Quantidade,
 			TipoMovimentacao = movimentacaoEstoque.TipoMovimentacao,

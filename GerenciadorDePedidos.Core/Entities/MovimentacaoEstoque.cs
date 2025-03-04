@@ -10,11 +10,16 @@ public class MovimentacaoEstoque : BaseEntity
 	public Produto Produto{ get; private set; }
 	public Guid ProdutoId { get; private set; }
 
-	public MovimentacaoEstoque(int quantidade, Tipo tipoMovimentacao, Guid produtoId)
+	public Guid ClienteId { get; private set; }
+	public Cliente Cliente { get; private set; }
+	
+	public MovimentacaoEstoque(){}
+
+	public MovimentacaoEstoque(int quantidade, Tipo tipoMovimentacao, Guid produtoId, Guid clienteId)
 	{
 		Quantidade = quantidade;
 		TipoMovimentacao = tipoMovimentacao;
 		ProdutoId = produtoId;
-
+		ClienteId = clienteId;
 	}
 }

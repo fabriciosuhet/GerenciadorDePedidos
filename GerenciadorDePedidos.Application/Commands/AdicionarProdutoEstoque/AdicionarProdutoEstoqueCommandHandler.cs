@@ -31,7 +31,7 @@ public class AdicionarProdutoEstoqueCommandHandler : IRequestHandler<AdicionarPr
 		
 		produto.AdicionarEstoque(request.Quantidade);
 
-		var movimentacaoEstoque = new MovimentacaoEstoque(request.Quantidade, Tipo.Adicao, produto.Id);
+		var movimentacaoEstoque = new MovimentacaoEstoque(request.Quantidade, Tipo.Adicao, produto.Id, request.ClienteId);
 		
 		await _movimentacaoEstoqueRepository.AddAsync(movimentacaoEstoque);
 		await _repository.UpdateAsync(produto.Id, produto);

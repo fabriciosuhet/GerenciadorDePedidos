@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(GerenciadorDePedidosDbContext))]
-    [Migration("20241217142946_updateTableCliente")]
-    partial class updateTableCliente
+    [Migration("20250304151110_InicialMigration")]
+    partial class InicialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -42,6 +42,9 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("PedidoId")
                         .HasColumnType("char(36)");
 
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
                     b.Property<string>("Senha")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -65,13 +68,16 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<decimal>("PrecoUnitario")
-                        .HasColumnType("decimal(65,30)");
+                        .HasColumnType("decimal(15, 2)");
 
                     b.Property<Guid>("ProdutoId")
                         .HasColumnType("char(36)");
 
                     b.Property<int>("Quantidade")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("decimal(15, 2)");
 
                     b.HasKey("Id");
 
@@ -80,6 +86,36 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProdutoId");
 
                     b.ToTable("ItensPedidos");
+                });
+
+            modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.MovimentacaoEstoque", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ClienteId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("DataMovimentacao")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("ProdutoId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("Quantidade")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TipoMovimentacao")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("ProdutoId");
+
+                    b.ToTable("MovimentacaoEstoques");
                 });
 
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Pedido", b =>
@@ -93,6 +129,9 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("DataPedido")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Total")
                         .HasColumnType("decimal(65,30)");
@@ -118,7 +157,7 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<decimal>("Preco")
-                        .HasColumnType("decimal(65,30)");
+                        .HasColumnType("decimal(15,2)");
 
                     b.HasKey("Id");
 
@@ -140,6 +179,25 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                     b.Navigation("Produto");
                 });
 
+            modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.MovimentacaoEstoque", b =>
+                {
+                    b.HasOne("GerenciadorDePedidos.Core.Entities.Cliente", "Cliente")
+                        .WithMany("MovimentacaoEstoque")
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GerenciadorDePedidos.Core.Entities.Produto", "Produto")
+                        .WithMany("MovimentacaoEstoque")
+                        .HasForeignKey("ProdutoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Produto");
+                });
+
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Pedido", b =>
                 {
                     b.HasOne("GerenciadorDePedidos.Core.Entities.Cliente", "Cliente")
@@ -153,12 +211,19 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Cliente", b =>
                 {
+                    b.Navigation("MovimentacaoEstoque");
+
                     b.Navigation("Pedidos");
                 });
 
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Pedido", b =>
                 {
                     b.Navigation("ItensPedidos");
+                });
+
+            modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Produto", b =>
+                {
+                    b.Navigation("MovimentacaoEstoque");
                 });
 #pragma warning restore 612, 618
         }

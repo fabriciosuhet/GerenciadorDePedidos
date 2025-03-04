@@ -53,6 +53,16 @@ public class ClienteController : ControllerBase
 		var clienteId = await _mediator.Send(command);
 		return CreatedAtAction(nameof(GetById), new { id = clienteId}, command);
 	}
+	
+	[HttpPost("cadastro-inicial")]
+	[AllowAnonymous]
+	// Cadastro de Cliente
+	public async Task<IActionResult> PostInicial([FromBody] CreateClienteCommand command)
+	{
+		var clienteId = await _mediator.Send(command);
+		return CreatedAtAction(nameof(GetById), new { id = clienteId}, command);
+	}
+	
 
 	[HttpPut("atualizar-cliente{id:guid}")]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
