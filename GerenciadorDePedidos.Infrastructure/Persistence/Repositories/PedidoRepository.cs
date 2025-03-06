@@ -13,9 +13,19 @@ public class PedidoRepository : IPedidoRepository
 		_context = context;
 	}
 	
-	public async Task<List<Pedido>> GetAllAsync(string? query)
+	public async Task<int> GetCountAsync(string? query)
 	{
-		return await _context.Pedidos.ToListAsync();
+		return await _context.Pedidos.AsNoTracking()
+			.Where(p => string.IsNullOrEmpty(query) || p.Status.ToString().Contains(query)).CountAsync();
+	}
+
+	public async Task<List<Pedido>> GetPagedAsync(string? query, int skip, int take)
+	{
+		return await _context.Pedidos.AsNoTracking()
+			.Where(p => string.IsNullOrEmpty(query) || p.Status.ToString().Contains(query))
+			.Skip(skip)
+			.Take(take)
+			.ToListAsync();
 	}
 
 	public async Task<Pedido?> GetByIdAsync(Guid id)

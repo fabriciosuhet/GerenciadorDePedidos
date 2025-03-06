@@ -19,7 +19,7 @@ public class MovimentacaoEstoqueRepository : IMovimentacaoEstoqueRepository
 		await _context.SaveChangesAsync();
 	}
 
-	public async Task<IEnumerable<MovimentacaoEstoque>> GetAllAsync(string? query)
+	public async Task<int> GetCountAsync(string? query)
 	{
 		DateTime? dataMovimentacao = null;
 
@@ -34,15 +34,26 @@ public class MovimentacaoEstoqueRepository : IMovimentacaoEstoqueRepository
 		{
 			tipoMovimentacao = parsedTipo;
 		}
-		
-		return await _context.MovimentacaoEstoques
+
+		return await _context.MovimentacaoEstoques.AsNoTracking()
 			.Include(me => me.Produto)
 			.Where(me =>
-			string.IsNullOrEmpty(query)
-			|| me.Produto.Nome.Contains(query)
-			|| (tipoMovimentacao.HasValue && me.TipoMovimentacao.Equals(tipoMovimentacao.Value))
-			|| (dataMovimentacao.HasValue && me.DataMovimentacao.Equals(dataMovimentacao.Value))).ToListAsync();
+				string.IsNullOrEmpty(query) || me.Produto.Nome.Contains(query)
+				                            || (tipoMovimentacao.HasValue &&
+				                                me.TipoMovimentacao.Equals(tipoMovimentacao.Value))
+				                            || (dataMovimentacao.HasValue &&
+				                                me.DataMovimentacao.Equals(dataMovimentacao.Value))).CountAsync();
 
+	}
+
+	public async Task<ICollection<MovimentacaoEstoque>> GetPagedAsync(string? query, int skip, int take)
+	{
+		return await _context.MovimentacaoEstoques.AsNoTracking()
+			.Include(me => me.Produto)
+			.Where(me => string.IsNullOrEmpty(query) || me.Produto.Nome.Contains(query))
+			.Skip(skip)
+			.Take(take)
+			.ToListAsync();
 	}
 
 	public async Task<MovimentacaoEstoque?> GetByIdAsync(Guid id)

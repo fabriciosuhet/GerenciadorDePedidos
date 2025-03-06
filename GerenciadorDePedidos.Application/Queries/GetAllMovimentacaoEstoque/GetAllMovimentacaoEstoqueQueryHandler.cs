@@ -1,10 +1,11 @@
+using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Queries.GetAllMovimentacaoEstoque;
 
-public class GetAllMovimentacaoEstoqueQueryHandler : IRequestHandler<GetAllMovimentacaoEstoqueQuery, IEnumerable<MovimentacaoEstoqueResponseDTO>>
+public class GetAllMovimentacaoEstoqueQueryHandler : IRequestHandler<GetAllMovimentacaoEstoqueQuery, PagedResultModel<MovimentacaoEstoqueResponseDTO>>
 {
 	private readonly IMovimentacaoEstoqueRepository _repository;
 
@@ -13,12 +14,15 @@ public class GetAllMovimentacaoEstoqueQueryHandler : IRequestHandler<GetAllMovim
 		_repository = repository;
 	}
 
-	public async Task<IEnumerable<MovimentacaoEstoqueResponseDTO>> Handle(GetAllMovimentacaoEstoqueQuery request, CancellationToken cancellationToken)
+	public async Task<PagedResultModel<MovimentacaoEstoqueResponseDTO>> Handle(GetAllMovimentacaoEstoqueQuery request, CancellationToken cancellationToken)
 	{
-		var movimentacaoEstoque = await _repository.GetAllAsync(request.Query);
+		var count = await _repository.GetCountAsync(request.Query);
 		
-		if (movimentacaoEstoque is null) 
+		if (count.Equals(0)) 
 			throw new ArgumentException("Nenhum registro encontrado");
+
+		var movimentacaoEstoque = await _repository.GetPagedAsync(request.Query,
+			(request.PageNumber - 1) * request.PageSize, request.PageSize);
 		
 		
 		var movimentacaoEstoqueDto = movimentacaoEstoque.Select(me => new MovimentacaoEstoqueResponseDTO
@@ -26,8 +30,8 @@ public class GetAllMovimentacaoEstoqueQueryHandler : IRequestHandler<GetAllMovim
 			Id = me.Id,
 			ProdutoId = me.ProdutoId,
 			ProdutoNome = me.Produto?.Nome ?? "Produto Desconhecido",
-		});
+		}).ToList();
 		
-		return movimentacaoEstoqueDto;
+		return new PagedResultModel<MovimentacaoEstoqueResponseDTO>(movimentacaoEstoqueDto, count, request.PageNumber, request.PageSize);
 	}
 }

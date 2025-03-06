@@ -13,11 +13,18 @@ public class ClienteRepository : IClienteRepository
 		_context = context;
 	}
 
-	public async Task<List<Cliente>> GetAllAsync(string? query)
+	public async Task<int> GetCountAsync(string? query)
 	{
 		return await _context.Clientes.Where(c => string.IsNullOrEmpty(query) ||
 		                                          c.Email.Contains(query) ||
-		                                          c.NomeCompleto.Contains(query)).ToListAsync();
+		                                          c.NomeCompleto.Contains(query)).CountAsync();
+	}
+
+	public async Task<ICollection<Cliente>> GetPagedAsync(string? query, int skip, int take)
+	{
+		return await _context.Clientes.AsNoTracking()
+			.Where(c => string.IsNullOrEmpty(query) || c.Email.Contains(query ?? "") ||
+			            c.NomeCompleto.Contains(query ?? "")).ToListAsync();
 	}
 
 	public async Task<Cliente?> GetByIdAsync(Guid id)

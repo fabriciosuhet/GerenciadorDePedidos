@@ -13,9 +13,18 @@ public class ProdutoRepository : IProdutoRepository
 		_context = context;
 	}
 
-	public async Task<List<Produto>> GetAllAsync(string? query)
+	public async Task<int> GetCountAsync(string? query)
 	{
 		return await _context.Produtos.Where(p => string.IsNullOrEmpty(query) || p.Nome.Contains(query))
+			.CountAsync();
+	}
+
+	public async Task<List<Produto>> GetPagedAsync(string? query, int skip, int take)
+	{
+		return await _context.Produtos
+			.Where(p => string.IsNullOrEmpty(query) || p.Nome.Contains(query))
+			.Skip(skip)
+			.Take(take)
 			.ToListAsync();
 	}
 

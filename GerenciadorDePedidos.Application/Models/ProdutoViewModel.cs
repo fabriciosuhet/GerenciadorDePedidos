@@ -2,10 +2,10 @@ namespace GerenciadorDePedidos.Application.Models;
 
 public class ProdutoViewModel
 {
-	public Guid Id { get; private set; }
-	public string Nome { get; private set; }
-	public decimal Preco { get; private set; } 
-	public int Estoque { get; private set; }
+	public Guid Id { get;  set; }
+	public string Nome { get;  set; }
+	public decimal Preco { get;  set; } 
+	public int Estoque { get;  set; }
 
 	public ProdutoViewModel(Guid id, string nome, decimal preco, int estoque)
 	{
