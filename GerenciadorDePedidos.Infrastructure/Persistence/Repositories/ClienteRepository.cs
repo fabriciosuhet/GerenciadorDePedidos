@@ -24,7 +24,10 @@ public class ClienteRepository : IClienteRepository
 	{
 		return await _context.Clientes.AsNoTracking()
 			.Where(c => string.IsNullOrEmpty(query) || c.Email.Contains(query ?? "") ||
-			            c.NomeCompleto.Contains(query ?? "")).ToListAsync();
+			            c.NomeCompleto.Contains(query ?? ""))
+			.Skip(skip)
+			.Take(take)
+			.ToListAsync();
 	}
 
 	public async Task<Cliente?> GetByIdAsync(Guid id)

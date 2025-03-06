@@ -34,6 +34,7 @@ public static class AuthServiceExtensions
 
 	public static IServiceCollection AddAuthService(this IServiceCollection services)
 	{
+		services.AddHttpContextAccessor();
 		services.AddScoped<IAuthService, AuthService>();
 		return services;
 	}

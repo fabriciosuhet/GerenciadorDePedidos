@@ -24,10 +24,22 @@ public class CreateClienteCommandHandler : IRequestHandler<CreateClienteCommand,
 	public async Task<Guid> Handle(CreateClienteCommand request, CancellationToken cancellationToken)
 	{
 		var passwordHash = _authService.ComputeSha256Hash(request.Senha);
+		bool hasAnyCliente = _context.Clientes.Any();
 
-		if (_context.Clientes.Any())
+		if (hasAnyCliente)
 		{
-			throw new Exception("O cadastro inicial já foi realizado. Use um end point autenticado");
+			var isAuthenticated = _authService.IsAuthenticated();
+			var isAdmin = _authService.IsInRole(Role.Admin);
+
+			if (!isAuthenticated)
+			{
+				throw new UnauthorizedAccessException("Apenas usuários autenticados podem criar novos clientes.");
+			}
+
+			if (!isAdmin)
+			{
+				throw new UnauthorizedAccessException("Apenas administradores podem criar novos clientes.");
+			}
 		}
 		
 		var cliente = new Cliente(request.NomeCompleto, request.Email, request.Telefone, passwordHash, request.Role);

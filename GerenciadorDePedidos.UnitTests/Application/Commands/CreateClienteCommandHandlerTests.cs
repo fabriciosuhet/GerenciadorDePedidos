@@ -92,8 +92,8 @@ public class CreateClienteCommandHandlerTests
 		var handler = new CreateClienteCommandHandler(clienteRepositoryMock.Object, authServiceMock.Object, dbContext);
 		
 		// Act e Assert
-		var exception = await Assert.ThrowsAsync<Exception>(() => handler.Handle(command, CancellationToken.None));
-		Assert.Equal("O cadastro inicial já foi realizado. Use um end point autenticado", exception.Message);
+		var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(command, CancellationToken.None));
+		Assert.Equal("Apenas usuários autenticados podem criar novos clientes.", exception.Message);
 		clienteRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Never());
 		authServiceMock.Verify(a => a.ComputeSha256Hash("Teste@123"), Times.Once());
 

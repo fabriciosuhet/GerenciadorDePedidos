@@ -22,6 +22,8 @@ public class PedidoRepository : IPedidoRepository
 	public async Task<List<Pedido>> GetPagedAsync(string? query, int skip, int take)
 	{
 		return await _context.Pedidos.AsNoTracking()
+			.Include(p => p.ItensPedidos)
+			.ThenInclude(i => i.Produto)
 			.Where(p => string.IsNullOrEmpty(query) || p.Status.ToString().Contains(query))
 			.Skip(skip)
 			.Take(take)
@@ -32,7 +34,7 @@ public class PedidoRepository : IPedidoRepository
 	{
 		return await _context.Pedidos
 			.Include(p => p.ItensPedidos)
-			.ThenInclude(i => i.Produto)
+				.ThenInclude(i => i.Produto)
 			.Include(p => p.Cliente)
 			.AsNoTracking()
 			.SingleOrDefaultAsync(p => p.Id == id);

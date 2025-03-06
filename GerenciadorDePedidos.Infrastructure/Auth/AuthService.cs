@@ -2,7 +2,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -11,10 +13,12 @@ namespace GerenciadorDePedidos.Infrastructure.Auth;
 public class AuthService : IAuthService
 {
 	private readonly IConfiguration _configuration;
+	private readonly IHttpContextAccessor _httpContextAccessor;
 
-	public AuthService(IConfiguration configuration)
+	public AuthService(IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
 	{
 		_configuration = configuration;
+		_httpContextAccessor = httpContextAccessor;
 	}
 
 	public string GenerateJwtToken(string email, string role)
@@ -55,5 +59,15 @@ public class AuthService : IAuthService
 			}
 			return builder.ToString();
 		}
+	}
+
+	public bool IsAuthenticated()
+	{
+		return _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
+	}
+
+	public bool IsInRole(Role role)
+	{
+		return _httpContextAccessor.HttpContext?.User.IsInRole(role.ToString()) ?? false;
 	}
 }

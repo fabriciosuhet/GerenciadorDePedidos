@@ -1,4 +1,6 @@
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Core.DTOs;
+using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
@@ -21,7 +23,10 @@ public class GetAllPedidosQueryHandler : IRequestHandler<GetAllPedidosQuery, Pag
 			request.PageSize);
 
 
-		var pedidoViewModel = pedidos.Select(p => new PedidoViewModel(p.ItensPedidos, p.Total)).ToList();
+		var pedidoViewModel = pedidos.Select(p => new PedidoViewModel(
+			p.Id,
+			p.Total
+		)).ToList();
 		
 		return new PagedResultModel<PedidoViewModel>(pedidoViewModel, totalCount, request.PageNumber, request.PageSize);
 	}

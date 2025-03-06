@@ -17,7 +17,7 @@ public class GetAllClientesQueryHandler : IRequestHandler<GetAllClientesQuery, P
 		var count = await _clienteRepository.GetCountAsync(request.Query);
 		
 		if (count.Equals(0))
-			throw new ArgumentException("Nenhum cliente encontrado");
+			return new PagedResultModel<ClienteViewModel>([], 0, request.PageNumber, request.PageSize);
 
 		var clientes = await _clienteRepository.GetPagedAsync(request.Query,
 			(request.PageNumber - 1) * request.PageSize, request.PageSize);
