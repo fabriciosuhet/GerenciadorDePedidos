@@ -1,10 +1,14 @@
+using GerenciadorDePedidos.API.Helpers;
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
 using GerenciadorDePedidos.Application.Commands.DeleteCliente;
 using GerenciadorDePedidos.Application.Commands.LoginCliente;
 using GerenciadorDePedidos.Application.Commands.UpdateCliente;
+using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Application.Queries.GetAllClientes;
 using GerenciadorDePedidos.Application.Queries.GetCliente;
+using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
+using GerenciadorDePedidos.Core.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,19 +21,29 @@ namespace GerenciadorDePedidos.API.Controllers;
 public class ClienteController : ControllerBase
 {
 	private readonly IMediator _mediator;
+	private readonly ICacheService _cacheService;
 
-	public ClienteController(IMediator mediator)
+	public ClienteController(IMediator mediator, ICacheService cacheService)
 	{
 		_mediator = mediator;
+		_cacheService = cacheService;
 	}
 
 	[HttpGet]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetAll(string? query)
 	{
-		var getAllClientes = new GetAllClientesQuery(query);
-		var clientes = await _mediator.Send(getAllClientes);
-		if (clientes is null) return NotFound();
+		var cacheKey = CacheKeyHelper.GetAllClientesKey(query);
+
+		if (!_cacheService.TryGet<PagedResultModel<ClienteViewModel>>(cacheKey, out var clientes))
+		{
+			var getAllClientes = new GetAllClientesQuery(query);
+			clientes = await _mediator.Send(getAllClientes);
+
+			if (clientes is null) return NotFound("Clientes nao encontrados");
+			
+			_cacheService.Set(cacheKey, clientes, TimeSpan.FromMinutes(5));
+		}
 		return Ok(clientes);
 		
 	}
@@ -38,11 +52,18 @@ public class ClienteController : ControllerBase
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetById(Guid id)
 	{
-		var getClienteById = new GetClienteQuery(id);
-		var cliente = await _mediator.Send(getClienteById);
-		if (cliente is null) return NotFound();
-		return Ok(cliente);
+		var cacheKey = CacheKeyHelper.GetClienteByIdKey(id);
+
+		if (!_cacheService.TryGet<ClienteDetailsViewModel>(cacheKey, out var cliente))
+		{
+			var getClienteById = new GetClienteQuery(id);
+			cliente = await _mediator.Send(getClienteById);
+			if (cliente is null) return NotFound("Cliente nao encontrado");
+			
+			_cacheService.Set(cacheKey, cliente, TimeSpan.FromMinutes(5));
+		}
 		
+		return Ok(cliente);
 	}
 
 	[HttpPost]

@@ -25,7 +25,8 @@ builder.Services.AddDatabase(builder.Configuration)
 	.AddJwtAuthentication(builder.Configuration)
 	.AddCorsService()
 	.AddSwaggerService()
-	.AddFluentValidationServices();
+	.AddFluentValidationServices()
+	.AddCacheService();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateProdutoCommand).Assembly));
 

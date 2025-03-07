@@ -1,10 +1,12 @@
 using GerenciadorDePedidos.Core.Repositories;
+using GerenciadorDePedidos.Core.Services;
 using GerenciadorDePedidos.Infrastructure.Persistence;
 using GerenciadorDePedidos.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using GerenciadorDePedidos.Infrastructure.Cache;
 
 namespace GerenciadorDePedidos.Infrastructure.Extensions;
 
@@ -24,6 +26,13 @@ public static class ServicesCollectionExtensions
 		var connectionString = configuration.GetConnectionString("DefaultConnection");
 		services.AddDbContext<GerenciadorDePedidosDbContext>(opt =>
 			opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+		return services;
+	}
+
+	public static IServiceCollection AddCacheService(this IServiceCollection services)
+	{
+		services.AddMemoryCache();
+		services.AddScoped<ICacheService, CacheService>();
 		return services;
 	}
 
