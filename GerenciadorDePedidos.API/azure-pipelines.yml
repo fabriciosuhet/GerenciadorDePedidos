@@ -1,0 +1,37 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+steps:
+  - task: NuGetToolInstaller@1
+
+  - task: UseDotNet@2
+    inputs:
+      packageType: sdk
+      version: '8.0.403'
+
+  - task: NuGetCommand@2
+    inputs:
+      restoreSolution: '$(solution)'
+
+  - script: dotnet build --configuration $(buildConfiguration) --no-restore
+    displayName: 'Build the application'
+
+  - script: dotnet test --no-build --configuration $(buildConfiguration)
+    displayName: 'Run unit tests'
+
+  - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
+    displayName: 'Publish the application'
+
+  - task: PublishPipelineArtifact@0
+    displayName: 'Publish artifacts'
+    inputs:
+      ArtifactName: 'drop'
+      targetPath: '$(Build.ArtifactStagingDirectory)'
