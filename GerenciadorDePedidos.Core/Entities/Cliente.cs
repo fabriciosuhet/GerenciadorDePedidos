@@ -27,7 +27,7 @@ public class Cliente : BaseEntity
 		Senha = senha;
 		Role = role;
 	}
-
+	
 	public void AlterarEmail(string email)
 	{
 		Email = email;

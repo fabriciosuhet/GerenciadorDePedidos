@@ -15,6 +15,9 @@ public class DeletePedidoCommandHandler : IRequestHandler<DeletePedidoCommand, U
 	public async Task<Unit> Handle(DeletePedidoCommand request, CancellationToken cancellationToken)
 	{
 		var pedido = await _pedidoRepository.GetByIdAsync(request.Id);
+		if (pedido is null)
+			throw new KeyNotFoundException("Pedido nao encontrado");
+		
 		await _pedidoRepository.DeleteAsync(pedido.Id);
 		return Unit.Value;
 	}

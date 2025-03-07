@@ -7,6 +7,11 @@ public class Produto : BaseEntity
 	public int Estoque { get; private set; }
 	public ICollection<MovimentacaoEstoque> MovimentacaoEstoque { get; private set; } = new List<MovimentacaoEstoque>();
 
+	public Produto()
+	{
+		
+	}
+
 	public Produto(string nome, decimal preco, int estoque)
 	{
 		Nome = nome;

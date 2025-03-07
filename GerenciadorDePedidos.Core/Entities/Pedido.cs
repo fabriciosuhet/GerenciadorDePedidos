@@ -11,7 +11,7 @@ public class Pedido : BaseEntity
 	public Guid ClienteId { get; private set; }
 	public Cliente Cliente { get; private set; }
 	
-	protected Pedido(){}
+	public Pedido(){}
 	
 	public Pedido(List<ItemPedido> itensPedidos, decimal total, Guid clienteId, DateTime dataPedido, Status status)
 	{

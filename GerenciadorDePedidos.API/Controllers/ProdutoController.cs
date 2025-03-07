@@ -14,7 +14,7 @@ using GerenciadorDePedidos.Core.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Extensions;
+
 
 namespace GerenciadorDePedidos.API.Controllers;
 
