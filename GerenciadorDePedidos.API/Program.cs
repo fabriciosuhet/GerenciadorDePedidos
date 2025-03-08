@@ -6,7 +6,10 @@ using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
 using GerenciadorDePedidos.Application.Validators;
 using GerenciadorDePedidos.Infrastructure.Extensions;
+using GerenciadorDePedidos.Infrastructure.Persistence;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
 

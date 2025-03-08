@@ -1,6 +1,0 @@
-﻿ervices:
-  gerenciadordepedidos.api:
-    image: gerenciadordepedidos.api
-    build:
-      context: .
-      dockerfile: GerenciadorDePedidos.API/Dockerfile
