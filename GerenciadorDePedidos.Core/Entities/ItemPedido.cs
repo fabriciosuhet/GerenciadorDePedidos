@@ -1,16 +1,18 @@
 namespace GerenciadorDePedidos.Core.Entities;
 
-public class ItemPedido : BaseEntity
+public class ItemPedido : BaseEntity<int>
 {
-	public Guid ProdutoId { get; private set; }
+	public int ProdutoId { get; private set; }
 	public Produto Produto { get; private set; }
 	public int Quantidade { get; private set; }
 	public decimal PrecoUnitario { get; private set; }
 	public decimal Total { get; private set; }
 	
-	protected ItemPedido(){}
+	protected ItemPedido()
+	{
+	}
 	
-	public ItemPedido(Guid produtoId, int quantidade, decimal precoUnitario)
+	public ItemPedido(int produtoId, int quantidade, decimal precoUnitario)
 	{
 		ProdutoId = produtoId;
 		Quantidade = quantidade;

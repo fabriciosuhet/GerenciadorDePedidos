@@ -1,6 +1,6 @@
 namespace GerenciadorDePedidos.Core.Entities;
 
-public class Produto : BaseEntity
+public class Produto : BaseEntity<int>
 {
 	public string Nome { get; private set; }
 	public decimal Preco { get; private set; } 

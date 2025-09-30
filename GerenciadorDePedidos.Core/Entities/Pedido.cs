@@ -2,29 +2,28 @@ using GerenciadorDePedidos.Core.Enums;
 
 namespace GerenciadorDePedidos.Core.Entities;
 
-public class Pedido : BaseEntity
+public class Pedido : BaseEntity<int>
 {
 	public DateTime DataPedido { get; set; } = DateTime.UtcNow;
 	public List<ItemPedido> ItensPedidos { get; private set; }
-	public decimal Total { get; private set; }
 	public Status Status { get; private set; }
 	public Guid ClienteId { get; private set; }
 	public Cliente Cliente { get; private set; }
+
+	public decimal Total => ItensPedidos.Sum(item => item.Total);
 	
 	public Pedido(){}
 	
-	public Pedido(List<ItemPedido> itensPedidos, decimal total, Guid clienteId, DateTime dataPedido, Status status)
+	public Pedido(Guid clienteId)
 	{
-		ItensPedidos = itensPedidos;
-		Total = total;
 		ClienteId = clienteId;
-		DataPedido = dataPedido;
 		Status = Status.Pendente;
 
 	}
 	
-	public void TotalPedido(int quantidade, decimal precoUnitario)
+	public void AdicionarItem(int produtoId, int quantidade, decimal precoUnitario)
 	{
-		Total += quantidade * precoUnitario;
-	}
+		var item = new ItemPedido(produtoId, quantidade, precoUnitario);
+		ItensPedidos.Add(item);
+    }
 }

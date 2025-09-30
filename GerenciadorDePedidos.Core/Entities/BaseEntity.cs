@@ -1,7 +1,7 @@
 namespace GerenciadorDePedidos.Core.Entities;
 
-public class BaseEntity
+public abstract class BaseEntity<TKey>
 {
-	public Guid Id { get; init; } = Guid.NewGuid();
-	
+	public TKey Id { get; set; }
+
 }
