@@ -1,6 +1,6 @@
 # Gerenciador de Pedidos
 
-![.NET](https://img.shields.io/badge/.NET-8.0-blueviolet) ![MySQL](https://img.shields.io/badge/MySQL-docker:latest-blue) ![Docker](https://img.shields.io/badge/Docker-Supported-brightgreen)
+![.NET](https://img.shields.io/badge/.NET-8.0-blueviolet) ![MySQL](https://img.shields.io/badge/MySQL-docker:latest-8.0.36) ![Docker](https://img.shields.io/badge/Docker-Supported-brightgreen)
 
 Bem-vindo ao **Gerenciador de Pedidos**, uma aplicação backend robusta desenvolvida em **.NET 8** para cadastro, consulta e gerenciamento de pedidos. Este projeto utiliza uma arquitetura moderna baseada em **DDD (Domain-Driven Design)** e **CQRS (Command Query Responsibility Segregation)**, seguindo os princípios **SOLID** para garantir um código limpo, escalável e manutenível.
 
@@ -61,4 +61,4 @@ Siga os passos abaixo para configurar e executar a aplicação:
 ![Diagrama banco de dados](https://i.imgur.com/xdREIPx.png)
 
 ### Documentação API Swagger
-![Imagem da documentação no Swagger](https://i.imgur.com/4fFNWqE.png)
+![Imagem da documentação no Swagger](https://i.imgur.com/ZHUUIIf.png)
