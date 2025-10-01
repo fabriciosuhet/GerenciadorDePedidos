@@ -5,18 +5,18 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.CreatePedido;
 
-public class CreatePedidoCommandHandler : IRequestHandler<CreatePedidoCommand, Guid>
+public class CreatePedidoCommandHandler : IRequestHandler<CreatePedidoCommand, int>
 {
-	private readonly IPedidoRepository _pedidoRepository;
-	private readonly IProdutoRepository _produtoRepository;
+	private readonly IRepository<Pedido, int> _pedidoRepository;
+	private readonly IRepository<Produto, int> _produtoRepository;
 
-	public CreatePedidoCommandHandler(IPedidoRepository pedidoRepository, IProdutoRepository produtoRepository)
-	{
-		_pedidoRepository = pedidoRepository;
-		_produtoRepository = produtoRepository;
-	}
+    public CreatePedidoCommandHandler(IRepository<Pedido, int> pedidoRepository, IRepository<Produto, int> produtoRepository)
+    {
+        _pedidoRepository = pedidoRepository;
+        _produtoRepository = produtoRepository;
+    }
 
-	public async Task<Guid> Handle(CreatePedidoCommand request, CancellationToken cancellationToken)
+    public async Task<int> Handle(CreatePedidoCommand request, CancellationToken cancellationToken)
 	{
 
 		if (request is null || request.ItensPedidos is null || !request.ItensPedidos.Any())
@@ -37,7 +37,7 @@ public class CreatePedidoCommandHandler : IRequestHandler<CreatePedidoCommand, G
 		}
 
 		var total = itens.Sum(item => item.Total);
-		var pedido = new Pedido(itens, total, request.ClienteId, DateTime.UtcNow, request.Status);
+		var pedido = new Pedido(request.ClienteId, request.Status);
 		
 		await _pedidoRepository.AddAsync(pedido);
 		return pedido.Id;

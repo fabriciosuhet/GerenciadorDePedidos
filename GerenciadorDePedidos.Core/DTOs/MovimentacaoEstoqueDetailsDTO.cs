@@ -5,8 +5,8 @@ namespace GerenciadorDePedidos.Core.DTOs;
 
 public class MovimentacaoEstoqueDetailsDTO
 {
-	public Guid Id { get;  set; }
-	public Guid ProdutoId { get; set; }
+	public int Id { get;  set; }
+	public int ProdutoId { get; set; }
 	public string ProdutoNome { get; set; }
 	public Cliente Nome { get; set; }
 	public string ClienteNome { get; set; }

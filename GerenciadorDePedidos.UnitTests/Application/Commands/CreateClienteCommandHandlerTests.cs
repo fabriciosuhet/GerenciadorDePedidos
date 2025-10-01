@@ -27,8 +27,8 @@ public class CreateClienteCommandHandlerTests
 		};
 		
 		// Mock de IClienteRepository
-		var clienteRepositoryMock = new Mock<IClienteRepository>();
-		clienteRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Cliente>())).Returns(Task.CompletedTask);
+		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
+        clienteRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Cliente>())).Returns(Task.CompletedTask);
 		
 		
 		// Mock de IAuthService
@@ -42,7 +42,7 @@ public class CreateClienteCommandHandlerTests
 		
 		var dbContext = new GerenciadorDePedidosDbContext(dbContextOptions);
 		
-		var handler = new CreateClienteCommandHandler(clienteRepositoryMock.Object, authServiceMock.Object, dbContext);
+		var handler = new CreateClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object, dbContext);
 		
 		// Act
 		var result = await handler.Handle(command, CancellationToken.None);
@@ -73,8 +73,8 @@ public class CreateClienteCommandHandlerTests
 		};
 		
 		// Mock de IClienteRepository
-		var clienteRepositoryMock = new Mock<IClienteRepository>();
-		clienteRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Cliente>())).Returns(Task.CompletedTask);
+		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
+        clienteRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Cliente>())).Returns(Task.CompletedTask);
 		
 		// Mock de IAuthService
 		var authServiceMock = new Mock<IAuthService>();
@@ -89,7 +89,7 @@ public class CreateClienteCommandHandlerTests
 		dbContext.Clientes.Add(new Cliente("Outro Cliente", "outro@exemplo.com", "987654", "outraSenha", Role.Usuario));
 		await dbContext.SaveChangesAsync();
 		
-		var handler = new CreateClienteCommandHandler(clienteRepositoryMock.Object, authServiceMock.Object, dbContext);
+		var handler = new CreateClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object, dbContext);
 		
 		// Act e Assert
 		var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(command, CancellationToken.None));

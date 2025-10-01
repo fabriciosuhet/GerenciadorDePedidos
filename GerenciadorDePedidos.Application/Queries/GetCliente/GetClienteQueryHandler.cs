@@ -1,5 +1,6 @@
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Core.DTOs;
+using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
@@ -7,14 +8,16 @@ namespace GerenciadorDePedidos.Application.Queries.GetCliente;
 
 public class GetClienteQueryHandler : IRequestHandler<GetClienteQuery, ClienteDetailsViewModel>
 {
+	private readonly IRepository<Cliente, Guid> _baseRepository;
 	private readonly IClienteRepository _clienteRepository;
 
-	public GetClienteQueryHandler(IClienteRepository clienteRepository)
-	{
-		_clienteRepository = clienteRepository;
-	}
+    public GetClienteQueryHandler(IRepository<Cliente, Guid> baseRepository, IClienteRepository clienteRepository)
+    {
+        _baseRepository = baseRepository;
+        _clienteRepository = clienteRepository;
+    }
 
-	public async Task<ClienteDetailsViewModel> Handle(GetClienteQuery request, CancellationToken cancellationToken)
+    public async Task<ClienteDetailsViewModel> Handle(GetClienteQuery request, CancellationToken cancellationToken)
 	{
 		var cliente = await _clienteRepository.GetDetailsByIdAsync(request.Id);
 		if (cliente == null) return null;

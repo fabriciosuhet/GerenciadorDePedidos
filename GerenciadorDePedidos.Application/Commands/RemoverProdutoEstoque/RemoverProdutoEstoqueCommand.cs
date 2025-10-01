@@ -2,13 +2,13 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.RemoverProdutoEstoque;
 
-public class RemoverProdutoEstoqueCommand : IRequest<Guid>
+public class RemoverProdutoEstoqueCommand : IRequest<int>
 {
-	public Guid ProdutoId { get; set; }
+	public int ProdutoId { get; set; }
 	public int Quantidade { get; set; }
 	public Guid ClienteId { get; set; }
 
-	public RemoverProdutoEstoqueCommand(Guid produtoId, int quantidade, Guid clienteId)
+	public RemoverProdutoEstoqueCommand(int produtoId, int quantidade, Guid clienteId)
 	{
 		ProdutoId = produtoId;
 		Quantidade = quantidade;

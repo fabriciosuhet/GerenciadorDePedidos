@@ -5,9 +5,9 @@ namespace GerenciadorDePedidos.Application.Queries.GetMovimentacaoEstoque;
 
 public class GetMovimentacaoEstoqueQuery : IRequest<MovimentacaoEstoqueDetailsDTO>
 {
-	public Guid Id { get; private set; }
+	public int Id { get; private set; }
 
-	public GetMovimentacaoEstoqueQuery(Guid id)
+	public GetMovimentacaoEstoqueQuery(int id)
 	{
 		Id = id;
 	}

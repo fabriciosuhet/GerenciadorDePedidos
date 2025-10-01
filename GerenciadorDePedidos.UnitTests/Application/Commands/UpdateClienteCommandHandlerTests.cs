@@ -22,7 +22,7 @@ public class UpdateClienteCommandHandlerTests
 		var role = Role.Usuario;
 			
 		var clienteMock = new Cliente(nome, email, telefone, senha, role);
-		var clienteRepositoryMock = new Mock<IClienteRepository>();
+		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
 		
 		clienteRepositoryMock.Setup(r => r.GetByIdAsync(clienteId)).ReturnsAsync(clienteMock);
 		
@@ -36,7 +36,7 @@ public class UpdateClienteCommandHandlerTests
 		Assert.Equal(email, clienteMock.Email);
 		Assert.Equal(telefone, clienteMock.Telefone);
 		clienteRepositoryMock.Verify(
-			r => r.UpdateAsync(It.IsAny<Guid>(), It.Is<Cliente>(c => c.Email.Equals(email) && c.Telefone.Equals(telefone))),
+			r => r.UpdateAsync(It.Is<Cliente>(c => c.Email.Equals(email) && c.Telefone.Equals(telefone))),
 			Times.Once);
 	}
 
@@ -45,9 +45,9 @@ public class UpdateClienteCommandHandlerTests
 	{
 		// Arrange
 		var clienteId = Guid.NewGuid();
-		var clienteRepositoryMock = new Mock<IClienteRepository>();
-		
-		clienteRepositoryMock.Setup(r => r.GetByIdAsync(clienteId)).ReturnsAsync((Cliente)null);
+		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
+
+        clienteRepositoryMock.Setup(r => r.GetByIdAsync(clienteId)).ReturnsAsync((Cliente)null);
 		
 		var handler = new UpdateClienteCommandHandler(clienteRepositoryMock.Object);
 		var command = new UpdateClienteCommand { Id = clienteId, Email = "novo@email.com", Telefone = "99999999999" };
@@ -55,6 +55,6 @@ public class UpdateClienteCommandHandlerTests
 		// Act e Assert
 		await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
 
-		clienteRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Guid>(), It.IsAny<Cliente>()), Times.Never);
+		clienteRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Cliente>()), Times.Never);
 	}
 }

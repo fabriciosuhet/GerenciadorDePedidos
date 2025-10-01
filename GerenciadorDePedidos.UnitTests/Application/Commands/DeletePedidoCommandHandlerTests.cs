@@ -14,10 +14,10 @@ public class DeletePedidoCommandHandlerTests
 	public async Task Handle_PedidoExist_ShouldDeletePedido()
 	{
 		// Arrange
-		var pedidoId = Guid.NewGuid();
+		var pedidoId = 1;
 		var pedidoMock = new Pedido {Id = pedidoId};
 		
-		var pedidoRepositoryMock = new Mock<IPedidoRepository>();
+		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
 		pedidoRepositoryMock.Setup(p => p.GetByIdAsync(pedidoId)).ReturnsAsync(pedidoMock);
 		
 		var handler = new DeletePedidoCommandHandler(pedidoRepositoryMock.Object);
@@ -35,8 +35,8 @@ public class DeletePedidoCommandHandlerTests
 	public async Task Handle_PedidoNotExist_ThrowsShouldException()
 	{
 		// Arrange
-		var pedidoId = Guid.NewGuid();
-		var pedidoRepositoryMock = new Mock<IPedidoRepository>();
+		var pedidoId =1;
+		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
 		
 		pedidoRepositoryMock.Setup(p => p.GetByIdAsync(pedidoId)).ReturnsAsync((Pedido)null);
 		
@@ -46,6 +46,6 @@ public class DeletePedidoCommandHandlerTests
 		// Act e Assert
 		var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("Pedido nao encontrado", exception.Message);
-		pedidoRepositoryMock.Verify(p => p.DeleteAsync(It.IsAny<Guid>()), Times.Never);
+		pedidoRepositoryMock.Verify(p => p.DeleteAsync(It.IsAny<int>()), Times.Never);
 	}
 }

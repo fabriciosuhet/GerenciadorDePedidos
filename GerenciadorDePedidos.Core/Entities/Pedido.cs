@@ -14,12 +14,12 @@ public class Pedido : BaseEntity<int>
 	
 	public Pedido(){}
 	
-	public Pedido(Guid clienteId)
+	public Pedido(Guid clienteId, Status status)
 	{
 		ClienteId = clienteId;
 		Status = Status.Pendente;
-
-	}
+        ItensPedidos = [];
+    }
 	
 	public void AdicionarItem(int produtoId, int quantidade, decimal precoUnitario)
 	{

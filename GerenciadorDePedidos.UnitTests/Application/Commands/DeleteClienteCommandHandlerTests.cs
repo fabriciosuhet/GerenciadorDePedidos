@@ -16,7 +16,7 @@ public class DeleteClienteCommandHandlerTests
 		var clienteId = Guid.NewGuid();
 		var clienteMock = new Cliente { Id = clienteId };
 		
-		var clienteRepositoryMock = new Mock<IClienteRepository>();
+		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
 		clienteRepositoryMock.Setup(r => r.GetByIdAsync(clienteId)).ReturnsAsync(clienteMock);
 		
 		var handler = new DeleteClienteCommandHandler(clienteRepositoryMock.Object);
@@ -35,7 +35,7 @@ public class DeleteClienteCommandHandlerTests
 	{
 		// Arrange
 		var clienteId = Guid.NewGuid();
-		var clienteRepositoryMock = new Mock<IClienteRepository>();
+		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
 		
 		clienteRepositoryMock.Setup(r => r.GetByIdAsync(clienteId)).ReturnsAsync((Cliente)null);
 		
