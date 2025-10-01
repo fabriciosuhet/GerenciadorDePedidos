@@ -2,14 +2,14 @@ version: '3.8'
 
 services:
   app:
-    image: dotnetimage
+    image: gerenciador-de-pedidos-api
     build:
       context: ..  # O contexto de build é o diretório pai (D:\projetos\GerenciadorDePedidos)
       dockerfile: GerenciadorDePedidos.API/Dockerfile  # Caminho relativo ao Dockerfile a partir da raiz
     ports:
       - "8080:8080"
     environment:
-      - ConnectionStrings__DefaultConnection=Server=db;Database=GerenciadorDePedidos;User=root;Password=teste1234;
+      - ConnectionStrings__DefaultConnection=Server=db;Database=GerenciadorDePedidos;User=root;Password=1234;
       - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - db
@@ -21,10 +21,10 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: teste1234
+      MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: GerenciadorDePedidos
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     networks:

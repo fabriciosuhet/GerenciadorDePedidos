@@ -1,12 +1,13 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
+namespace GerenciadorDePedidos.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InicialMigration : Migration
+    public partial class Inicial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -40,7 +41,8 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                 name: "Produtos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Nome = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Preco = table.Column<decimal>(type: "decimal(15,2)", nullable: false),
@@ -56,9 +58,9 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                 name: "Pedidos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     DataPedido = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Total = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     ClienteId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
                 },
@@ -78,11 +80,12 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                 name: "MovimentacaoEstoques",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Quantidade = table.Column<int>(type: "int", nullable: false),
                     TipoMovimentacao = table.Column<int>(type: "int", nullable: false),
                     DataMovimentacao = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    ProdutoId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    ProdutoId = table.Column<int>(type: "int", nullable: false),
                     ClienteId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci")
                 },
                 constraints: table =>
@@ -107,12 +110,13 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                 name: "ItensPedidos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    ProdutoId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    ProdutoId = table.Column<int>(type: "int", nullable: false),
                     Quantidade = table.Column<int>(type: "int", nullable: false),
                     PrecoUnitario = table.Column<decimal>(type: "decimal(15,2)", nullable: false),
                     Total = table.Column<decimal>(type: "decimal(15,2)", nullable: false),
-                    PedidoId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                    PedidoId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {

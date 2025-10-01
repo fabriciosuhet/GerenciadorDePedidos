@@ -4,19 +4,16 @@ using GerenciadorDePedidos.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
+namespace GerenciadorDePedidos.Infrastructure.Migrations
 {
     [DbContext(typeof(GerenciadorDePedidosDbContext))]
-    [Migration("20250304151110_InicialMigration")]
-    partial class InicialMigration
+    partial class GerenciadorDePedidosDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,18 +57,20 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.ItemPedido", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
-                    b.Property<Guid?>("PedidoId")
-                        .HasColumnType("char(36)");
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("PedidoId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("PrecoUnitario")
                         .HasColumnType("decimal(15, 2)");
 
-                    b.Property<Guid>("ProdutoId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("ProdutoId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Quantidade")
                         .HasColumnType("int");
@@ -90,9 +89,11 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.MovimentacaoEstoque", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("ClienteId")
                         .HasColumnType("char(36)");
@@ -100,8 +101,8 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("DataMovimentacao")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("ProdutoId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("ProdutoId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Quantidade")
                         .HasColumnType("int");
@@ -120,9 +121,11 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Pedido", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("ClienteId")
                         .HasColumnType("char(36)");
@@ -133,9 +136,6 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Total")
-                        .HasColumnType("decimal(65,30)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
@@ -145,9 +145,11 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Produto", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Estoque")
                         .HasColumnType("int");

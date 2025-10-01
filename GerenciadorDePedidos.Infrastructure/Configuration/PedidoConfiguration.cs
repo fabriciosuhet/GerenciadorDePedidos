@@ -16,10 +16,6 @@ public class PedidoConfiguration : IEntityTypeConfiguration<Pedido>
 			.WithMany(c => c.Pedidos)
 			.HasForeignKey(p => p.ClienteId)
 			.OnDelete(DeleteBehavior.Restrict);
-		
-		builder
-			.Property(p => p.Total)
-			.HasColumnType("decimal(15,2)");
 			
 	}
 }

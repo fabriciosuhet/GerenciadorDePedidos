@@ -85,7 +85,7 @@ public class ClienteController : ControllerBase
 	}
 	
 
-	[HttpPut("atualizar-cliente{id:guid}")]
+	[HttpPut("atualizar-cliente")]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> Put(Guid id, [FromBody] UpdateClienteCommand command)
 	{
