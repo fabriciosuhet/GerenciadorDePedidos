@@ -9,9 +9,7 @@ public class RemoverProdutoEstoqueCommandValidator : AbstractValidator<RemoverPr
 	{
 		RuleFor(re => re.ProdutoId)
 			.NotEmpty()
-			.WithMessage("o PedidoId nao pode ser vazio")
-			.Must(id => id != Guid.Empty)
-			.WithMessage("O ProdutoId deve ser um valor válido (diferente de Guid.Empty).");
+			.WithMessage("o PedidoId nao pode ser vazio");
 
 		RuleFor(re => re.Quantidade)
 			.NotEmpty()

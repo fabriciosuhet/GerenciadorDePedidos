@@ -18,7 +18,8 @@ public static class ServicesCollectionExtensions
 		services.AddScoped<IProdutoRepository, ProdutoRepository>();
 		services.AddScoped<IPedidoRepository, PedidoRepository>();
 		services.AddScoped<IMovimentacaoEstoqueRepository, MovimentacaoEstoqueRepository>();
-		return services;
+		services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
+        return services;
 	}
 
 	public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)

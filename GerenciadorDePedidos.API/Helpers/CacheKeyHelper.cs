@@ -17,7 +17,7 @@ public static class CacheKeyHelper
 		return $"produtos:{ query ?? "all"}";
 	}
 
-	public static string GetProdutoByIdKey(Guid id)
+	public static string GetProdutoByIdKey(int id)
 	{
 		return $"produto:{id}";
 	}
@@ -27,7 +27,7 @@ public static class CacheKeyHelper
 		return $"pedidos:{ query ?? "all"}";
 	}
 
-	public static string GetPedidoByIdKey(Guid id)
+	public static string GetPedidoByIdKey(int id)
 	{
 		return $"pedido:{id}";
 	}
