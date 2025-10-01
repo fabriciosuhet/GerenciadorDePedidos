@@ -60,7 +60,7 @@ public class ProdutoController : ControllerBase
 
 	[HttpGet("movimentacao-estoque/{id:guid}")]
 	[Authorize(Roles = $"{nameof(Role.Admin)}")]
-	public async Task<IActionResult> GetMovimentacaoEstoque(Guid id)
+	public async Task<IActionResult> GetMovimentacaoEstoque(int id)
 	{
 		var getMovimentacao = new GetMovimentacaoEstoqueQuery(id);
 		var movimentacao = await _mediator.Send(getMovimentacao);
@@ -71,7 +71,7 @@ public class ProdutoController : ControllerBase
 
 	[HttpGet("{id:guid}")]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
-	public async Task<IActionResult> GetById(Guid id)
+	public async Task<IActionResult> GetById(int id)
 	{
 		var cacheKey = CacheKeyHelper.GetProdutoByIdKey(id);
 

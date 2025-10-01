@@ -5,9 +5,9 @@ namespace GerenciadorDePedidos.Application.Queries.GetProduto;
 
 public class GetProdutoQuery : IRequest<ProdutoDetailsViewModel>
 {
-	public Guid Id { get; private set; }
+	public int Id { get; private set; }
 
-	public GetProdutoQuery(Guid id)
+	public GetProdutoQuery(int id)
 	{
 		Id = id;
 	}

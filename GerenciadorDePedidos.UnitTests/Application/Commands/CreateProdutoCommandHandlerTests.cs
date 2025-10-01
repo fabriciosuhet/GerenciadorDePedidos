@@ -21,7 +21,7 @@ public class CreateProdutoCommandHandlerTests
 		};
 		
 		// Mock de IProdutoRepository
-		var produtoRepositoryMock = new Mock<IProdutoRepository>();
+		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
 		produtoRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Produto>())).Returns(Task.CompletedTask);
 		
 		var handler = new CreateProdutoCommandHandler(produtoRepositoryMock.Object);
@@ -30,7 +30,7 @@ public class CreateProdutoCommandHandlerTests
 		var result = await handler.Handle(command, CancellationToken.None);
 		
 		// Assert
-		Assert.NotEqual(Guid.Empty, result);
+		Assert.NotEqual(1, result);
 		produtoRepositoryMock.Verify(r => r.AddAsync(It.Is<Produto>(p =>
 			p.Nome.Equals("Produto Teste") &&
 			p.Preco.Equals(19.99m) &&
@@ -49,7 +49,7 @@ public class CreateProdutoCommandHandlerTests
 			Preco = 19.99m
 		};
 		
-		var produtoRepositoryMock = new Mock<IProdutoRepository>();
+		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
 		var handler = new CreateProdutoCommandHandler(produtoRepositoryMock.Object);
 		
 		// Act e Assert

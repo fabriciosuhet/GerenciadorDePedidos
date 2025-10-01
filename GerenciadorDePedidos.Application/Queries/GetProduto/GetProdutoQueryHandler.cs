@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
@@ -6,13 +7,14 @@ namespace GerenciadorDePedidos.Application.Queries.GetProduto;
 
 public class GetProdutoQueryHandler : IRequestHandler<GetProdutoQuery, ProdutoDetailsViewModel>
 {
-	private readonly IProdutoRepository _produtoRepository;
+	private readonly IRepository<Produto, int> _produtoRepository;
 
-	public GetProdutoQueryHandler(IProdutoRepository produtoRepository) 
-		=> _produtoRepository = produtoRepository;
-	
+    public GetProdutoQueryHandler(IRepository<Produto, int> produtoRepository)
+    {
+        _produtoRepository = produtoRepository;
+    }
 
-	public async Task<ProdutoDetailsViewModel> Handle(GetProdutoQuery request, CancellationToken cancellationToken)
+    public async Task<ProdutoDetailsViewModel> Handle(GetProdutoQuery request, CancellationToken cancellationToken)
 	{
 		var produto = await _produtoRepository.GetByIdAsync(request.Id);
 		if (produto is null) return null;

@@ -46,7 +46,7 @@ public class PedidoController : ControllerBase
 
 	[HttpGet("{id:guid}")]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
-	public async Task<IActionResult> GetById(Guid id)
+	public async Task<IActionResult> GetById(int id)
 	{
 		var cacheKey = CacheKeyHelper.GetPedidoByIdKey(id);
 
