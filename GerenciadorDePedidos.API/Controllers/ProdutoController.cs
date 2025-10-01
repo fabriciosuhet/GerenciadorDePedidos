@@ -38,11 +38,12 @@ public class ProdutoController : ControllerBase
 	{
 		var cacheKey = CacheKeyHelper.GetAllProdutosKey(query);
 
-		if (_cacheService.TryGet<PagedResultModel<ProdutoViewModel>>(cacheKey, out var produtos))
+		if (!_cacheService.TryGet<PagedResultModel<ProdutoViewModel>>(cacheKey, out var produtos))
 		{
 			var getAllProdutos = new GetAllProdutosQuery(query);
 			produtos = await _mediator.Send(getAllProdutos);
-			if (produtos is null) return NotFound("Produtos nao encontrados");
+			if (produtos is null) return
+					NotFound("Produtos nao encontrados");
 			_cacheService.Set(cacheKey, produtos, TimeSpan.FromMinutes(5));
 		}
 		return Ok(produtos);
@@ -69,7 +70,7 @@ public class ProdutoController : ControllerBase
 	}
 	
 
-	[HttpGet("{id:guid}")]
+	[HttpGet("{id:int}")]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetById(int id)
 	{
@@ -94,15 +95,15 @@ public class ProdutoController : ControllerBase
 		return CreatedAtAction(nameof(GetById), new { id = produtoId }, command);
 	}
 
-	[HttpPut("atualizar-produto/{id:guid}")]
+	[HttpPut("atualizar-produto")]
 	[Authorize(Roles = nameof(Role.Admin))]
-	public async Task<IActionResult> Put(Guid id, [FromBody] UpdateProdutoCommand command)
+	public async Task<IActionResult> Put([FromBody] UpdateProdutoCommand command)
 	{
 		await _mediator.Send(command);
 		return NoContent();
 	}
 	
-	[HttpPut("adicionar-estoque/{id:guid}")]
+	[HttpPut("adicionar-estoque")]
 	[Authorize(Roles = $"{nameof(Role.Admin)}")]
 	public async Task<IActionResult> PutAddEstoque(AdicionarProdutoEstoqueCommand command)
 	{

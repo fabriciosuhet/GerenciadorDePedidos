@@ -17,6 +17,8 @@ public class CreateProdutoCommandHandler : IRequestHandler<CreateProdutoCommand,
 	{
 		var produto = new Produto(request.Nome, request.Preco, request.Estoque);
 		await _produtoRepository.AddAsync(produto);
-		return produto.Id;
+
+		await _produtoRepository.SaveChangesAsync();
+        return produto.Id;
 	}
 }

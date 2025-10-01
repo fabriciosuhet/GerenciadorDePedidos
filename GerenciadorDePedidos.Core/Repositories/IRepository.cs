@@ -10,5 +10,6 @@ namespace GerenciadorDePedidos.Core.Repositories
         Task AddAsync(TEntity entity);
         void UpdateAsync(TEntity entity);
         Task DeleteAsync(TKey id);
+        Task SaveChangesAsync();
     }
 }

@@ -42,6 +42,11 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Repositories
             return await _dbSet.Skip(skip).Take(take).ToListAsync();
         }
 
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
+
         public void UpdateAsync(TEntity entity)
         {
              _dbSet.Update(entity);

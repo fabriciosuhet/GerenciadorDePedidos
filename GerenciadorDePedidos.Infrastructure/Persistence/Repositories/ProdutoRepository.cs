@@ -10,9 +10,17 @@ public class ProdutoRepository : Repository<Produto, int>, IProdutoRepository
     {
     }
 
+    public async Task<IEnumerable<Produto>> GetAllProdutos(string? query)
+    {
+		return await _context.Produtos
+			.AsNoTracking()
+			.Where(x => string.IsNullOrEmpty(query) || x.Nome.Contains(query))
+			.ToListAsync();
+    }
+
     public async Task<int> GetCountAsync(string? query)
 	{
-		return await _context.Produtos.Where(p => string.IsNullOrEmpty(query) || p.Nome.Contains(query))
+		return await _context.Produtos.AsNoTracking().Where(p => string.IsNullOrEmpty(query) || p.Nome.Contains(query))
 			.CountAsync();
 	}
 

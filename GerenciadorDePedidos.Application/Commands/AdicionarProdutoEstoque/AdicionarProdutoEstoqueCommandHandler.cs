@@ -34,8 +34,11 @@ public class AdicionarProdutoEstoqueCommandHandler : IRequestHandler<AdicionarPr
 		var movimentacaoEstoque = new MovimentacaoEstoque(request.Quantidade, Tipo.Adicao, produto.Id, request.ClienteId);
 		
 		await _movimentacaoEstoqueRepository.AddAsync(movimentacaoEstoque);
-		_produtoRepository.UpdateAsync(produto);
-		
-		return produto.Id;
+        _produtoRepository.UpdateAsync(produto);
+		await _produtoRepository.SaveChangesAsync();
+        await _movimentacaoEstoqueRepository.SaveChangesAsync();
+
+
+        return produto.Id;
 	}
 }
