@@ -17,7 +17,7 @@ public class PedidoTests
 		var dataPedido = DateTime.UtcNow;
 		
 		// Act (Agir)
-		var pedido = new Pedido(itensPedidos, total, clienteId, dataPedido, Status.Pendente);
+		var pedido = new Pedido(clienteId, Status.Pendente);
 		
 		// Assert (Verificar)
 		Assert.IsEmpty(pedido.ItensPedidos);
@@ -31,7 +31,8 @@ public class PedidoTests
 	public void ConstrutorPadrao_DeveInicilizarListaDePedidosNaoNula()
 	{
 		// Arrange e Act
-		var pedido = new Pedido(new List<ItemPedido>(), 0m, Guid.NewGuid(), DateTime.UtcNow, Status.Pendente);
+		var clienteId = Guid.NewGuid();
+		var pedido = new Pedido(clienteId, Status.Pendente);
 		
 		// Assert
 		Assert.NotNull(pedido.ItensPedidos);
@@ -41,13 +42,14 @@ public class PedidoTests
 	public void TotalPedidos_DeveAtualizarTotalCorretamente()
 	{
 		// Arrange
-		var pedido = new Pedido(new List<ItemPedido>(), 0m, Guid.NewGuid(), DateTime.UtcNow, Status.Pendente);
+		var clienteId = Guid.NewGuid();
+        var pedido = new Pedido(clienteId, Status.Pendente);
 		var quantidade = 10;
 		var precoUnitario = 50m;
 		var totalEsperado = quantidade * precoUnitario;
-		
+
 		// Act
-		pedido.TotalPedido(quantidade, precoUnitario);
+		var total = pedido.Total;
 		
 		// Assert
 		Assert.AreEqual(totalEsperado, pedido.Total);

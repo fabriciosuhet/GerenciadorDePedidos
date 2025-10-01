@@ -10,18 +10,18 @@ namespace GerenciadorDePedidos.Application.Commands.CreateCliente;
 
 public class CreateClienteCommandHandler : IRequestHandler<CreateClienteCommand, Guid>
 {
-	private readonly IClienteRepository _clienteRepository;
 	private readonly IAuthService _authService;
+	private readonly IRepository<Cliente, Guid> _clienteRepository;
 	private readonly GerenciadorDePedidosDbContext _context;
 
-	public CreateClienteCommandHandler(IClienteRepository clienteRepository, IAuthService authService, GerenciadorDePedidosDbContext context)
-	{
-		_clienteRepository = clienteRepository;
-		_authService = authService;
-		_context = context;
-	}
+    public CreateClienteCommandHandler(IAuthService authService, IRepository<Cliente, Guid> clienteRepository, GerenciadorDePedidosDbContext context)
+    {
+        _authService = authService;
+        _clienteRepository = clienteRepository;
+        _context = context;
+    }
 
-	public async Task<Guid> Handle(CreateClienteCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateClienteCommand request, CancellationToken cancellationToken)
 	{
 		var passwordHash = _authService.ComputeSha256Hash(request.Senha);
 		bool hasAnyCliente = _context.Clientes.Any();

@@ -4,15 +4,16 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.CreateProduto;
 
-public class CreateProdutoCommandHandler : IRequestHandler<CreateProdutoCommand, Guid>
+public class CreateProdutoCommandHandler : IRequestHandler<CreateProdutoCommand, int>
 {
-	private readonly IProdutoRepository _produtoRepository;
+	private readonly IRepository<Produto, int> _produtoRepository;
 
-	public CreateProdutoCommandHandler(IProdutoRepository produtoRepository)
-	{
-		_produtoRepository = produtoRepository;
-	}
-	public async Task<Guid> Handle(CreateProdutoCommand request, CancellationToken cancellationToken)
+    public CreateProdutoCommandHandler(IRepository<Produto, int> produtoRepository)
+    {
+        _produtoRepository = produtoRepository;
+    }
+
+    public async Task<int> Handle(CreateProdutoCommand request, CancellationToken cancellationToken)
 	{
 		var produto = new Produto(request.Nome, request.Preco, request.Estoque);
 		await _produtoRepository.AddAsync(produto);

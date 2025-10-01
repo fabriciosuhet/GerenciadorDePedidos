@@ -15,20 +15,20 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 	public async Task Handle_CommandValid_AddsMovimentacaoEstoqueAndUpdatesProduto()
 	{
 		// Arrange
-		var produtoId = Guid.NewGuid();
+		var produtoId = 1;
 		var clienteId = Guid.NewGuid();
 		var produto = new Produto("Produto Teste", 11.99m, 10)
 		{
 			Id = produtoId,
 		};
-		
+
 		// Mock de IProdutoRepository
-		var produtoRepositoryMock = new Mock<IProdutoRepository>();
+		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
 		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync(produto);
-		produtoRepositoryMock.Setup(r => r.UpdateAsync(produtoId, It.IsAny<Produto>())).Returns(Task.CompletedTask);
+		produtoRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<Produto>()));
 		
 		// Mock de IMovimentacaoEstoqueRepository
-		var movimentacaoEstoqueRepositoryMock = new Mock<IMovimentacaoEstoqueRepository>();
+		var movimentacaoEstoqueRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
 		movimentacaoEstoqueRepositoryMock.Setup(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>()))
 			.Returns(Task.CompletedTask);
 
@@ -41,7 +41,7 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 		// Assert
 		Assert.Equal(produtoId, result);
 		produtoRepositoryMock.Verify(r => r.GetByIdAsync(produtoId), Times.Once());
-		produtoRepositoryMock.Verify(r => r.UpdateAsync(produtoId, It.Is<Produto>(p => p == produto)), Times.Once());
+		produtoRepositoryMock.Verify(r => r.UpdateAsync(It.Is<Produto>(p => p == produto)), Times.Once());
 		movimentacaoEstoqueRepositoryMock.Verify(r => r.AddAsync(It.Is<MovimentacaoEstoque>(
 			m => m.Quantidade.Equals(10) && m.TipoMovimentacao.Equals(Tipo.Adicao) && m.ProdutoId.Equals(produtoId) &&
 			     m.ClienteId.Equals(clienteId))));
@@ -51,15 +51,15 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 	public async Task Handle_InvalidProdutoId_ThrowsKeyNotFoundException()
 	{
 		// Arrange 
-		var produtoId = Guid.NewGuid();
+		var produtoId = 1;
 		var clienteId = Guid.NewGuid();
 		
 		// Mock do IProdutoRepository
-		var produtoRepositoryMock = new Mock<IProdutoRepository>();
+		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
 		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync((Produto)null);
 		
 		// Mock de IMovimentacaoEstoqueRepository 
-		var movimentacaoEstoqueRepositoryMock = new Mock<IMovimentacaoEstoqueRepository>();
+		var movimentacaoEstoqueRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
 		var command = new AdicionarProdutoEstoqueCommand(produtoId, 10, clienteId);
 		var handler = new AdicionarProdutoEstoqueCommandHandler(produtoRepositoryMock.Object, movimentacaoEstoqueRepositoryMock.Object);
 		
@@ -73,7 +73,7 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 	public async Task Handle_NegativeQuantidade_ThrowsKeyArgumentException()
 	{
 		// Arrange
-		var produtoId = Guid.NewGuid();
+		var produtoId = 1;
 		var clienteId = Guid.NewGuid();
 		var produto = new Produto("Produto Teste", 10.99m, 10)
 		{
@@ -81,19 +81,19 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 		};
 		
 		// Mock de IProdutoRepository
-		var produtoRepositoryMock = new Mock<IProdutoRepository>();
-		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync(produto);
+		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
+        produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync(produto);
 		
 		// Mock de IMovimentacaoEstoqueRepository
-		var movimentacaoEstoqueRepositoryMock = new Mock<IMovimentacaoEstoqueRepository>();
-		var command = new AdicionarProdutoEstoqueCommand(produtoId, -5, clienteId);
+		var movimentacaoEstoqueRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
+        var command = new AdicionarProdutoEstoqueCommand(produtoId, -5, clienteId);
 		var handler = new AdicionarProdutoEstoqueCommandHandler(produtoRepositoryMock.Object, movimentacaoEstoqueRepositoryMock.Object);
 		
 		// Act e Assert
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("O valor não pode ser menor ou igual a 0", exception.Message);
 		movimentacaoEstoqueRepositoryMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>()), Times.Never());
-		produtoRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Guid>(), It.IsAny<Produto>()), Times.Never());
+		produtoRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Produto>()), Times.Never());
 	}
 	
 }

@@ -8,14 +8,14 @@ namespace GerenciadorDePedidos.Application.Queries.GetPedido;
 
 public class GetPedidoQueryHandler : IRequestHandler<GetPedidoQuery, PedidoRespondeDTO>
 {
-	private readonly IPedidoRepository _pedidoRepository;
+	private readonly IRepository<Pedido, int> _pedidoRepository;
 
-	public GetPedidoQueryHandler(IPedidoRepository pedidoRepository)
-	{
-		_pedidoRepository = pedidoRepository;
-	}
+    public GetPedidoQueryHandler(IRepository<Pedido, int> pedidoRepository)
+    {
+        _pedidoRepository = pedidoRepository;
+    }
 
-	public async Task<PedidoRespondeDTO> Handle(GetPedidoQuery request, CancellationToken cancellationToken)
+    public async Task<PedidoRespondeDTO> Handle(GetPedidoQuery request, CancellationToken cancellationToken)
 	{
 		var pedido = await _pedidoRepository.GetByIdAsync(request.Id);
 		if (pedido is null) return null;

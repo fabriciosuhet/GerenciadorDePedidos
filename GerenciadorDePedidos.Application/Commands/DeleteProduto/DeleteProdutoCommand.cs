@@ -4,9 +4,9 @@ namespace GerenciadorDePedidos.Application.Commands.DeleteProduto;
 
 public class DeleteProdutoCommand : IRequest<Unit>
 {
-	public Guid Id { get; private set; }
+	public int Id { get; private set; }
 
-	public DeleteProdutoCommand(Guid id)
+	public DeleteProdutoCommand(int id)
 	{
 		Id = id;
 	}

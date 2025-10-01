@@ -4,7 +4,7 @@ namespace GerenciadorDePedidos.Core.DTOs;
 
 public class PedidoRespondeDTO
 {
-	public Guid Id { get;  set; }
+	public int Id { get;  set; }
 	public DateTime DataPedido { get; set; }
 	public decimal Total { get; set; }
 	public Guid ClienteId { get;  set; }

@@ -10,7 +10,7 @@ public class ItemPedidoTests
 	public void Construtor_DeveCriarItemPedidoComDadosCorretos()
 	{
 		// Arrange
-		var produtoId = Guid.NewGuid();
+		var produtoId = 1;
 		const int quantidade = 2;
 		const decimal precoUnitario = 10m;
 		var totalEsperado = quantidade * precoUnitario;
@@ -29,7 +29,7 @@ public class ItemPedidoTests
 	public void Total_DeveSerCalculadoCorretamenteNoConstrutor()
 	{
 		// Arrange
-		var produtoId = Guid.NewGuid();
+		var produtoId = 1;
 		var quantidade = 3;
 		var precoUnitario = 5m;
 		var totalEsperado = quantidade * precoUnitario;
@@ -46,7 +46,7 @@ public class ItemPedidoTests
 	public void AtualizarTotal_DeveManterTotalConsistente()
 	{
 		// Arrange
-		var itemPedido = new ItemPedido(Guid.NewGuid(), 4, 10m);
+		var itemPedido = new ItemPedido(1, 4, 10m);
 		var totalEsperado = itemPedido.Quantidade * itemPedido.PrecoUnitario;
 		
 		// Act

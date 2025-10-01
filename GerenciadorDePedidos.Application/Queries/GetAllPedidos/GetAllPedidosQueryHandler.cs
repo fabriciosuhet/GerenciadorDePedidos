@@ -8,18 +8,17 @@ namespace GerenciadorDePedidos.Application.Queries.GetAllPedidos;
 
 public class GetAllPedidosQueryHandler : IRequestHandler<GetAllPedidosQuery, PagedResultModel<PedidoViewModel>>
 {
-	private readonly IPedidoRepository _pedidoRepository;
+	private readonly IRepository<Pedido, int> _pedidoRepository;
 
-	public GetAllPedidosQueryHandler(IPedidoRepository pedidoRepository)
+    public GetAllPedidosQueryHandler(IRepository<Pedido, int> pedidoRepository)
+    {
+        _pedidoRepository = pedidoRepository;
+    }
+
+    public async Task<PagedResultModel<PedidoViewModel>> Handle(GetAllPedidosQuery request, CancellationToken cancellationToken)
 	{
-		_pedidoRepository = pedidoRepository;
-	}
-
-
-	public async Task<PagedResultModel<PedidoViewModel>> Handle(GetAllPedidosQuery request, CancellationToken cancellationToken)
-	{
-		var totalCount = await _pedidoRepository.GetCountAsync(request.Query);
-		var pedidos = await _pedidoRepository.GetPagedAsync(request.Query, (request.PageNumber - 1) * request.PageSize,
+		var totalCount = await _pedidoRepository.GetCountAsync();
+		var pedidos = await _pedidoRepository.GetPagedAsync((request.PageNumber - 1) * request.PageSize,
 			request.PageSize);
 
 

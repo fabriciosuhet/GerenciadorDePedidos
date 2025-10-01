@@ -9,9 +9,7 @@ public class AdicionarProdutoEstoqueCommandValidator : AbstractValidator<Adicion
 	{
 		RuleFor(ap => ap.ProdutoId)
 			.NotEmpty()
-			.WithMessage("O produtoId nao pode ser vazio")
-			.Must(id => id != Guid.Empty)
-			.WithMessage("O ProdutoId deve ser um valor válido (diferente de Guid.Empty).");
+			.WithMessage("O produtoId nao pode ser vazio");
 
 		RuleFor(ap => ap.Quantidade)
 			.GreaterThanOrEqualTo(0)

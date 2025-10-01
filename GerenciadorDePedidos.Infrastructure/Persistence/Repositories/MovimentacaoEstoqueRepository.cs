@@ -7,16 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GerenciadorDePedidos.Infrastructure.Persistence.Repositories;
 
-public class MovimentacaoEstoqueRepository : IMovimentacaoEstoqueRepository
+public class MovimentacaoEstoqueRepository : Repository<MovimentacaoEstoque, int>, IMovimentacaoEstoqueRepository
 {
-	private readonly GerenciadorDePedidosDbContext _context;
-
-	public MovimentacaoEstoqueRepository(GerenciadorDePedidosDbContext context) => _context = context;
-
-	public async Task AddAsync(MovimentacaoEstoque movimentacaoEstoque)
+	public MovimentacaoEstoqueRepository(GerenciadorDePedidosDbContext context) : base(context)
 	{
-		await _context.MovimentacaoEstoques.AddAsync(movimentacaoEstoque);
-		await _context.SaveChangesAsync();
 	}
 
 	public async Task<int> GetCountAsync(string? query)
@@ -27,7 +21,7 @@ public class MovimentacaoEstoqueRepository : IMovimentacaoEstoqueRepository
 		{
 			dataMovimentacao = parsedDate;
 		}
-		
+
 		Tipo? tipoMovimentacao = null;
 
 		if (!string.IsNullOrEmpty(query) && Enum.TryParse(query, out Tipo parsedTipo))
@@ -35,20 +29,20 @@ public class MovimentacaoEstoqueRepository : IMovimentacaoEstoqueRepository
 			tipoMovimentacao = parsedTipo;
 		}
 
-		return await _context.MovimentacaoEstoques.AsNoTracking()
+		return await _dbSet.AsNoTracking()
 			.Include(me => me.Produto)
 			.Where(me =>
 				string.IsNullOrEmpty(query) || me.Produto.Nome.Contains(query)
-				                            || (tipoMovimentacao.HasValue &&
-				                                me.TipoMovimentacao.Equals(tipoMovimentacao.Value))
-				                            || (dataMovimentacao.HasValue &&
-				                                me.DataMovimentacao.Equals(dataMovimentacao.Value))).CountAsync();
+											|| (tipoMovimentacao.HasValue &&
+												me.TipoMovimentacao.Equals(tipoMovimentacao.Value))
+											|| (dataMovimentacao.HasValue &&
+												me.DataMovimentacao.Equals(dataMovimentacao.Value))).CountAsync();
 
 	}
 
 	public async Task<ICollection<MovimentacaoEstoque>> GetPagedAsync(string? query, int skip, int take)
 	{
-		return await _context.MovimentacaoEstoques.AsNoTracking()
+		return await _dbSet.AsNoTracking()
 			.Include(me => me.Produto)
 			.Where(me => string.IsNullOrEmpty(query) || me.Produto.Nome.Contains(query))
 			.Skip(skip)
@@ -56,9 +50,9 @@ public class MovimentacaoEstoqueRepository : IMovimentacaoEstoqueRepository
 			.ToListAsync();
 	}
 
-	public async Task<MovimentacaoEstoque?> GetByIdAsync(Guid id)
+	public async Task<MovimentacaoEstoque?> GetByIdAMovimentacaoAsync(int id)
 	{
-		return await _context.MovimentacaoEstoques
+		return await _dbSet
 			.Include(me => me.Produto)
 			.Include(m => m.Cliente)
 			.AsNoTracking()

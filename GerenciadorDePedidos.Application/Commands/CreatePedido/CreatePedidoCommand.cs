@@ -5,7 +5,7 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.CreatePedido;
 
-public class CreatePedidoCommand : IRequest<Guid>
+public class CreatePedidoCommand : IRequest<int>
 {
 	public List<ItemPedidoDTO> ItensPedidos { get; set; }
 	public Guid ClienteId { get; set; }

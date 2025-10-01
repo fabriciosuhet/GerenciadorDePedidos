@@ -2,7 +2,7 @@ using GerenciadorDePedidos.Core.Enums;
 
 namespace GerenciadorDePedidos.Core.Entities;
 
-public class Cliente : BaseEntity
+public class Cliente : BaseEntity<Guid>
 {
 	public string NomeCompleto { get; private set; }
 	public string Email { get; private set; }
@@ -16,8 +16,8 @@ public class Cliente : BaseEntity
 
 	public Cliente()
 	{
-		
-	}
+		Id = Guid.NewGuid();
+    }
 	
 	public Cliente(string nomeCompleto, string email, string telefone, string senha, Role role)
 	{
@@ -27,7 +27,7 @@ public class Cliente : BaseEntity
 		Senha = senha;
 		Role = role;
 	}
-	
+
 	public void AlterarEmail(string email)
 	{
 		Email = email;

@@ -7,9 +7,9 @@ namespace GerenciadorDePedidos.Application.Queries.GetPedido;
 
 public class GetPedidoQuery : IRequest<PedidoRespondeDTO>
 {
-	public Guid Id { get; private set; }
+	public int Id { get; private set; }
 
-	public GetPedidoQuery(Guid id)
+	public GetPedidoQuery(int id)
 	{
 		Id = id;
 	}

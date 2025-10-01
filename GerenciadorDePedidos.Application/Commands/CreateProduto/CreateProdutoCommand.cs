@@ -2,7 +2,7 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.CreateProduto;
 
-public class CreateProdutoCommand : IRequest<Guid>
+public class CreateProdutoCommand : IRequest<int>
 {
 	public string Nome { get; set; }
 	public decimal Preco { get; set; } 

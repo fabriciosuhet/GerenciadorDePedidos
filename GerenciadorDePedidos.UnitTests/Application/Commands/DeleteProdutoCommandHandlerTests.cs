@@ -13,10 +13,10 @@ public class DeleteProdutoCommandHandlerTests
 	public async Task Handler_ProdutoExist_ShouldDeleteProduto()
 	{
 		// Arrange
-		var produtoId = Guid.NewGuid();
+		var produtoId = 1;
 		var produtoMock = new Produto {Id = produtoId};
 		
-		var produtoRepositoryMock = new Mock<IProdutoRepository>();
+		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
 		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync(produtoMock);
 		
 		var handler = new DeleteProdutoCommandHandler(produtoRepositoryMock.Object);
@@ -33,8 +33,8 @@ public class DeleteProdutoCommandHandlerTests
 	public async Task Handler_ProdutoNotExist_ThrowsShouldException()
 	{
 		// Arrange
-		var produtoId = Guid.NewGuid();
-		var produtoRepositoryMock = new Mock<IProdutoRepository>();
+		var produtoId = 1;
+		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
 		
 		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync((Produto) null);
 		
@@ -44,6 +44,6 @@ public class DeleteProdutoCommandHandlerTests
 		// Act e Assert
 		var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("Produto nao encontrado", exception.Message);
-		produtoRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<Guid>()), Times.Never);
+		produtoRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<int>()), Times.Never);
 	}
 }

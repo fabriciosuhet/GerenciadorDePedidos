@@ -1,5 +1,6 @@
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Core.DTOs;
+using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
@@ -7,21 +8,21 @@ namespace GerenciadorDePedidos.Application.Queries.GetAllMovimentacaoEstoque;
 
 public class GetAllMovimentacaoEstoqueQueryHandler : IRequestHandler<GetAllMovimentacaoEstoqueQuery, PagedResultModel<MovimentacaoEstoqueResponseDTO>>
 {
-	private readonly IMovimentacaoEstoqueRepository _repository;
+	private readonly IRepository<MovimentacaoEstoque, int> _movimentacaoEstoqueRepository;
 
-	public GetAllMovimentacaoEstoqueQueryHandler(IMovimentacaoEstoqueRepository repository)
-	{
-		_repository = repository;
-	}
+    public GetAllMovimentacaoEstoqueQueryHandler(IRepository<MovimentacaoEstoque, int> movimentacaoEstoqueRepository)
+    {
+        _movimentacaoEstoqueRepository = movimentacaoEstoqueRepository;
+    }
 
-	public async Task<PagedResultModel<MovimentacaoEstoqueResponseDTO>> Handle(GetAllMovimentacaoEstoqueQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResultModel<MovimentacaoEstoqueResponseDTO>> Handle(GetAllMovimentacaoEstoqueQuery request, CancellationToken cancellationToken)
 	{
-		var count = await _repository.GetCountAsync(request.Query);
+		var count = await _movimentacaoEstoqueRepository.GetCountAsync();
 		
 		if (count.Equals(0)) 
 			throw new ArgumentException("Nenhum registro encontrado");
 
-		var movimentacaoEstoque = await _repository.GetPagedAsync(request.Query,
+		var movimentacaoEstoque = await _movimentacaoEstoqueRepository.GetPagedAsync(
 			(request.PageNumber - 1) * request.PageSize, request.PageSize);
 		
 		
