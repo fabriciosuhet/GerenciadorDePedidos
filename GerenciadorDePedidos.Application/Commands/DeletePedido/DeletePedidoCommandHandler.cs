@@ -20,6 +20,7 @@ public class DeletePedidoCommandHandler : IRequestHandler<DeletePedidoCommand, U
 			throw new KeyNotFoundException("Pedido nao encontrado");
 		
 		await _pedidoRepository.DeleteAsync(pedido.Id);
+		await _pedidoRepository.SaveChangesAsync();
 		return Unit.Value;
 	}
 }

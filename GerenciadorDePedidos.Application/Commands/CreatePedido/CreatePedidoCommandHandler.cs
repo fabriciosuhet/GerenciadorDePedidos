@@ -38,8 +38,15 @@ public class CreatePedidoCommandHandler : IRequestHandler<CreatePedidoCommand, i
 
 		var total = itens.Sum(item => item.Total);
 		var pedido = new Pedido(request.ClienteId, request.Status);
-		
-		await _pedidoRepository.AddAsync(pedido);
+
+        foreach (var itemDto in request.ItensPedidos)
+        {
+			var produto = await _produtoRepository.GetByIdAsync(itemDto.produtoId);
+			pedido.AdicionarItem(produto.Id, itemDto.Quantidade, produto.Preco);
+        }
+
+        await _pedidoRepository.AddAsync(pedido);
+		await _pedidoRepository.SaveChangesAsync();
 		return pedido.Id;
 
 	}

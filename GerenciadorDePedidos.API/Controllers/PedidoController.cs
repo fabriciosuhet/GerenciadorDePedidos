@@ -44,7 +44,7 @@ public class PedidoController : ControllerBase
 		return Ok(pedidos);
 	}
 
-	[HttpGet("{id:guid}")]
+	[HttpGet("{id:int}")]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetById(int id)
 	{
@@ -70,7 +70,7 @@ public class PedidoController : ControllerBase
 		return CreatedAtAction(nameof(GetById), new {id = pedidoId}, command);
 	}
 	
-	[HttpDelete("deletar-pedido/{id:guid}")]
+	[HttpDelete("deletar-pedido/{id:int}")]
 	[Authorize(Roles = $"{nameof(Role.Admin)}")]
 	public async Task<IActionResult> Delete(DeletePedidoCommand command)
 	{
