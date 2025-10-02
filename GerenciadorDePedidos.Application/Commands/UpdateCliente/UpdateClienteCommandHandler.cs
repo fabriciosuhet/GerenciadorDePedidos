@@ -23,6 +23,7 @@ public class UpdateClienteCommandHandler : IRequestHandler<UpdateClienteCommand,
         cliente.AlterarTelefone(request.Telefone);
 		
 		_clienteRepository.UpdateAsync(cliente);
+		await _clienteRepository.SaveChangesAsync();
 		return Unit.Value;
 	}
 }

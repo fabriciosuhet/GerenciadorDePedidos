@@ -20,6 +20,7 @@ public class DeleteClienteCommandHandler : IRequestHandler<DeleteClienteCommand,
 			throw new KeyNotFoundException("O cliente nao foi encontrado");
 
 		await _clienteRepository.DeleteAsync(cliente.Id);
+		await _clienteRepository.SaveChangesAsync();
 		return Unit.Value;
 	}
 }
