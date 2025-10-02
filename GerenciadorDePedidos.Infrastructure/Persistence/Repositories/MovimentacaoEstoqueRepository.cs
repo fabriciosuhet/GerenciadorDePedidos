@@ -58,4 +58,22 @@ public class MovimentacaoEstoqueRepository : Repository<MovimentacaoEstoque, int
 			.AsNoTracking()
 			.FirstOrDefaultAsync(me => me.Id == id);
 	}
+
+    public async Task<MovimentacaoEstoque?>? GetByIdMovimentacaoAsync(int id)
+    {
+		return await _dbSet
+			.AsNoTracking()
+			.Include(me => me.Produto)
+			.Include(me => me.Cliente)
+			.FirstOrDefaultAsync();
+    }
+
+    public async Task<IEnumerable<MovimentacaoEstoque?>>? GetAllMovimentacaoAsync(string? query)
+    {
+		return await _dbSet
+			.AsNoTracking()
+			.Include(me => me.Produto)
+			.Include(me => me.Cliente)
+			.ToListAsync();
+    }
 }

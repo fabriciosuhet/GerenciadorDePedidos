@@ -8,25 +8,30 @@ namespace GerenciadorDePedidos.Application.Queries.GetAllMovimentacaoEstoque;
 
 public class GetAllMovimentacaoEstoqueQueryHandler : IRequestHandler<GetAllMovimentacaoEstoqueQuery, PagedResultModel<MovimentacaoEstoqueResponseDTO>>
 {
-	private readonly IRepository<MovimentacaoEstoque, int> _movimentacaoEstoqueRepository;
+	private readonly IRepository<MovimentacaoEstoque, int> _baseRepository;
+	private readonly IMovimentacaoEstoqueRepository _movimentacoEstoqueRepository;
 
-    public GetAllMovimentacaoEstoqueQueryHandler(IRepository<MovimentacaoEstoque, int> movimentacaoEstoqueRepository)
+    public GetAllMovimentacaoEstoqueQueryHandler(IRepository<MovimentacaoEstoque, int> baseRepository, IMovimentacaoEstoqueRepository movimentacoEstoqueRepository)
     {
-        _movimentacaoEstoqueRepository = movimentacaoEstoqueRepository;
+        _baseRepository = baseRepository;
+        _movimentacoEstoqueRepository = movimentacoEstoqueRepository;
     }
 
     public async Task<PagedResultModel<MovimentacaoEstoqueResponseDTO>> Handle(GetAllMovimentacaoEstoqueQuery request, CancellationToken cancellationToken)
 	{
-		var count = await _movimentacaoEstoqueRepository.GetCountAsync();
-		
-		if (count.Equals(0)) 
+		var count = await _baseRepository.GetCountAsync();
+
+		var movimentacoes = await _movimentacoEstoqueRepository.GetAllMovimentacaoAsync(request.Query);
+        
+
+        if (count.Equals(0)) 
 			throw new ArgumentException("Nenhum registro encontrado");
 
-		var movimentacaoEstoque = await _movimentacaoEstoqueRepository.GetPagedAsync(
+		var movimentacaoEstoque = await _baseRepository.GetPagedAsync(
 			(request.PageNumber - 1) * request.PageSize, request.PageSize);
 		
 		
-		var movimentacaoEstoqueDto = movimentacaoEstoque.Select(me => new MovimentacaoEstoqueResponseDTO
+		var movimentacaoEstoqueDto = movimentacoes.Select(me => new MovimentacaoEstoqueResponseDTO
 		{
 			Id = me.Id,
 			ProdutoId = me.ProdutoId,

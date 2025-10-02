@@ -59,7 +59,7 @@ public class ProdutoController : ControllerBase
 		return Ok(movimentacoes);
 	}
 
-	[HttpGet("movimentacao-estoque/{id:guid}")]
+	[HttpGet("movimentacao-estoque/{id:int}")]
 	[Authorize(Roles = $"{nameof(Role.Admin)}")]
 	public async Task<IActionResult> GetMovimentacaoEstoque(int id)
 	{
@@ -111,7 +111,7 @@ public class ProdutoController : ControllerBase
 		return Ok("Produto adicionado com sucesso ao estoque.");
 	}
 	
-	[HttpPut("remover-estoque/{id:guid}")]
+	[HttpPut("remover-estoque")]
 	[Authorize(Roles = $"{nameof(Role.Admin)}")]
 	public async Task<IActionResult> PutRemoveEstoque(RemoverProdutoEstoqueCommand command)
 	{
@@ -119,7 +119,7 @@ public class ProdutoController : ControllerBase
 		return Ok("Produto removido com sucesso do estoque.");
 	}
 
-	[HttpDelete("remover-produto/{id:guid}")]
+	[HttpDelete("remover-produto")]
 	[Authorize(Roles = nameof(Role.Admin))]
 	public async Task<IActionResult> Delete(DeleteProdutoCommand command)
 	{

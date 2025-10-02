@@ -18,6 +18,7 @@ public class UpdateProdutoCommandHandler : IRequestHandler<UpdateProdutoCommand,
 		var produto =  await _produtoRepository.GetByIdAsync(request.Id);
 		produto.AlterarDados(request.Nome, request.Preco, request.Estoque);
 		_produtoRepository.UpdateAsync(produto);
+		await _produtoRepository.SaveChangesAsync();
 		return Unit.Value;
 	}
 }
