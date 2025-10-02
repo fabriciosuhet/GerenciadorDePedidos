@@ -33,7 +33,7 @@ public class PedidoRepository : Repository<Pedido, int> , IPedidoRepository
 	{
 		return await _dbSet
 			.Include(p => p.ItensPedidos)
-				.ThenInclude(i => i.Produto)
+			.ThenInclude(i => i.Produto)
 			.Include(p => p.Cliente)
 			.AsNoTracking()
 			.SingleOrDefaultAsync(p => p.Id == id);

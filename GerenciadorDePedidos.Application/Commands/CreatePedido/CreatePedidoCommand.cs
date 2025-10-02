@@ -1,5 +1,4 @@
 using GerenciadorDePedidos.Core.DTOs;
-using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using MediatR;
 
