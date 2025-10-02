@@ -1,22 +1,17 @@
-using System.Net;
 using System.Text.Json.Serialization;
 using FluentValidation;
 using GerenciadorDePedidos.API.Filters;
-using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
 using GerenciadorDePedidos.Application.Validators;
 using GerenciadorDePedidos.Infrastructure.Extensions;
-using GerenciadorDePedidos.Infrastructure.Persistence;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddValidatorsFromAssemblyContaining<CreateClineteCommandValidator>();
-builder.Services.AddControllers(opt => opt.Filters.Add(typeof(ValidationFilter)))
-	.AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);
+builder.Services.AddControllers(opt => opt.Filters.Add(typeof(ValidationFilter)));
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

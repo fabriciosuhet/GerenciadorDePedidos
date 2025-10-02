@@ -20,6 +20,7 @@ public class DeleteProdutoCommandHandler : IRequestHandler<DeleteProdutoCommand,
 			throw new KeyNotFoundException("Produto nao encontrado");
 		
 		await _produtoRepository.DeleteAsync(produto.Id);
+		await _produtoRepository.SaveChangesAsync();
 		return Unit.Value;
 	}
 }

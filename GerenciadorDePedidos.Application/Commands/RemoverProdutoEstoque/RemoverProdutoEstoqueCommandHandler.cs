@@ -38,6 +38,7 @@ public class RemoverProdutoEstoqueCommandHandler : IRequestHandler<RemoverProdut
 		
 		await _movimentacaoEstoqueRepository.AddAsync(movimentacaoEstoque);
 		_produtoRepository.UpdateAsync(produto);
+		await _movimentacaoEstoqueRepository.SaveChangesAsync();
 		
 		return produto.Id;
 	}

@@ -8,7 +8,6 @@ public class MovimentacaoEstoqueDetailsDTO
 	public int Id { get;  set; }
 	public int ProdutoId { get; set; }
 	public string ProdutoNome { get; set; }
-	public Cliente Nome { get; set; }
 	public string ClienteNome { get; set; }
 	public int Quantidade { get; set; }
 	public Tipo TipoMovimentacao { get; set; }

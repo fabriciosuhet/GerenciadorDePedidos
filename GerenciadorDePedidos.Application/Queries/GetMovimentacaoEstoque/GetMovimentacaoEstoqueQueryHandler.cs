@@ -7,16 +7,16 @@ namespace GerenciadorDePedidos.Application.Queries.GetMovimentacaoEstoque;
 
 public class GetMovimentacaoEstoqueQueryHandler : IRequestHandler<GetMovimentacaoEstoqueQuery, MovimentacaoEstoqueDetailsDTO>
 {
-	private readonly IRepository<MovimentacaoEstoque, int> _movimentacaoEstoqueRepository;
+	private readonly IMovimentacaoEstoqueRepository _movimentacaoEstoqueRepository;
 
-    public GetMovimentacaoEstoqueQueryHandler(IRepository<MovimentacaoEstoque, int> movimentacaoEstoqueRepository)
+    public GetMovimentacaoEstoqueQueryHandler(IMovimentacaoEstoqueRepository movimentacaoEstoqueRepository)
     {
         _movimentacaoEstoqueRepository = movimentacaoEstoqueRepository;
     }
 
     public async Task<MovimentacaoEstoqueDetailsDTO> Handle(GetMovimentacaoEstoqueQuery request, CancellationToken cancellationToken)
 	{
-		var movimentacaoEstoque = await _movimentacaoEstoqueRepository.GetByIdAsync(request.Id);
+		var movimentacaoEstoque = await _movimentacaoEstoqueRepository.GetByIdMovimentacaoAsync(request.Id);
 		if (movimentacaoEstoque is null)
 			return null;
 
