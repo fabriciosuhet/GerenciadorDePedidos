@@ -70,7 +70,7 @@ public class PedidoController : ControllerBase
 		return CreatedAtAction(nameof(GetById), new {id = pedidoId}, command);
 	}
 	
-	[HttpDelete("deletar-pedido/{id:int}")]
+	[HttpDelete("deletar-pedido")]
 	[Authorize(Roles = $"{nameof(Role.Admin)}")]
 	public async Task<IActionResult> Delete(DeletePedidoCommand command)
 	{
