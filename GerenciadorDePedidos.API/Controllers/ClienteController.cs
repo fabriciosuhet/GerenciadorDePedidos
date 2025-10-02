@@ -87,13 +87,13 @@ public class ClienteController : ControllerBase
 
 	[HttpPut("atualizar-cliente")]
 	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
-	public async Task<IActionResult> Put(Guid id, [FromBody] UpdateClienteCommand command)
+	public async Task<IActionResult> Put([FromBody] UpdateClienteCommand command)
 	{
 		await _mediator.Send(command);
 		return NoContent();
 	}
 
-	[HttpDelete("deletar-cliente/{id:guid}")]
+	[HttpDelete("deletar-cliente")]
 	[Authorize(Roles = nameof(Role.Admin))]
 	public async Task<IActionResult> Delete(DeleteClienteCommand command)
 	{
