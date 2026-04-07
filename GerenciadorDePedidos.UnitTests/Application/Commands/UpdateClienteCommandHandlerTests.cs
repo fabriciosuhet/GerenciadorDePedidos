@@ -18,10 +18,9 @@ public class UpdateClienteCommandHandlerTests
 		var nome = "Nome teste";
 		var email = "test@test.com";
 		var telefone = "123456";
-		var senha = "Teste@123";
 		var role = Role.Usuario;
 			
-		var clienteMock = new Cliente(nome, email, telefone, senha, role);
+		var clienteMock = new Cliente(nome, telefone, role);
 		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
 		
 		clienteRepositoryMock.Setup(r => r.GetByIdAsync(clienteId)).ReturnsAsync(clienteMock);
@@ -33,10 +32,9 @@ public class UpdateClienteCommandHandlerTests
 		await handler.Handle(command, CancellationToken.None);
 		
 		// Assert
-		Assert.Equal(email, clienteMock.Email);
 		Assert.Equal(telefone, clienteMock.Telefone);
 		clienteRepositoryMock.Verify(
-			r => r.UpdateAsync(It.Is<Cliente>(c => c.Email.Equals(email) && c.Telefone.Equals(telefone))),
+			r => r.UpdateAsync(It.Is<Cliente>(c => c.Telefone.Equals(telefone))),
 			Times.Once);
 	}
 

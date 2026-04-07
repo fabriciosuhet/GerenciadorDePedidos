@@ -20,10 +20,4 @@ public class ClienteRepository : Repository<Cliente, Guid>, IClienteRepository
 			.AsNoTracking()
 			.SingleOrDefaultAsync(c => c.Id == id);
 	}
-
-	public async Task<Cliente?> GetUserByEmailAndPasswordAsync(string email, string passwordHash)
-	{
-		return await _dbSet
-			.SingleOrDefaultAsync(c => c.Email == email && c.Senha == passwordHash);
-	}
 }

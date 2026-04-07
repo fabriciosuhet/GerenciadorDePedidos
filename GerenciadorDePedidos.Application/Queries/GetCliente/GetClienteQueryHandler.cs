@@ -45,7 +45,6 @@ public class GetClienteQueryHandler : IRequestHandler<GetClienteQuery, ClienteDe
 
 		return new ClienteDetailsViewModel(
 			cliente.NomeCompleto,
-			cliente.Email,
 			cliente.Telefone,
 			pedidosDto
 		);

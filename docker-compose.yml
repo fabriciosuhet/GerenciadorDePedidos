@@ -1,18 +1,17 @@
-version: '3.8'
-
 services:
   app:
     image: gerenciador-de-pedidos-api
     build:
-      context: ..  # O contexto de build é o diretório pai (D:\projetos\GerenciadorDePedidos)
-      dockerfile: GerenciadorDePedidos.API/Dockerfile  # Caminho relativo ao Dockerfile a partir da raiz
+      context: .  
+      dockerfile: ./Dockerfile
     ports:
       - "8080:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Server=db;Database=GerenciadorDePedidos;User=root;Password=1234;
       - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -29,6 +28,11 @@ services:
       - mysql-data:/var/lib/mysql
     networks:
       - app-network
+    healthcheck:                                  
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1234"]
+        interval: 5s
+        timeout: 5s
+        retries: 10
 
 networks:
   app-network:
