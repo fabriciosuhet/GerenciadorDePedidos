@@ -30,7 +30,6 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpGet]
-	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetAll(string? query)
 	{
 		var cacheKey = CacheKeyHelper.GetAllClientesKey(query);
@@ -49,7 +48,6 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpGet("{id:guid}")]
-	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> GetById(Guid id)
 	{
 		var cacheKey = CacheKeyHelper.GetClienteByIdKey(id);
@@ -67,7 +65,6 @@ public class ClienteController : ControllerBase
 	}
 
 	[HttpPost]
-	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	// Cadastro de Cliente
 	public async Task<IActionResult> Post([FromBody] CreateClienteCommand command)
 	{
@@ -99,14 +96,5 @@ public class ClienteController : ControllerBase
 	{
 		await _mediator.Send(command);
 		return Ok("Cliente deletado com sucesso");
-	}
-
-	[HttpPut("login")]
-	[AllowAnonymous]
-	public async Task<IActionResult> Login([FromBody] LoginClienteCommand command)
-	{
-		var loginClienteViewModel = await _mediator.Send(command);
-		if (loginClienteViewModel == null) return BadRequest();
-		return Ok(loginClienteViewModel);
 	}
 }

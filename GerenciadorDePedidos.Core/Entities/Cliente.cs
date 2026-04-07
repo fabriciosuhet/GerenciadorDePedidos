@@ -9,15 +9,15 @@ public class Cliente : BaseEntity<Guid>
 	public Role Role { get; private set; }
 	
 	public Guid PedidoId { get; private set; }
-	public List<MovimentacaoEstoque> MovimentacaoEstoque { get; set; } = new List<MovimentacaoEstoque>();
-	public List<Pedido> Pedidos  { get; private set; } = new List<Pedido>();
+	public List<MovimentacaoEstoque> MovimentacaoEstoque { get; set; } = [];
+	public List<Pedido> Pedidos { get; private set; } = [];
 
 	public Cliente()
 	{
 		Id = Guid.NewGuid();
     }
 	
-	public Cliente(string nomeCompleto, string telefone, Role role)
+	public Cliente(string nomeCompleto, string telefone, Role role) : this()
 	{
 		NomeCompleto = nomeCompleto;
 		Telefone = telefone;

@@ -10,10 +10,12 @@ namespace GerenciadorDePedidos.Core.Entities
         public string SenhaHash { get; set; }
         public Role Role { get; set; }
 
-        public Login(string email, string senhaHash)
+        public Login(Guid clienteId, string email, string senhaHash, Role role)
         {
+            ClienteId = clienteId;
             Email = email;
             SenhaHash = senhaHash;
+            Role = role;
         }
     }
 }
