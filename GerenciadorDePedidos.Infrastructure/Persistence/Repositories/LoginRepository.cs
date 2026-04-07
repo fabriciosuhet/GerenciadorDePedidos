@@ -9,6 +9,7 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Repositories
         public LoginRepository(GerenciadorDePedidosDbContext context) : base(context)
         {
         }
+
         public async Task<Login?> GetEmailAndPasswordAsync(string email, string password)
         {
             return await _dbSet.AsNoTracking()

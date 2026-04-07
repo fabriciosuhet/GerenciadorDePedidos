@@ -26,7 +26,8 @@ builder.Services.AddDatabase(builder.Configuration)
 	.AddCorsService()
 	.AddSwaggerService()
 	.AddFluentValidationServices()
-	.AddCacheService();
+	.AddCacheService()
+	.AddPolicyController();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateProdutoCommand).Assembly));
 
