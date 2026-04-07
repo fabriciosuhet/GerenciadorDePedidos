@@ -4,6 +4,8 @@ using GerenciadorDePedidos.API.Filters;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
 using GerenciadorDePedidos.Application.Validators;
 using GerenciadorDePedidos.Infrastructure.Extensions;
+using GerenciadorDePedidos.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,5 +45,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<GerenciadorDePedidosDbContext>();
+    db.Database.Migrate();
+}
 
 app.Run();

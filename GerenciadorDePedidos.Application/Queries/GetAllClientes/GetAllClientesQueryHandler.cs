@@ -25,7 +25,7 @@ public class GetAllClientesQueryHandler : IRequestHandler<GetAllClientesQuery, P
 			(request.PageNumber - 1) * request.PageSize, request.PageSize);
 		
 		var clienteViewModel = clientes
-			.Select(c => new ClienteViewModel(c.Id, c.NomeCompleto, c.Email, c.Telefone))
+			.Select(c => new ClienteViewModel(c.Id, c.NomeCompleto, c.Telefone))
 			.ToList();
 		
 		return new PagedResultModel<ClienteViewModel>(clienteViewModel, count, request.PageNumber, request.PageSize);

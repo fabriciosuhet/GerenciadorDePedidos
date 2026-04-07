@@ -19,7 +19,6 @@ public class UpdateClienteCommandHandler : IRequestHandler<UpdateClienteCommand,
 		if (cliente is null)
 			throw new KeyNotFoundException("Cliente nao encontrado");
 		
-		cliente.AlterarEmail(request.Email);
         cliente.AlterarTelefone(request.Telefone);
 		
 		_clienteRepository.UpdateAsync(cliente);

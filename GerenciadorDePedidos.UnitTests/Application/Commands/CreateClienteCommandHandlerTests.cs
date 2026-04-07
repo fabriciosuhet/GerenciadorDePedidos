@@ -51,9 +51,7 @@ public class CreateClienteCommandHandlerTests
 		Assert.NotEqual(Guid.Empty, result);
 		clienteRepositoryMock.Verify(r => r.AddAsync(It.Is<Cliente>(c =>
 			c.NomeCompleto.Equals("Nome teste") &&
-			c.Email.Equals("email@teste.com") &&
 			c.Telefone.Equals("123456789") &&
-			c.Senha.Equals("hashedPassword") &&
 			c.Role.Equals(Role.Admin))), Times.Once());
 		authServiceMock.Verify(a => a.ComputeSha256Hash("Teste@123"), Times.Once());
 
@@ -86,7 +84,7 @@ public class CreateClienteCommandHandlerTests
 			.Options;
 		
 		var dbContext = new GerenciadorDePedidosDbContext(dbContextOptions);
-		dbContext.Clientes.Add(new Cliente("Outro Cliente", "outro@exemplo.com", "987654", "outraSenha", Role.Usuario));
+		dbContext.Clientes.Add(new Cliente("Outro Cliente","987654", Role.Usuario));
 		await dbContext.SaveChangesAsync();
 		
 		var handler = new CreateClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object, dbContext);

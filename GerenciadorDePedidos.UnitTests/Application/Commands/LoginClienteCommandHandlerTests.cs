@@ -23,20 +23,20 @@ public class LoginClienteCommandHandlerTests
 		var tokenFake = "token_jwt_fake";
 		Role role = Role.Usuario;
 
-		var cliente = new Cliente(nomeCompleto, email, telefone, senha, role);
+		var login = new Login(email, senha);
 
 		var authServiceMock = new Mock<IAuthService>();
 		authServiceMock.Setup(a => a.ComputeSha256Hash(senha)).Returns(senhaHash);
 		authServiceMock.Setup(a => a.GenerateJwtToken(email, role.ToString())).Returns(tokenFake);
-		
-		var clienteRepositoryMock = new Mock<IClienteRepository>();
-		clienteRepositoryMock.Setup(r => r.GetUserByEmailAndPasswordAsync(email, senhaHash)).ReturnsAsync(cliente);
-		
-		var handler = new LoginClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object);
-		var command = new LoginClienteCommand{Email = email, Password = senha};
-		
-		// Act 
-		var result = await handler.Handle(command, CancellationToken.None);
+
+        var loginClienteRepository = new Mock<ILoginRepository>();
+        loginClienteRepository.Setup(r => r.GetEmailAndPasswordAsync(email, senhaHash)).ReturnsAsync(login);
+
+        var handler = new LoginClienteCommandHandler(authServiceMock.Object, loginClienteRepository.Object);
+        var command = new LoginClienteCommand { Email = email, Password = senha };
+
+        // Act 
+        var result = await handler.Handle(command, CancellationToken.None);
 		
 		// Assert
 		Assert.NotNull(result);
@@ -56,10 +56,10 @@ public class LoginClienteCommandHandlerTests
 		var authServiceMock = new Mock<IAuthService>();
 		authServiceMock.Setup(a => a.ComputeSha256Hash(senha)).Returns(senhaHash);
 		
-		var clienteRepositoryMock = new Mock<IClienteRepository>();
-		clienteRepositoryMock.Setup(r => r.GetUserByEmailAndPasswordAsync(email, senhaHash)).ReturnsAsync((Cliente)null);
+		var loginClienteRepository = new Mock<ILoginRepository>();
+        loginClienteRepository.Setup(r => r.GetEmailAndPasswordAsync(email, senhaHash)).ReturnsAsync((Login)null);
 		
-		var handler = new LoginClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object);
+		var handler = new LoginClienteCommandHandler(authServiceMock.Object, loginClienteRepository.Object);
 		var command = new LoginClienteCommand {Email = email, Password = senhaHash};
 		
 		// Act
