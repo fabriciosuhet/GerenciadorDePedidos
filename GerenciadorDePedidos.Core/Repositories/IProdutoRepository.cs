@@ -2,7 +2,7 @@ using GerenciadorDePedidos.Core.Entities;
 
 namespace GerenciadorDePedidos.Core.Repositories;
 
-public interface IProdutoRepository
+public interface IProdutoRepository : IRepository<Produto, int>
 {
 	Task<int> GetCountAsync(string? query);
 	Task<IEnumerable<Produto>> GetAllProdutos(string? query);
