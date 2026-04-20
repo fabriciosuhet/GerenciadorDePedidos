@@ -17,13 +17,14 @@ public class LoginClienteCommandHandlerTests
 		// Arrange
 		var nomeCompleto = "Nome Teste";
 		var email = "email@teste.com";
+		var clienteId = Guid.NewGuid();
 		var senha = "Teste@123";
 		var senhaHash = "hashSenha123";
 		var telefone = "99999999999";
 		var tokenFake = "token_jwt_fake";
 		Role role = Role.Usuario;
 
-		var login = new Login(email, senha);
+		var login = new Login(clienteId, email, senha, role);
 
 		var authServiceMock = new Mock<IAuthService>();
 		authServiceMock.Setup(a => a.ComputeSha256Hash(senha)).Returns(senhaHash);

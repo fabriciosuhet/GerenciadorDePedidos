@@ -10,19 +10,19 @@ namespace GerenciadorDePedidos.API.Controllers
     [Authorize]
     public class LoginController : ControllerBase
     {
-        private readonly IMediator mediator;
+        private readonly IMediator _mediator;
 
         public LoginController(IMediator mediator)
         {
-            this.mediator = mediator;
+            _mediator = mediator;
         }
 
         [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginClienteCommand command)
         {
-            var loginResult = await mediator.Send(command);
-            return loginResult is null ? Unauthorized("Email ou senha invalidos") : Ok(loginResult);
+            var loginResult = await _mediator.Send(command);
+            return loginResult is null ? NotFound("Email ou senha invalidos") : Ok(loginResult);
         }
     }
 }

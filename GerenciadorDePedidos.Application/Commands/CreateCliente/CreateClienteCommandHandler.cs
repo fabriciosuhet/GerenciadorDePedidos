@@ -32,7 +32,7 @@ public class CreateClienteCommandHandler : IRequestHandler<CreateClienteCommand,
         await _clienteRepository.AddAsync(cliente);
         await _loginRepository.AddAsync(login);
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return cliente.Id;
     }

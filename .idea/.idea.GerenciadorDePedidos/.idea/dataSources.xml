@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="GerenciadorDePedidos@localhost" uuid="eacde2e7-0998-4269-8060-f734b1fad3a5">
+    <data-source source="LOCAL" name="GerenciadorDePedidos@127.0.0.1" uuid="eacde2e7-0998-4269-8060-f734b1fad3a5">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://localhost:3307/GerenciadorDePedidos</jdbc-url>
+      <jdbc-url>jdbc:mysql://127.0.0.1:3306/GerenciadorDePedidos</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="com.intellij.clouds.kubernetes.db.host.port" />
+        <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
+        <property name="com.intellij.clouds.kubernetes.db.container.port" />
+      </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

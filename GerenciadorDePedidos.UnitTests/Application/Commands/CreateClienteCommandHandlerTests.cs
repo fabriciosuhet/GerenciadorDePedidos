@@ -27,8 +27,12 @@ public class CreateClienteCommandHandlerTests
 		};
 		
 		// Mock de IClienteRepository
-		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
+		var clienteRepositoryMock = new Mock<IClienteRepository>();
         clienteRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Cliente>())).Returns(Task.CompletedTask);
+        
+        // Mock de ILoginRepository
+        var loginRepositoryMock = new Mock<ILoginRepository>();
+        loginRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Login>())).Returns(Task.CompletedTask);
 		
 		
 		// Mock de IAuthService
@@ -42,7 +46,7 @@ public class CreateClienteCommandHandlerTests
 		
 		var dbContext = new GerenciadorDePedidosDbContext(dbContextOptions);
 		
-		var handler = new CreateClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object, dbContext);
+		var handler = new CreateClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object, dbContext, loginRepositoryMock.Object);
 		
 		// Act
 		var result = await handler.Handle(command, CancellationToken.None);
@@ -71,8 +75,12 @@ public class CreateClienteCommandHandlerTests
 		};
 		
 		// Mock de IClienteRepository
-		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
+		var clienteRepositoryMock = new Mock<IClienteRepository>();
         clienteRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Cliente>())).Returns(Task.CompletedTask);
+        
+        // Mock de ILoginRepository
+        var loginRepositoryMock = new Mock<ILoginRepository>();
+        loginRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Login>())).Returns(Task.CompletedTask);
 		
 		// Mock de IAuthService
 		var authServiceMock = new Mock<IAuthService>();
@@ -87,7 +95,7 @@ public class CreateClienteCommandHandlerTests
 		dbContext.Clientes.Add(new Cliente("Outro Cliente","987654", Role.Usuario));
 		await dbContext.SaveChangesAsync();
 		
-		var handler = new CreateClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object, dbContext);
+		var handler = new CreateClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object, dbContext,loginRepositoryMock.Object);
 		
 		// Act e Assert
 		var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(command, CancellationToken.None));
