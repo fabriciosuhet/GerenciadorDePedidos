@@ -37,7 +37,7 @@ public class CreateClienteCommandHandlerTests
 		
 		// Mock de IAuthService
 		var authServiceMock = new Mock<IAuthService>();
-		authServiceMock.Setup(a => a.ComputeSha256Hash("Teste@123")).Returns("hashedPassword");
+		authServiceMock.Setup(a => a.HashPassowrd("Teste@123")).Returns("hashedPassword");
 		
 		// Mock de GerenciadorDePedidosDbContext
 		var dbContextOptions = new DbContextOptionsBuilder<GerenciadorDePedidosDbContext>()
@@ -57,7 +57,7 @@ public class CreateClienteCommandHandlerTests
 			c.NomeCompleto.Equals("Nome teste") &&
 			c.Telefone.Equals("123456789") &&
 			c.Role.Equals(Role.Admin))), Times.Once());
-		authServiceMock.Verify(a => a.ComputeSha256Hash("Teste@123"), Times.Once());
+		authServiceMock.Verify(a => a.HashPassowrd("Teste@123"), Times.Once());
 
 	}
 
@@ -84,7 +84,7 @@ public class CreateClienteCommandHandlerTests
 		
 		// Mock de IAuthService
 		var authServiceMock = new Mock<IAuthService>();
-		authServiceMock.Setup(a => a.ComputeSha256Hash("Teste@123")).Returns("hashedPassword");
+		authServiceMock.Setup(a => a.HashPassowrd("Teste@123")).Returns("hashedPassword");
 		
 		// Mock de GerenciadorDePedidosDbContext com um cliente existente
 		var dbContextOptions = new DbContextOptionsBuilder<GerenciadorDePedidosDbContext>()
@@ -101,7 +101,7 @@ public class CreateClienteCommandHandlerTests
 		var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("Apenas usuários autenticados podem criar novos clientes.", exception.Message);
 		clienteRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Never());
-		authServiceMock.Verify(a => a.ComputeSha256Hash("Teste@123"), Times.Once());
+		authServiceMock.Verify(a => a.HashPassowrd("Teste@123"), Times.Once());
 
 	}
 }

@@ -27,11 +27,11 @@ public class LoginClienteCommandHandlerTests
 		var login = new Login(clienteId, email, senha, role);
 
 		var authServiceMock = new Mock<IAuthService>();
-		authServiceMock.Setup(a => a.ComputeSha256Hash(senha)).Returns(senhaHash);
+		authServiceMock.Setup(a => a.VerifyPassowrd(senha, senhaHash)).Returns(true);
 		authServiceMock.Setup(a => a.GenerateJwtToken(email, role.ToString())).Returns(tokenFake);
 
         var loginClienteRepository = new Mock<ILoginRepository>();
-        loginClienteRepository.Setup(r => r.GetEmailAndPasswordAsync(email, senhaHash)).ReturnsAsync(login);
+        loginClienteRepository.Setup(r => r.GetEmailAndPasswordAsync(email)).ReturnsAsync(login);
 
         var handler = new LoginClienteCommandHandler(authServiceMock.Object, loginClienteRepository.Object);
         var command = new LoginClienteCommand { Email = email, Password = senha };
@@ -55,10 +55,10 @@ public class LoginClienteCommandHandlerTests
 		var senhaHash = "hashSenha123";
 		
 		var authServiceMock = new Mock<IAuthService>();
-		authServiceMock.Setup(a => a.ComputeSha256Hash(senha)).Returns(senhaHash);
+		authServiceMock.Setup(a => a.VerifyPassowrd(senha, senhaHash)).Returns(false);
 		
 		var loginClienteRepository = new Mock<ILoginRepository>();
-        loginClienteRepository.Setup(r => r.GetEmailAndPasswordAsync(email, senhaHash)).ReturnsAsync((Login)null);
+        loginClienteRepository.Setup(r => r.GetEmailAndPasswordAsync(email)).ReturnsAsync((Login)null);
 		
 		var handler = new LoginClienteCommandHandler(authServiceMock.Object, loginClienteRepository.Object);
 		var command = new LoginClienteCommand {Email = email, Password = senhaHash};

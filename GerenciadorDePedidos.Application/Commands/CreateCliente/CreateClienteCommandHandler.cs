@@ -23,7 +23,7 @@ public class CreateClienteCommandHandler : IRequestHandler<CreateClienteCommand,
 
     public async Task<Guid> Handle(CreateClienteCommand request, CancellationToken cancellationToken)
 	{
-		var passwordHash = _authService.ComputeSha256Hash(request.Senha);
+		var passwordHash = _authService.HashPassowrd(request.Senha);
 
         var cliente = new Cliente(request.NomeCompleto, request.Telefone, request.Role);
 

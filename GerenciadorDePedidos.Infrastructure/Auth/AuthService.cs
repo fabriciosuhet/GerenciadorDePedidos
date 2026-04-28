@@ -44,21 +44,14 @@ public class AuthService : IAuthService
 		return stringToken;
 	}
 
-	public string ComputeSha256Hash(string password)
+	public string HashPassowrd(string password)
 	{
-		using (SHA256 sha256Hashg = SHA256.Create())
-		{
-			// Compute hash - retorna byte array
-			byte[] bytes = sha256Hashg.ComputeHash(Encoding.UTF8.GetBytes(password));
-			
-			// Converte byte array em string
-			StringBuilder builder = new StringBuilder();
-			for (int i = 0; i < bytes.Length; i++)
-			{
-				builder.Append(bytes[i].ToString("x2"));
-			}
-			return builder.ToString();
-		}
+		return BCrypt.Net.BCrypt.HashPassword(password);
+	}
+
+	public bool VerifyPassowrd(string password, string passwordHash)
+	{
+		return BCrypt.Net.BCrypt.Verify(password, passwordHash);
 	}
 
 	public bool IsAuthenticated()

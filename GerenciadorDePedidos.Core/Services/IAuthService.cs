@@ -5,7 +5,8 @@ namespace GerenciadorDePedidos.Core.Services;
 public interface IAuthService
 {
 	string GenerateJwtToken(string email, string role);
-	string ComputeSha256Hash(string password);
+	string HashPassowrd(string password);
+	bool VerifyPassowrd(string password, string passwordHash);
 	bool IsAuthenticated();
 	bool IsInRole(Role role);
 }

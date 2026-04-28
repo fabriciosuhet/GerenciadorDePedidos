@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
@@ -18,12 +19,19 @@ public class LoginClienteCommandHandler : IRequestHandler<LoginClienteCommand, L
 
     public async Task<LoginClienteViewModel> Handle(LoginClienteCommand request, CancellationToken cancellationToken)
 	{
-		var passwordHash = _authService.ComputeSha256Hash(request.Password);
+		string passwordHash = _authService.HashPassowrd(request.Password);
 		
-		var cliente = await _loginRepository.GetEmailAndPasswordAsync(request.Email, passwordHash);
+		var cliente = await _loginRepository.GetEmailAndPasswordAsync(request.Email);
 		
 		if (cliente == null) return null;
+		
+		var isPasswordValid =  _authService.VerifyPassowrd(request.Password, cliente.SenhaHash);
 
+		if (!isPasswordValid)
+		{
+			return null;
+		}
+		
 		var token = _authService.GenerateJwtToken(cliente.Email, cliente.Role.ToString());
 		return new LoginClienteViewModel(cliente.Email, token);
 	}

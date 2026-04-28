@@ -10,11 +10,11 @@ namespace GerenciadorDePedidos.Infrastructure.Persistence.Repositories
         {
         }
 
-        public async Task<Login?> GetEmailAndPasswordAsync(string email, string password)
+        public async Task<Login?> GetEmailAndPasswordAsync(string email)
         {
             return await _dbSet.AsNoTracking()
                 .Include(l => l.Cliente)
-                .SingleOrDefaultAsync(l => l.Email.Equals(email) && l.SenhaHash.Equals(password));
+                .SingleOrDefaultAsync(l => l.Email.Equals(email));
         }
     }
 }

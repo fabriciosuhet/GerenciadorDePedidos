@@ -83,7 +83,6 @@ public class ClienteController : ControllerBase
 	
 
 	[HttpPut("atualizar-cliente")]
-	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
 	public async Task<IActionResult> Put([FromBody] UpdateClienteCommand command)
 	{
 		await _mediator.Send(command);
