@@ -35,7 +35,7 @@ Siga os passos abaixo para configurar e executar a aplicação:
 
 2. **Construa e inicie os containers com Docker Compose O docker-compose irá criar os containers para o MySQL e a aplicação.**
    ```bash
-   docker-compose up --build
+   docker compose up --build
 
   **Esse comando irá:**
   - Construir e iniciar a aplicação .NET 8.
