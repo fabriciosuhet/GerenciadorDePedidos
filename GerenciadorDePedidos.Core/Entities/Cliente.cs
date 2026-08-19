@@ -28,5 +28,10 @@ public class Cliente : BaseEntity<Guid>
 	{
 		Telefone = telefone;
 	}
+
+	public void AlterarNome(string nome)
+	{
+		NomeCompleto = nome;
+	}
 }
 
