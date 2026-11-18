@@ -3,27 +3,13 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace GerenciadorDePedidos.Infrastructure.Cache;
 
-public class CacheService : ICacheService
+public class CacheService(IMemoryCache memoryCache) : ICacheService
 {
-	private readonly IMemoryCache _memoryCache;
+	public T? Get<T>(string key) => memoryCache.Get<T>(key);
 
-	public CacheService(IMemoryCache memoryCache)
-	{
-		_memoryCache = memoryCache;
-	}
+	public void Set<T>(string key, T value, TimeSpan expiration) => memoryCache.Set(key, value, expiration);
 
-	public T Get<T>(string key)
-	{
-		return _memoryCache.Get<T>(key);
-	}
+	public bool TryGet<T>(string key, out T? value) => memoryCache.TryGetValue(key, out value);
 
-	public void Set<T>(string key, T value, TimeSpan expiration)
-	{
-		_memoryCache.Set(key, value, expiration);
-	}
-
-	public bool TryGet<T>(string key, out T value)
-	{
-		return _memoryCache.TryGetValue(key, out value);
-	}
+	public void Remove(string key) => memoryCache.Remove(key);
 }

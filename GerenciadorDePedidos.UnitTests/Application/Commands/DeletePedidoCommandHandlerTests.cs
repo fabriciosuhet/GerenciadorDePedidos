@@ -3,8 +3,6 @@ using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
 using Moq;
-using Xunit;
-using Assert = Xunit.Assert;
 
 namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 
@@ -13,39 +11,33 @@ public class DeletePedidoCommandHandlerTests
 	[Fact]
 	public async Task Handle_PedidoExist_ShouldDeletePedido()
 	{
-		// Arrange
-		var pedidoId = 1;
-		var pedidoMock = new Pedido {Id = pedidoId};
-		
+		const int pedidoId = 1;
+		var pedidoMock = new Pedido(Guid.NewGuid(), Status.Pendente) { Id = pedidoId };
+
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
-		pedidoRepositoryMock.Setup(p => p.GetByIdAsync(pedidoId)).ReturnsAsync(pedidoMock);
-		
+		pedidoRepositoryMock.Setup(p => p.GetByIdAsync(pedidoId, It.IsAny<CancellationToken>())).ReturnsAsync(pedidoMock);
+
 		var handler = new DeletePedidoCommandHandler(pedidoRepositoryMock.Object);
 		var command = new DeletePedidoCommand(pedidoId);
-		
-		// Act
+
 		await handler.Handle(command, CancellationToken.None);
-		
-		// Assert
-		pedidoRepositoryMock.Verify(p => p.DeleteAsync(pedidoId), Times.Once);
-		
+
+		pedidoRepositoryMock.Verify(p => p.DeleteAsync(pedidoId, It.IsAny<CancellationToken>()), Times.Once);
+		pedidoRepositoryMock.Verify(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
-	public async Task Handle_PedidoNotExist_ThrowsShouldException()
+	public async Task Handle_PedidoNotExist_ThrowsKeyNotFoundException()
 	{
-		// Arrange
-		var pedidoId =1;
+		const int pedidoId = 1;
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
-		
-		pedidoRepositoryMock.Setup(p => p.GetByIdAsync(pedidoId)).ReturnsAsync((Pedido)null);
-		
+		pedidoRepositoryMock.Setup(p => p.GetByIdAsync(pedidoId, It.IsAny<CancellationToken>())).ReturnsAsync((Pedido?)null);
+
 		var handler = new DeletePedidoCommandHandler(pedidoRepositoryMock.Object);
 		var command = new DeletePedidoCommand(pedidoId);
-		
-		// Act e Assert
+
 		var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("Pedido nao encontrado", exception.Message);
-		pedidoRepositoryMock.Verify(p => p.DeleteAsync(It.IsAny<int>()), Times.Never);
+		pedidoRepositoryMock.Verify(p => p.DeleteAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 }

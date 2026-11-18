@@ -7,17 +7,18 @@ public class ValidationFilter : IActionFilter
 {
 	public void OnActionExecuting(ActionExecutingContext context)
 	{
+		if (context.ModelState.IsValid)
+			return;
+
+		var messages = context.ModelState
+			.SelectMany(ms => ms.Value?.Errors ?? [])
+			.Select(e => e.ErrorMessage)
+			.ToList();
+
+		context.Result = new BadRequestObjectResult(messages);
 	}
 
 	public void OnActionExecuted(ActionExecutedContext context)
 	{
-		if (!context.ModelState.IsValid)
-		{
-				var messages = context.ModelState
-					.SelectMany(ms => ms.Value.Errors)
-					.Select(e => e.ErrorMessage)
-					.ToList();
-				context.Result = new BadRequestObjectResult(messages);
-		}
 	}
 }

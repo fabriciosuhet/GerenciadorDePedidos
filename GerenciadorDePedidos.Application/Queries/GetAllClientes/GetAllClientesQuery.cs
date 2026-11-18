@@ -3,14 +3,7 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Queries.GetAllClientes;
 
-public class GetAllClientesQuery : IRequest<PagedResultModel<ClienteViewModel>>
-{
-	public string? Query { get; private set; }
-	public int PageNumber { get; private set; } = 1;
-	public int PageSize { get; private set; } = 10;
-	
-	public GetAllClientesQuery(string? query)
-	{
-		Query = query;
-	}
-}
+public sealed record GetAllClientesQuery(
+	string? Query = null,
+	int PageNumber = 1,
+	int PageSize = 10) : IRequest<PagedResultModel<ClienteViewModel>>;

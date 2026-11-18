@@ -4,107 +4,85 @@ using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
 using Moq;
-using Xunit;
-using Assert = Xunit.Assert;
 
 namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 
 public class CreatePedidoCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_ValidCommand_ShouldCreatePedido()
+	public async Task Handle_ValidCommand_ShouldCreatePedidoWithSingleBatchQuery()
 	{
-		// Arrange
-		var produtoId = 1;
+		const int produtoId1 = 1;
+		const int produtoId2 = 2;
 		var clienteId = Guid.NewGuid();
-		var command = new CreatePedidoCommand
-		{
-			ItensPedidos = new List<ItemPedidoDTO>
-			{
-				new ItemPedidoDTO { produtoId = produtoId, Quantidade = 2 }
-			},
-			ClienteId = clienteId,
-			Status = Status.Pendente
-		};
+		var command = new CreatePedidoCommand(
+			[
+				new ItemPedidoDTO { ProdutoId = produtoId1, Quantidade = 2 },
+				new ItemPedidoDTO { ProdutoId = produtoId2, Quantidade = 3 }
+			],
+			clienteId,
+			Status.Pendente);
 
-		var produto = new Produto("Produto Teste", 10.00m, 5) { Id = produtoId };
+		var produto1 = new Produto("Produto 1", 10.00m, 5) { Id = produtoId1 };
+		var produto2 = new Produto("Produto 2", 20.00m, 5) { Id = produtoId2 };
 
-		// Mock de IProdutoRepository
-		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
-		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync(produto);
-		
-		// Mock de IPedidoRepository
+		var produtoRepositoryMock = new Mock<IProdutoRepository>();
+		produtoRepositoryMock
+			.Setup(r => r.GetByIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync([produto1, produto2]);
+
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
-        pedidoRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Pedido>())).Returns(Task.CompletedTask);
-		
 		var handler = new CreatePedidoCommandHandler(pedidoRepositoryMock.Object, produtoRepositoryMock.Object);
-		
-		
-		// Act
+
 		var result = await handler.Handle(command, CancellationToken.None);
-		
-		// Assert
-		Assert.NotEqual(1, result);
-		produtoRepositoryMock.Verify(r => r.GetByIdAsync(produtoId), Times.Once());
+
+		Assert.Equal(0, result);
+		produtoRepositoryMock.Verify(
+			r => r.GetByIdsAsync(It.Is<IEnumerable<int>>(ids => ids.Count() == 2), It.IsAny<CancellationToken>()),
+			Times.Once);
 		pedidoRepositoryMock.Verify(r => r.AddAsync(It.Is<Pedido>(p =>
-			p.ClienteId.Equals(clienteId) &&
-			p.Status.Equals(Status.Pendente) &&
-			p.ItensPedidos.Count.Equals(1) &&
-			p.ItensPedidos.Any(i =>
-				i.ProdutoId.Equals(produtoId) && i.Quantidade.Equals(2) && i.PrecoUnitario.Equals(10.00m)) &&
-			p.Total.Equals(20m)
-		)), Times.Once());
+			p.ClienteId == clienteId &&
+			p.Status == Status.Pendente &&
+			p.ItensPedidos.Count == 2 &&
+			p.Total == 80m), It.IsAny<CancellationToken>()), Times.Once);
+		pedidoRepositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
 	public async Task Handle_EmptyItensPedidos_ThrowsArgumentException()
 	{
-		// Arrange
-		var clienteId = Guid.NewGuid();
-		var command = new CreatePedidoCommand
-		{
-			ItensPedidos = new List<ItemPedidoDTO>(),
-			ClienteId = clienteId,
-			Status = Status.Pendente
-		};
+		var command = new CreatePedidoCommand([], Guid.NewGuid(), Status.Pendente);
 
-		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
-        var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
-        var handler = new CreatePedidoCommandHandler(pedidoRepositoryMock.Object, produtoRepositoryMock.Object);
-		
-		// Act e Assert
+		var produtoRepositoryMock = new Mock<IProdutoRepository>();
+		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
+		var handler = new CreatePedidoCommandHandler(pedidoRepositoryMock.Object, produtoRepositoryMock.Object);
+
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("O pedido deve conter pelo menos um item.", exception.Message);
-		produtoRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<int>()), Times.Never());
-		pedidoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Pedido>()), Times.Never());
+		produtoRepositoryMock.Verify(r => r.GetByIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()), Times.Never);
+		pedidoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Pedido>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]
 	public async Task Handle_ProdutoNotFound_ThrowsArgumentException()
 	{
-		var produtoId = 1;
-		var clienteId = Guid.NewGuid();
-		var command = new CreatePedidoCommand
-		{
-			ItensPedidos = new List<ItemPedidoDTO>
-			{
-				new ItemPedidoDTO { produtoId = produtoId, Quantidade = 2 }
-			},
-			ClienteId = clienteId,
-			Status = Status.Pendente
-		};
-		
-		// Mock de iProdutoRepository retornando null (produto nao encontrado)
-		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
-		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync((Produto)null);
-		
+		const int produtoId = 1;
+		var command = new CreatePedidoCommand(
+			[new ItemPedidoDTO { ProdutoId = produtoId, Quantidade = 2 }],
+			Guid.NewGuid(),
+			Status.Pendente);
+
+		var produtoRepositoryMock = new Mock<IProdutoRepository>();
+		produtoRepositoryMock
+			.Setup(r => r.GetByIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync([]);
+
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
 		var handler = new CreatePedidoCommandHandler(pedidoRepositoryMock.Object, produtoRepositoryMock.Object);
-		
-		// Act e Assert
+
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal($"O produto com o ID {produtoId} nao foi encontrado.", exception.Message);
-		produtoRepositoryMock.Verify(r => r.GetByIdAsync(produtoId), Times.Once());
-		pedidoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Pedido>()), Times.Never());
+		produtoRepositoryMock.Verify(r => r.GetByIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()), Times.Once);
+		pedidoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Pedido>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 }

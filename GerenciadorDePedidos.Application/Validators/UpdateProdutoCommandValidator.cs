@@ -1,5 +1,5 @@
 using FluentValidation;
-using GerenciadorDePedidos.Application.Commands;
+using GerenciadorDePedidos.Application.Commands.UpdateProduto;
 
 namespace GerenciadorDePedidos.Application.Validators;
 
@@ -8,17 +8,16 @@ public class UpdateProdutoCommandValidator : AbstractValidator<UpdateProdutoComm
 	public UpdateProdutoCommandValidator()
 	{
 		RuleFor(up => up.Id)
-			.NotNull().WithMessage("O ID nao pode ser nulo")
-			.NotEmpty().WithMessage("O ID nao pode ser vazio");
+			.GreaterThan(0).WithMessage("O ID deve ser maior que zero.");
 
 		RuleFor(up => up.Nome)
-			.NotNull().WithMessage("O nome nao pode ser nulo")
-			.NotEmpty().WithMessage("O nome nao pode ser vazio")
-			.MaximumLength(255).WithMessage("O nome nao pode ter mais de 255 caracteres");
+			.NotEmpty().WithMessage("O nome não pode ser vazio.")
+			.MaximumLength(255).WithMessage("O nome não pode ter mais de 255 caracteres.");
 
 		RuleFor(up => up.Preco)
-			.NotNull().WithMessage("O preco nao pode ser nulo")
-			.NotEmpty().WithMessage("O preco nao pode ser vazio")
-			.GreaterThanOrEqualTo(0).WithMessage("O preco deve ser maior ou igual a 0");
+			.GreaterThanOrEqualTo(0).WithMessage("O preço deve ser maior ou igual a 0.");
+
+		RuleFor(up => up.Estoque)
+			.GreaterThanOrEqualTo(0).WithMessage("O estoque deve ser maior ou igual a 0.");
 	}
 }

@@ -2,13 +2,18 @@ services:
   app:
     image: gerenciador-de-pedidos-api
     build:
-      context: .  
+      context: .
       dockerfile: ./Dockerfile
     ports:
       - "8080:8080"
     environment:
-      - ConnectionStrings__DefaultConnection=Server=db;Database=GerenciadorDePedidos;User=root;Password=1234;
+      - ConnectionStrings__DefaultConnection=Server=db;Database=${MYSQL_DATABASE};User=root;Password=${MYSQL_ROOT_PASSWORD};
       - ASPNETCORE_ENVIRONMENT=Development
+      - Jwt__Key=${JWT_KEY}
+      - AdminSeed__NomeCompleto=${ADMIN_SEED_NOME}
+      - AdminSeed__Telefone=${ADMIN_SEED_TELEFONE}
+      - AdminSeed__Email=${ADMIN_SEED_EMAIL}
+      - AdminSeed__Password=${ADMIN_SEED_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
@@ -20,19 +25,19 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: GerenciadorDePedidos
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
       - app-network
-    healthcheck:                                  
-        test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1234"]
-        interval: 5s
-        timeout: 5s
-        retries: 10
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 networks:
   app-network:

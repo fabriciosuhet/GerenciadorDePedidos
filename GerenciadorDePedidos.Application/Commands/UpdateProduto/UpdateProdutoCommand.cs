@@ -1,11 +1,5 @@
 using MediatR;
 
-namespace GerenciadorDePedidos.Application.Commands;
+namespace GerenciadorDePedidos.Application.Commands.UpdateProduto;
 
-public class UpdateProdutoCommand : IRequest<Unit>
-{
-	public int Id { get; set; }
-	public string Nome { get; set; }
-	public decimal Preco { get; set; }
-	public int Estoque { get; set; }
-}
+public sealed record UpdateProdutoCommand(int Id, string Nome, decimal Preco, int Estoque) : IRequest<Unit>;

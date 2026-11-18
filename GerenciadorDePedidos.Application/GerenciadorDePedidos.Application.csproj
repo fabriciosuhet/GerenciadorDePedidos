@@ -8,11 +8,9 @@
 
     <ItemGroup>
       <ProjectReference Include="..\GerenciadorDePedidos.Core\GerenciadorDePedidos.Core.csproj" />
-      <ProjectReference Include="..\GerenciadorDePedidos.Infrastructure\GerenciadorDePedidos.Infrastructure.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
       <PackageReference Include="MediatR" Version="12.4.1" />
     </ItemGroup>

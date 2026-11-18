@@ -1,129 +1,106 @@
+using GerenciadorDePedidos.API.Authorization;
 using GerenciadorDePedidos.API.Helpers;
-using GerenciadorDePedidos.Application.Commands;
-using GerenciadorDePedidos.Application.Commands.AdicionarPedidoEstoque;
+using GerenciadorDePedidos.Application.Commands.AdicionarProdutoEstoque;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
 using GerenciadorDePedidos.Application.Commands.DeleteProduto;
 using GerenciadorDePedidos.Application.Commands.RemoverProdutoEstoque;
+using GerenciadorDePedidos.Application.Commands.UpdateProduto;
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Application.Queries.GetAllMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetAllProdutos;
 using GerenciadorDePedidos.Application.Queries.GetMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetProduto;
-using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 
 namespace GerenciadorDePedidos.API.Controllers;
 
-[ApiController]
 [Route("api/produto")]
-[Authorize]
-public class ProdutoController : ControllerBase
+[AcessoPadrao]
+public class ProdutoController(IMediator mediator, ICacheService cacheService)
+	: ApiControllerBase(mediator, cacheService)
 {
-	private readonly IMediator _mediator;
-	private readonly ICacheService _cacheService;
-	
-	public ProdutoController(IMediator mediator, ICacheService cacheService)
-	{
-		_mediator = mediator;
-		_cacheService = cacheService;
-	}
-
 	[HttpGet]
-	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
-	public async Task<IActionResult> GetAll(string? query)
-	{
-		var cacheKey = CacheKeyHelper.GetAllProdutosKey(query);
-
-		if (!_cacheService.TryGet<PagedResultModel<ProdutoViewModel>>(cacheKey, out var produtos))
-		{
-			var getAllProdutos = new GetAllProdutosQuery(query);
-			produtos = await _mediator.Send(getAllProdutos);
-			if (produtos is null) return
-					NotFound("Produtos nao encontrados");
-			_cacheService.Set(cacheKey, produtos, TimeSpan.FromMinutes(5));
-		}
-		return Ok(produtos);
-	}
-
-	[HttpGet("movimentacao-estoque")]
-	[Authorize(Roles = $"{nameof(Role.Admin)}")]
-	public async Task<IActionResult> GetAllMovimentacaoEstoque(string? query)
-	{
-		var getAllMovimentacoes = new GetAllMovimentacaoEstoqueQuery(query);
-		var movimentacoes = await _mediator.Send(getAllMovimentacoes);
-		if (movimentacoes is null) return NotFound("Movimentacoes nao encontradas");
-		return Ok(movimentacoes);
-	}
-
-	[HttpGet("movimentacao-estoque/{id:int}")]
-	[Authorize(Roles = $"{nameof(Role.Admin)}")]
-	public async Task<IActionResult> GetMovimentacaoEstoque(int id)
-	{
-		var getMovimentacao = new GetMovimentacaoEstoqueQuery(id);
-		var movimentacao = await _mediator.Send(getMovimentacao);
-		if (movimentacao is null) return NotFound("Movimentacao nao encontrada");
-		return Ok(movimentacao);
-	}
-	
+	public Task<IActionResult> GetAll([FromQuery] string? query, CancellationToken cancellationToken)
+		=> GetCachedOrNotFoundAsync<PagedResultModel<ProdutoViewModel>>(
+			CacheKeyHelper.GetAllProdutosKey(query),
+			new GetAllProdutosQuery(query),
+			"Produtos nao encontrados",
+			cancellationToken);
 
 	[HttpGet("{id:int}")]
-	[Authorize(Roles = $"{nameof(Role.Admin)},{nameof(Role.Usuario)}")]
-	public async Task<IActionResult> GetById(int id)
-	{
-		var cacheKey = CacheKeyHelper.GetProdutoByIdKey(id);
+	public Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+		=> GetCachedOrNotFoundAsync<ProdutoDetailsViewModel>(
+			CacheKeyHelper.GetProdutoByIdKey(id),
+			new GetProdutoQuery(id),
+			"Produto nao encontrado",
+			cancellationToken);
 
-		if (!_cacheService.TryGet<ProdutoDetailsViewModel>(cacheKey, out var produto))
-		{
-			var getProdutoById = new GetProdutoQuery(id);
-			produto = await _mediator.Send(getProdutoById);
-			if (produto is null) return NotFound("Produto nao encontrado");
-			_cacheService.Set(cacheKey, produto, TimeSpan.FromMinutes(5));
-		}
-		
-		return Ok(produto);
-	}
+	[HttpGet("movimentacao-estoque")]
+	[AcessoRestrito]
+	public Task<IActionResult> GetAllMovimentacaoEstoque([FromQuery] string? query, CancellationToken cancellationToken)
+		=> GetOrNotFoundAsync(
+			new GetAllMovimentacaoEstoqueQuery(query),
+			"Movimentacoes nao encontradas",
+			cancellationToken);
+
+	[HttpGet("movimentacao-estoque/{id:int}")]
+	[AcessoRestrito]
+	public Task<IActionResult> GetMovimentacaoEstoque(int id, CancellationToken cancellationToken)
+		=> GetOrNotFoundAsync(
+			new GetMovimentacaoEstoqueQuery(id),
+			"Movimentacao nao encontrada",
+			cancellationToken);
 
 	[HttpPost]
-	[Authorize(Roles = nameof(Role.Admin))]
-	public async Task<IActionResult> Post([FromBody] CreateProdutoCommand command)
+	[AcessoRestrito]
+	public async Task<IActionResult> Post([FromBody] CreateProdutoCommand command, CancellationToken cancellationToken)
 	{
-		var produtoId = await _mediator.Send(command);
-		return CreatedAtAction(nameof(GetById), new { id = produtoId }, command);
+		var produtoId = await SendAsync(command, cancellationToken);
+		CacheService?.Remove(CacheKeyHelper.GetAllProdutosKey(null));
+		return CreatedAtAction(nameof(GetById), new { id = produtoId }, new { id = produtoId });
 	}
 
 	[HttpPut("atualizar-produto")]
-	[Authorize(Roles = nameof(Role.Admin))]
-	public async Task<IActionResult> Put([FromBody] UpdateProdutoCommand command)
+	[AcessoRestrito]
+	public async Task<IActionResult> Put([FromBody] UpdateProdutoCommand command, CancellationToken cancellationToken)
 	{
-		await _mediator.Send(command);
+		await SendAsync(command, cancellationToken);
+		InvalidarCacheProduto(command.Id);
 		return NoContent();
 	}
-	
+
 	[HttpPut("adicionar-estoque")]
-	[Authorize(Roles = $"{nameof(Role.Admin)}")]
-	public async Task<IActionResult> PutAddEstoque(AdicionarProdutoEstoqueCommand command)
+	[AcessoRestrito]
+	public async Task<IActionResult> PutAddEstoque([FromBody] AdicionarProdutoEstoqueCommand command, CancellationToken cancellationToken)
 	{
-		await _mediator.Send(command);
+		await SendAsync(command, cancellationToken);
+		InvalidarCacheProduto(command.ProdutoId);
 		return Ok("Produto adicionado com sucesso ao estoque.");
 	}
-	
+
 	[HttpPut("remover-estoque")]
-	[Authorize(Roles = $"{nameof(Role.Admin)}")]
-	public async Task<IActionResult> PutRemoveEstoque(RemoverProdutoEstoqueCommand command)
+	[AcessoRestrito]
+	public async Task<IActionResult> PutRemoveEstoque([FromBody] RemoverProdutoEstoqueCommand command, CancellationToken cancellationToken)
 	{
-		await _mediator.Send(command);
+		await SendAsync(command, cancellationToken);
+		InvalidarCacheProduto(command.ProdutoId);
 		return Ok("Produto removido com sucesso do estoque.");
 	}
 
 	[HttpDelete("remover-produto")]
-	[Authorize(Roles = nameof(Role.Admin))]
-	public async Task<IActionResult> Delete(DeleteProdutoCommand command)
+	[AcessoRestrito]
+	public async Task<IActionResult> Delete([FromQuery] int id, CancellationToken cancellationToken)
 	{
-		await _mediator.Send(command);
+		await SendAsync(new DeleteProdutoCommand(id), cancellationToken);
+		InvalidarCacheProduto(id);
 		return Ok("Produto removido com sucesso");
+	}
+
+	private void InvalidarCacheProduto(int id)
+	{
+		CacheService?.Remove(CacheKeyHelper.GetProdutoByIdKey(id));
+		CacheService?.Remove(CacheKeyHelper.GetAllProdutosKey(null));
 	}
 }

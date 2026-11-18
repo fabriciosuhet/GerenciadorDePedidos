@@ -4,14 +4,7 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Queries.GetAllMovimentacaoEstoque;
 
-public class GetAllMovimentacaoEstoqueQuery : IRequest<PagedResultModel<MovimentacaoEstoqueResponseDTO>>
-{
-	public string? Query { get; private set; }
-	public int PageNumber { get; private set; } = 1;
-	public int PageSize { get; private set; } = 10;
-	
-	public GetAllMovimentacaoEstoqueQuery(string? query)
-	{
-		Query = query;
-	}
-}
+public sealed record GetAllMovimentacaoEstoqueQuery(
+	string? Query = null,
+	int PageNumber = 1,
+	int PageSize = 10) : IRequest<PagedResultModel<MovimentacaoEstoqueResponseDTO>>;

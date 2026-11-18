@@ -4,20 +4,33 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GerenciadorDePedidos.Infrastructure.Persistence.Repositories;
 
-public class ClienteRepository : Repository<Cliente, Guid>, IClienteRepository
+public class ClienteRepository(GerenciadorDePedidosDbContext context)
+	: Repository<Cliente, Guid>(context), IClienteRepository
 {
+	public Task<int> GetCountAsync(string? query, CancellationToken cancellationToken = default)
+		=> BuildFilteredQuery(query).CountAsync(cancellationToken);
 
-    public ClienteRepository(GerenciadorDePedidosDbContext context) : base(context)
-	{
-    }
+	public Task<List<Cliente>> GetPagedAsync(string? query, int skip, int take, CancellationToken cancellationToken = default)
+		=> BuildFilteredQuery(query)
+			.OrderBy(c => c.NomeCompleto)
+			.Skip(skip)
+			.Take(take)
+			.ToListAsync(cancellationToken);
 
-    public async Task<Cliente?> GetDetailsByIdAsync(Guid id)
-	{
-		return await _dbSet
+	public Task<Cliente?> GetDetailsByIdAsync(Guid id, CancellationToken cancellationToken = default)
+		=> _dbSet
 			.Include(c => c.Pedidos)
-			.ThenInclude(p => p.ItensPedidos)
-			.ThenInclude(ip => ip.Produto)
+				.ThenInclude(p => p.ItensPedidos)
+					.ThenInclude(ip => ip.Produto)
 			.AsNoTracking()
-			.SingleOrDefaultAsync(c => c.Id == id);
+			.SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+	private IQueryable<Cliente> BuildFilteredQuery(string? query)
+	{
+		var q = _dbSet.AsNoTracking();
+		if (!string.IsNullOrWhiteSpace(query))
+			q = q.Where(c => c.NomeCompleto.Contains(query) || c.Telefone.Contains(query));
+
+		return q;
 	}
 }

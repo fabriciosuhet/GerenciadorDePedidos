@@ -1,107 +1,94 @@
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
+using GerenciadorDePedidos.Application.Commands.RegisterCliente;
+using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
-using GerenciadorDePedidos.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+using MediatR;
 using Moq;
-using Xunit;
-using Assert = Xunit.Assert;
 
 namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 
 public class CreateClienteCommandHandlerTests
 {
 	[Fact]
-	public async Task Handler_CommandValid_ShouldCreateCliente()
+	public async Task Handle_ComandoValido_DeveCriarClienteERetornarIdEToken()
 	{
-		// Arrange
-		var command = new CreateClienteCommand
-		{
-			NomeCompleto = "Nome teste",
-			Email = "email@teste.com",
-			Telefone = "123456789",
-			Senha = "Teste@123",
-			Role = Role.Admin
-		};
-		
-		// Mock de IClienteRepository
-		var clienteRepositoryMock = new Mock<IClienteRepository>();
-        clienteRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Cliente>())).Returns(Task.CompletedTask);
-        
-        // Mock de ILoginRepository
-        var loginRepositoryMock = new Mock<ILoginRepository>();
-        loginRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Login>())).Returns(Task.CompletedTask);
-		
-		
-		// Mock de IAuthService
-		var authServiceMock = new Mock<IAuthService>();
-		authServiceMock.Setup(a => a.HashPassowrd("Teste@123")).Returns("hashedPassword");
-		
-		// Mock de GerenciadorDePedidosDbContext
-		var dbContextOptions = new DbContextOptionsBuilder<GerenciadorDePedidosDbContext>()
-			.UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-			.Options;
-		
-		var dbContext = new GerenciadorDePedidosDbContext(dbContextOptions);
-		
-		var handler = new CreateClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object, dbContext, loginRepositoryMock.Object);
-		
-		// Act
-		var result = await handler.Handle(command, CancellationToken.None);
-		
-		// Assert
-		Assert.NotEqual(Guid.Empty, result);
-		clienteRepositoryMock.Verify(r => r.AddAsync(It.Is<Cliente>(c =>
-			c.NomeCompleto.Equals("Nome teste") &&
-			c.Telefone.Equals("123456789") &&
-			c.Role.Equals(Role.Admin))), Times.Once());
-		authServiceMock.Verify(a => a.HashPassowrd("Teste@123"), Times.Once());
+		var command = new CreateClienteCommand("Nome teste", Role.Admin, "Teste@123", "email@teste.com", "123456789");
 
+		var clienteRepositoryMock = new Mock<IClienteRepository>();
+		var loginRepositoryMock = new Mock<ILoginRepository>();
+		loginRepositoryMock.Setup(r => r.GetByEmailAsync(command.Email, It.IsAny<CancellationToken>())).ReturnsAsync((Login?)null);
+
+		var authServiceMock = new Mock<IAuthService>();
+		authServiceMock.Setup(a => a.HashPassword("Teste@123")).Returns("hashedPassword");
+		authServiceMock.Setup(a => a.GenerateJwtToken("email@teste.com", nameof(Role.Admin))).Returns("jwt-token");
+
+		var unitOfWorkMock = new Mock<IUnitOfWork>();
+
+		var handler = new CreateClienteCommandHandler(
+			authServiceMock.Object,
+			clienteRepositoryMock.Object,
+			loginRepositoryMock.Object,
+			unitOfWorkMock.Object);
+
+		var result = await handler.Handle(command, CancellationToken.None);
+
+		Assert.NotEqual(Guid.Empty, result.Id);
+		Assert.Equal("jwt-token", result.Token);
+		clienteRepositoryMock.Verify(r => r.AddAsync(
+			It.Is<Cliente>(c => c.NomeCompleto == "Nome teste" && c.Telefone == "123456789" && c.Role == Role.Admin),
+			It.IsAny<CancellationToken>()), Times.Once);
+		loginRepositoryMock.Verify(r => r.AddAsync(
+			It.Is<Login>(l => l.Email == "email@teste.com" && l.SenhaHash == "hashedPassword"),
+			It.IsAny<CancellationToken>()), Times.Once);
+		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
-	public async Task Handler_ClienteExisting_ThrowsException()
+	public async Task Handle_EmailDuplicado_DeveLancarArgumentException()
 	{
-		// Arrange
-		var command = new CreateClienteCommand
-		{
-			NomeCompleto = "Nome Teste",
-			Email = "email@teste.com",
-			Telefone = "123456789",
-			Role = Role.Admin,
-			Senha = "Teste@123"
-		};
-		
-		// Mock de IClienteRepository
-		var clienteRepositoryMock = new Mock<IClienteRepository>();
-        clienteRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Cliente>())).Returns(Task.CompletedTask);
-        
-        // Mock de ILoginRepository
-        var loginRepositoryMock = new Mock<ILoginRepository>();
-        loginRepositoryMock.Setup(r => r.AddAsync(It.IsAny<Login>())).Returns(Task.CompletedTask);
-		
-		// Mock de IAuthService
-		var authServiceMock = new Mock<IAuthService>();
-		authServiceMock.Setup(a => a.HashPassowrd("Teste@123")).Returns("hashedPassword");
-		
-		// Mock de GerenciadorDePedidosDbContext com um cliente existente
-		var dbContextOptions = new DbContextOptionsBuilder<GerenciadorDePedidosDbContext>()
-			.UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-			.Options;
-		
-		var dbContext = new GerenciadorDePedidosDbContext(dbContextOptions);
-		dbContext.Clientes.Add(new Cliente("Outro Cliente","987654", Role.Usuario));
-		await dbContext.SaveChangesAsync();
-		
-		var handler = new CreateClienteCommandHandler(authServiceMock.Object, clienteRepositoryMock.Object, dbContext,loginRepositoryMock.Object);
-		
-		// Act e Assert
-		var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(command, CancellationToken.None));
-		Assert.Equal("Apenas usuários autenticados podem criar novos clientes.", exception.Message);
-		clienteRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Cliente>()), Times.Never());
-		authServiceMock.Verify(a => a.HashPassowrd("Teste@123"), Times.Once());
+		var command = new CreateClienteCommand("Nome Teste", Role.Usuario, "Teste@123", "email@teste.com", "123456789");
 
+		var clienteRepositoryMock = new Mock<IClienteRepository>();
+		var loginRepositoryMock = new Mock<ILoginRepository>();
+		loginRepositoryMock.Setup(r => r.GetByEmailAsync(command.Email, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new Login(Guid.NewGuid(), command.Email, "hash", Role.Usuario));
+
+		var authServiceMock = new Mock<IAuthService>();
+		var unitOfWorkMock = new Mock<IUnitOfWork>();
+
+		var handler = new CreateClienteCommandHandler(
+			authServiceMock.Object,
+			clienteRepositoryMock.Object,
+			loginRepositoryMock.Object,
+			unitOfWorkMock.Object);
+
+		await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
+		clienteRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Cliente>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task RegisterHandler_DeveSempreForcarRoleUsuario()
+	{
+		var esperado = new CreateClienteViewModel(Guid.NewGuid(), "user-token");
+		var senderMock = new Mock<ISender>();
+		senderMock
+			.Setup(s => s.Send(It.IsAny<CreateClienteCommand>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(esperado);
+
+		var handler = new RegisterClienteCommandHandler(senderMock.Object);
+		var command = new RegisterClienteCommand("Novo Usuario", "User@1234", "novo@teste.com", "11999999999");
+
+		var result = await handler.Handle(command, CancellationToken.None);
+
+		Assert.Equal(esperado, result);
+		senderMock.Verify(s => s.Send(
+			It.Is<CreateClienteCommand>(c =>
+				c.NomeCompleto == "Novo Usuario" &&
+				c.Role == Role.Usuario &&
+				c.Email == "novo@teste.com"),
+			It.IsAny<CancellationToken>()), Times.Once);
 	}
 }

@@ -4,21 +4,17 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.UpdateProduto;
 
-public class UpdateProdutoCommandHandler : IRequestHandler<UpdateProdutoCommand, Unit>
+public sealed class UpdateProdutoCommandHandler(IRepository<Produto, int> produtoRepository)
+	: IRequestHandler<UpdateProdutoCommand, Unit>
 {
-	private readonly IRepository<Produto, int> _produtoRepository;
-
-    public UpdateProdutoCommandHandler(IRepository<Produto, int> produtoRepository)
-    {
-        _produtoRepository = produtoRepository;
-    }
-
-    public async Task<Unit> Handle(UpdateProdutoCommand request, CancellationToken cancellationToken)
+	public async Task<Unit> Handle(UpdateProdutoCommand request, CancellationToken cancellationToken)
 	{
-		var produto =  await _produtoRepository.GetByIdAsync(request.Id);
+		var produto = await produtoRepository.GetByIdAsync(request.Id, cancellationToken)
+			?? throw new KeyNotFoundException("Produto nao encontrado");
+
 		produto.AlterarDados(request.Nome, request.Preco, request.Estoque);
-		_produtoRepository.UpdateAsync(produto);
-		await _produtoRepository.SaveChangesAsync();
+		produtoRepository.Update(produto);
+		await produtoRepository.SaveChangesAsync(cancellationToken);
 		return Unit.Value;
 	}
 }

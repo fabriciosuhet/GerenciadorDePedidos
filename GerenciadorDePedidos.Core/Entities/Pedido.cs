@@ -4,26 +4,30 @@ namespace GerenciadorDePedidos.Core.Entities;
 
 public class Pedido : BaseEntity<int>
 {
-	public DateTime DataPedido { get; set; } = DateTime.UtcNow;
-	public List<ItemPedido> ItensPedidos { get; private set; }
+	public DateTime DataPedido { get; private set; } = DateTime.UtcNow;
+	public List<ItemPedido> ItensPedidos { get; private set; } = [];
 	public Status Status { get; private set; }
 	public Guid ClienteId { get; private set; }
-	public Cliente Cliente { get; private set; }
+	public Cliente Cliente { get; private set; } = null!;
 
 	public decimal Total => ItensPedidos.Sum(item => item.Total);
-	
-	public Pedido(){}
-	
-	public Pedido(Guid clienteId, Status status)
+
+	protected Pedido()
+	{
+	}
+
+	public Pedido(Guid clienteId, Status status = Status.Pendente)
 	{
 		ClienteId = clienteId;
-		Status = Status.Pendente;
-        ItensPedidos = [];
-    }
-	
-	public void AdicionarItem(int produtoId, int quantidade, decimal precoUnitario)
+		Status = status;
+		ItensPedidos = [];
+	}
+
+	public void AdicionarItem(Produto produto, int quantidade)
 	{
-		var item = new ItemPedido(produtoId, quantidade, precoUnitario);
+		ArgumentNullException.ThrowIfNull(produto);
+
+		var item = new ItemPedido(produto.Id, quantidade, produto.Preco);
 		ItensPedidos.Add(item);
-    }
+	}
 }

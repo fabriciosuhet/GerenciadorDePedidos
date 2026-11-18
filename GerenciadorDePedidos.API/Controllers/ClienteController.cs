@@ -1,13 +1,12 @@
+using GerenciadorDePedidos.API.Authorization;
 using GerenciadorDePedidos.API.Helpers;
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
 using GerenciadorDePedidos.Application.Commands.DeleteCliente;
-using GerenciadorDePedidos.Application.Commands.LoginCliente;
+using GerenciadorDePedidos.Application.Commands.RegisterCliente;
 using GerenciadorDePedidos.Application.Commands.UpdateCliente;
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Application.Queries.GetAllClientes;
 using GerenciadorDePedidos.Application.Queries.GetCliente;
-using GerenciadorDePedidos.Core.Entities;
-using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -15,85 +14,61 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GerenciadorDePedidos.API.Controllers;
 
-[ApiController]
 [Route("api/cliente")]
-[Authorize]
-public class ClienteController : ControllerBase
+[AcessoPadrao]
+public class ClienteController(IMediator mediator, ICacheService cacheService)
+	: ApiControllerBase(mediator, cacheService)
 {
-	private readonly IMediator _mediator;
-	private readonly ICacheService _cacheService;
-
-	public ClienteController(IMediator mediator, ICacheService cacheService)
-	{
-		_mediator = mediator;
-		_cacheService = cacheService;
-	}
-
 	[HttpGet]
-	public async Task<IActionResult> GetAll(string? query)
-	{
-		var cacheKey = CacheKeyHelper.GetAllClientesKey(query);
-
-		if (!_cacheService.TryGet<PagedResultModel<ClienteViewModel>>(cacheKey, out var clientes))
-		{
-			var getAllClientes = new GetAllClientesQuery(query);
-			clientes = await _mediator.Send(getAllClientes);
-
-			if (clientes is null) return NotFound("Clientes nao encontrados");
-			
-			_cacheService.Set(cacheKey, clientes, TimeSpan.FromMinutes(5));
-		}
-		return Ok(clientes);
-		
-	}
+	public Task<IActionResult> GetAll([FromQuery] string? query, CancellationToken cancellationToken)
+		=> GetCachedOrNotFoundAsync<PagedResultModel<ClienteViewModel>>(
+			CacheKeyHelper.GetAllClientesKey(query),
+			new GetAllClientesQuery(query),
+			"Clientes nao encontrados",
+			cancellationToken);
 
 	[HttpGet("{id:guid}")]
-	public async Task<IActionResult> GetById(Guid id)
-	{
-		var cacheKey = CacheKeyHelper.GetClienteByIdKey(id);
-
-		if (!_cacheService.TryGet<ClienteDetailsViewModel>(cacheKey, out var cliente))
-		{
-			var getClienteById = new GetClienteQuery(id);
-			cliente = await _mediator.Send(getClienteById);
-			if (cliente is null) return NotFound("Cliente nao encontrado");
-			
-			_cacheService.Set(cacheKey, cliente, TimeSpan.FromMinutes(5));
-		}
-		
-		return Ok(cliente);
-	}
+	public Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+		=> GetCachedOrNotFoundAsync<ClienteDetailsViewModel>(
+			CacheKeyHelper.GetClienteByIdKey(id),
+			new GetClienteQuery(id),
+			"Cliente nao encontrado",
+			cancellationToken);
 
 	[HttpPost]
-	// Cadastro de Cliente
-	public async Task<IActionResult> Post([FromBody] CreateClienteCommand command)
+	[AcessoRestrito]
+	public async Task<IActionResult> Post([FromBody] CreateClienteCommand command, CancellationToken cancellationToken)
 	{
-		var clienteId = await _mediator.Send(command);
-		return CreatedAtAction(nameof(GetById), new { id = clienteId}, command);
+		var result = await SendAsync(command, cancellationToken);
+		CacheService?.Remove(CacheKeyHelper.GetAllClientesKey(null));
+		return CreatedAtAction(nameof(GetById), new { id = result.Id }, new { id = result.Id });
 	}
-	
-	[HttpPost("cadastro-inicial")]
+
+	[HttpPost("registrar")]
 	[AllowAnonymous]
-	// Cadastro de Cliente
-	public async Task<IActionResult> PostInicial([FromBody] CreateClienteCommand command)
+	public async Task<IActionResult> Registrar([FromBody] RegisterClienteCommand command, CancellationToken cancellationToken)
 	{
-		var clienteId = await _mediator.Send(command);
-		return CreatedAtAction(nameof(GetById), new { id = clienteId}, command);
+		var result = await SendAsync(command, cancellationToken);
+		CacheService?.Remove(CacheKeyHelper.GetAllClientesKey(null));
+		return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
 	}
-	
 
 	[HttpPut("atualizar-cliente")]
-	public async Task<IActionResult> Put([FromBody] UpdateClienteCommand command)
+	public async Task<IActionResult> Put([FromBody] UpdateClienteCommand command, CancellationToken cancellationToken)
 	{
-		await _mediator.Send(command);
+		await SendAsync(command, cancellationToken);
+		CacheService?.Remove(CacheKeyHelper.GetClienteByIdKey(command.Id));
+		CacheService?.Remove(CacheKeyHelper.GetAllClientesKey(null));
 		return NoContent();
 	}
 
 	[HttpDelete("deletar-cliente")]
-	[Authorize(Roles = nameof(Role.Admin))]
-	public async Task<IActionResult> Delete(DeleteClienteCommand command)
+	[AcessoRestrito]
+	public async Task<IActionResult> Delete([FromQuery] Guid id, CancellationToken cancellationToken)
 	{
-		await _mediator.Send(command);
+		await SendAsync(new DeleteClienteCommand(id), cancellationToken);
+		CacheService?.Remove(CacheKeyHelper.GetClienteByIdKey(id));
+		CacheService?.Remove(CacheKeyHelper.GetAllClientesKey(null));
 		return Ok("Cliente deletado com sucesso");
 	}
 }
