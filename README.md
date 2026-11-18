@@ -54,7 +54,7 @@ Siga os passos abaixo para configurar e executar a aplicação:
 
 ### Como Parar os Containers
   ```bash
-  docker-compose-down
+  docker compose down
 ```
 
 ### Diagrama Banco de Dados
