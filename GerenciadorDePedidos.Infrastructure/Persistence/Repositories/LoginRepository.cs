@@ -2,19 +2,16 @@
 using GerenciadorDePedidos.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace GerenciadorDePedidos.Infrastructure.Persistence.Repositories
-{
-    public class LoginRepository : Repository<Login, int>, ILoginRepository
-    {
-        public LoginRepository(GerenciadorDePedidosDbContext context) : base(context)
-        {
-        }
+namespace GerenciadorDePedidos.Infrastructure.Persistence.Repositories;
 
-        public async Task<Login?> GetEmailAndPasswordAsync(string email)
-        {
-            return await _dbSet.AsNoTracking()
-                .Include(l => l.Cliente)
-                .SingleOrDefaultAsync(l => l.Email.Equals(email));
-        }
-    }
+public class LoginRepository(GerenciadorDePedidosDbContext context)
+	: Repository<Login, int>(context), ILoginRepository
+{
+	public Task<Login?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+		=> _dbSet.AsNoTracking()
+			.Include(l => l.Cliente)
+			.SingleOrDefaultAsync(l => l.Email == email, cancellationToken);
+
+	public Task<Login?> GetByClienteIdAsync(Guid clienteId, CancellationToken cancellationToken = default)
+		=> _dbSet.SingleOrDefaultAsync(l => l.ClienteId == clienteId, cancellationToken);
 }

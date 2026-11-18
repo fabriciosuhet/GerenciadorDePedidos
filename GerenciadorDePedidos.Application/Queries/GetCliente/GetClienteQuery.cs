@@ -3,12 +3,4 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Queries.GetCliente;
 
-public class GetClienteQuery : IRequest<ClienteDetailsViewModel>
-{
-	public Guid Id { get; private set; }
-
-	public GetClienteQuery(Guid id)
-	{
-		Id = id;
-	}
-}
+public sealed record GetClienteQuery(Guid Id) : IRequest<ClienteDetailsViewModel?>;

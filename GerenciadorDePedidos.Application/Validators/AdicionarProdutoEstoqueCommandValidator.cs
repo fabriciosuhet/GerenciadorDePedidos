@@ -1,5 +1,5 @@
 using FluentValidation;
-using GerenciadorDePedidos.Application.Commands.AdicionarPedidoEstoque;
+using GerenciadorDePedidos.Application.Commands.AdicionarProdutoEstoque;
 
 namespace GerenciadorDePedidos.Application.Validators;
 
@@ -8,17 +8,12 @@ public class AdicionarProdutoEstoqueCommandValidator : AbstractValidator<Adicion
 	public AdicionarProdutoEstoqueCommandValidator()
 	{
 		RuleFor(ap => ap.ProdutoId)
-			.NotEmpty()
-			.WithMessage("O produtoId nao pode ser vazio");
+			.GreaterThan(0).WithMessage("O ProdutoId deve ser maior que zero.");
 
 		RuleFor(ap => ap.Quantidade)
-			.GreaterThanOrEqualTo(0)
-			.WithMessage("A quantidade deve ser maior ou igual a 0");
-		
+			.GreaterThan(0).WithMessage("A quantidade deve ser maior que zero.");
+
 		RuleFor(ap => ap.ClienteId)
-			.NotEmpty()
-			.WithMessage("O ClienteId nao pode ser vazio")
-			.Must(id => id != Guid.Empty)
-			.WithMessage("O ClienteId deve ser um valor válido (diferente de Guid.Empty).");
+			.NotEmpty().WithMessage("O ClienteId não pode ser vazio.");
 	}
 }

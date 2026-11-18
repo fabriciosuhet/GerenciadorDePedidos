@@ -1,16 +1,16 @@
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
+using GerenciadorDePedidos.Infrastructure.Cache;
 using GerenciadorDePedidos.Infrastructure.Persistence;
 using GerenciadorDePedidos.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
-using GerenciadorDePedidos.Infrastructure.Cache;
 
 namespace GerenciadorDePedidos.Infrastructure.Extensions;
 
-public static class ServicesCollectionExtensions 
+public static class ServicesCollectionExtensions
 {
 	public static IServiceCollection AddRepositories(this IServiceCollection services)
 	{
@@ -19,8 +19,9 @@ public static class ServicesCollectionExtensions
 		services.AddScoped<IPedidoRepository, PedidoRepository>();
 		services.AddScoped<IMovimentacaoEstoqueRepository, MovimentacaoEstoqueRepository>();
 		services.AddScoped<ILoginRepository, LoginRepository>();
+		services.AddScoped<IUnitOfWork, UnitOfWork>();
 		services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
-        return services;
+		return services;
 	}
 
 	public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
@@ -42,7 +43,7 @@ public static class ServicesCollectionExtensions
 	{
 		services.AddSwaggerGen(c =>
 		{
-			c.SwaggerDoc("v1", new OpenApiInfo {Title = "GerenciadorDePedidos.API", Version =  "v1"});
+			c.SwaggerDoc("v1", new OpenApiInfo { Title = "GerenciadorDePedidos.API", Version = "v1" });
 			c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
 			{
 				Name = "Authorization",
@@ -52,7 +53,7 @@ public static class ServicesCollectionExtensions
 				In = ParameterLocation.Header,
 				Description = "JWT Authorization header using the Bearer scheme."
 			});
-	
+
 			c.AddSecurityRequirement(new OpenApiSecurityRequirement
 			{
 				{
@@ -70,6 +71,4 @@ public static class ServicesCollectionExtensions
 		});
 		return services;
 	}
-	
-	
 }

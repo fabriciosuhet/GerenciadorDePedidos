@@ -3,26 +3,16 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GerenciadorDePedidos.API.Controllers
+namespace GerenciadorDePedidos.API.Controllers;
+
+[Route("api/[controller]")]
+public class LoginController(IMediator mediator) : ApiControllerBase(mediator)
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class LoginController : ControllerBase
-    {
-        private readonly IMediator _mediator;
-
-        public LoginController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
-
-        [HttpPost]
-        [AllowAnonymous]
-        public async Task<IActionResult> Login([FromBody] LoginClienteCommand command)
-        {
-            var loginResult = await _mediator.Send(command);
-            return loginResult is null ? NotFound("Email ou senha invalidos") : Ok(loginResult);
-        }
-    }
+	[HttpPost]
+	[AllowAnonymous]
+	public async Task<IActionResult> Login([FromBody] LoginClienteCommand command, CancellationToken cancellationToken)
+	{
+		var loginResult = await SendAsync(command, cancellationToken);
+		return loginResult is null ? NotFound("Email ou senha invalidos") : Ok(loginResult);
+	}
 }

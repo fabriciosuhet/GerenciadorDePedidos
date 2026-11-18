@@ -4,23 +4,16 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.DeleteCliente;
 
-public class DeleteClienteCommandHandler : IRequestHandler<DeleteClienteCommand, Unit>
+public sealed class DeleteClienteCommandHandler(IRepository<Cliente, Guid> clienteRepository)
+	: IRequestHandler<DeleteClienteCommand, Unit>
 {
-	private readonly IRepository<Cliente, Guid> _clienteRepository;
-
-    public DeleteClienteCommandHandler(IRepository<Cliente, Guid> clienteRepository)
-    {
-        _clienteRepository = clienteRepository;
-    }
-
-    public async Task<Unit> Handle(DeleteClienteCommand request, CancellationToken cancellationToken)
+	public async Task<Unit> Handle(DeleteClienteCommand request, CancellationToken cancellationToken)
 	{
-		var cliente = await _clienteRepository.GetByIdAsync(request.Id);
-		if (cliente is null)
-			throw new KeyNotFoundException("O cliente nao foi encontrado");
+		var cliente = await clienteRepository.GetByIdAsync(request.Id, cancellationToken)
+			?? throw new KeyNotFoundException("O cliente nao foi encontrado");
 
-		await _clienteRepository.DeleteAsync(cliente.Id);
-		await _clienteRepository.SaveChangesAsync();
+		await clienteRepository.DeleteAsync(cliente.Id, cancellationToken);
+		await clienteRepository.SaveChangesAsync(cancellationToken);
 		return Unit.Value;
 	}
 }

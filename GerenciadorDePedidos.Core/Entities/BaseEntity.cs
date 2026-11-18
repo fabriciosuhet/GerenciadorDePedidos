@@ -2,6 +2,5 @@ namespace GerenciadorDePedidos.Core.Entities;
 
 public abstract class BaseEntity<TKey>
 {
-	public TKey Id { get; set; }
-
+	public TKey Id { get; set; } = default!;
 }

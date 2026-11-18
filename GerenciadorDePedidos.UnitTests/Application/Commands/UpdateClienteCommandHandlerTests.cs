@@ -3,56 +3,60 @@ using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
 using Moq;
-using Xunit;
-using Assert = Xunit.Assert;
 
 namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 
 public class UpdateClienteCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_ClienteExist_ShouldUpdateCliente()
+	public async Task Handle_ClienteExist_ShouldUpdateClienteAndLogin()
 	{
-		// Arrange 
-		var clienteId = Guid.NewGuid();
-		var nome = "Nome teste";
-		var email = "test@test.com";
-		var telefone = "123456";
-		var role = Role.Usuario;
-			
-		var clienteMock = new Cliente(nome, telefone, role);
-		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
-		
-		clienteRepositoryMock.Setup(r => r.GetByIdAsync(clienteId)).ReturnsAsync(clienteMock);
-		
-		var handler = new UpdateClienteCommandHandler(clienteRepositoryMock.Object);
-		var command = new UpdateClienteCommand{Id = clienteId, Email = email, Telefone = telefone};
-		
-		// Act
+		var cliente = new Cliente("Nome teste", "11111111111", Role.Usuario);
+		var login = new Login(cliente.Id, "old@test.com", "hash", Role.Usuario);
+
+		var clienteRepositoryMock = new Mock<IClienteRepository>();
+		clienteRepositoryMock.Setup(r => r.GetByIdAsync(cliente.Id, It.IsAny<CancellationToken>())).ReturnsAsync(cliente);
+
+		var loginRepositoryMock = new Mock<ILoginRepository>();
+		loginRepositoryMock.Setup(r => r.GetByClienteIdAsync(cliente.Id, It.IsAny<CancellationToken>())).ReturnsAsync(login);
+		loginRepositoryMock.Setup(r => r.GetByEmailAsync("new@test.com", It.IsAny<CancellationToken>())).ReturnsAsync((Login?)null);
+
+		var unitOfWorkMock = new Mock<IUnitOfWork>();
+
+		var handler = new UpdateClienteCommandHandler(
+			clienteRepositoryMock.Object,
+			loginRepositoryMock.Object,
+			unitOfWorkMock.Object);
+
+		var command = new UpdateClienteCommand(cliente.Id, "new@test.com", "11999999999");
+
 		await handler.Handle(command, CancellationToken.None);
-		
-		// Assert
-		Assert.Equal(telefone, clienteMock.Telefone);
-		clienteRepositoryMock.Verify(
-			r => r.UpdateAsync(It.Is<Cliente>(c => c.Telefone.Equals(telefone))),
-			Times.Once);
+
+		Assert.Equal("11999999999", cliente.Telefone);
+		Assert.Equal("new@test.com", login.Email);
+		clienteRepositoryMock.Verify(r => r.Update(cliente), Times.Once);
+		loginRepositoryMock.Verify(r => r.Update(login), Times.Once);
+		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
-	public async Task Handler_ClienteNaoExiste_DeveLancarUmaExcecao()
+	public async Task Handle_ClienteNaoExiste_DeveLancarKeyNotFoundException()
 	{
-		// Arrange
 		var clienteId = Guid.NewGuid();
-		var clienteRepositoryMock = new Mock<IRepository<Cliente, Guid>>();
+		var clienteRepositoryMock = new Mock<IClienteRepository>();
+		clienteRepositoryMock.Setup(r => r.GetByIdAsync(clienteId, It.IsAny<CancellationToken>())).ReturnsAsync((Cliente?)null);
 
-        clienteRepositoryMock.Setup(r => r.GetByIdAsync(clienteId)).ReturnsAsync((Cliente)null);
-		
-		var handler = new UpdateClienteCommandHandler(clienteRepositoryMock.Object);
-		var command = new UpdateClienteCommand { Id = clienteId, Email = "novo@email.com", Telefone = "99999999999" };
-		
-		// Act e Assert
+		var loginRepositoryMock = new Mock<ILoginRepository>();
+		var unitOfWorkMock = new Mock<IUnitOfWork>();
+
+		var handler = new UpdateClienteCommandHandler(
+			clienteRepositoryMock.Object,
+			loginRepositoryMock.Object,
+			unitOfWorkMock.Object);
+
+		var command = new UpdateClienteCommand(clienteId, "novo@email.com", "99999999999");
+
 		await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
-
-		clienteRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Cliente>()), Times.Never);
+		clienteRepositoryMock.Verify(r => r.Update(It.IsAny<Cliente>()), Times.Never);
 	}
 }

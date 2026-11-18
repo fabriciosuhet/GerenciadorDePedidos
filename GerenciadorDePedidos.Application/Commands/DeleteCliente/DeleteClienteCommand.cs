@@ -2,12 +2,4 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.DeleteCliente;
 
-public class DeleteClienteCommand : IRequest<Unit>
-{
-	public Guid Id { get; set; }
-
-	public DeleteClienteCommand(Guid id)
-	{
-		Id = id;
-	}
-}
+public sealed record DeleteClienteCommand(Guid Id) : IRequest<Unit>;

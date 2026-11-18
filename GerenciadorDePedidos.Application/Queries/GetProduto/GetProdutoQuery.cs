@@ -3,12 +3,4 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Queries.GetProduto;
 
-public class GetProdutoQuery : IRequest<ProdutoDetailsViewModel>
-{
-	public int Id { get; private set; }
-
-	public GetProdutoQuery(int id)
-	{
-		Id = id;
-	}
-}
+public sealed record GetProdutoQuery(int Id) : IRequest<ProdutoDetailsViewModel?>;

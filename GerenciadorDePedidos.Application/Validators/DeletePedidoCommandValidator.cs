@@ -8,7 +8,6 @@ public class DeletePedidoCommandValidator : AbstractValidator<DeletePedidoComman
 	public DeletePedidoCommandValidator()
 	{
 		RuleFor(p => p.Id)
-			.NotNull().WithMessage("O id nao pode ser nulo")
-			.NotEmpty().WithMessage("O id nao pode ser vazio");
+			.GreaterThan(0).WithMessage("O id deve ser maior que zero.");
 	}
 }

@@ -1,53 +1,21 @@
+using GerenciadorDePedidos.Application.Mappings;
 using GerenciadorDePedidos.Application.Models;
-using GerenciadorDePedidos.Core.DTOs;
-using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Queries.GetCliente;
 
-public class GetClienteQueryHandler : IRequestHandler<GetClienteQuery, ClienteDetailsViewModel>
+public sealed class GetClienteQueryHandler(IClienteRepository clienteRepository)
+	: IRequestHandler<GetClienteQuery, ClienteDetailsViewModel?>
 {
-	private readonly IRepository<Cliente, Guid> _baseRepository;
-	private readonly IClienteRepository _clienteRepository;
-
-    public GetClienteQueryHandler(IRepository<Cliente, Guid> baseRepository, IClienteRepository clienteRepository)
-    {
-        _baseRepository = baseRepository;
-        _clienteRepository = clienteRepository;
-    }
-
-    public async Task<ClienteDetailsViewModel> Handle(GetClienteQuery request, CancellationToken cancellationToken)
+	public async Task<ClienteDetailsViewModel?> Handle(GetClienteQuery request, CancellationToken cancellationToken)
 	{
-		var cliente = await _clienteRepository.GetDetailsByIdAsync(request.Id);
-		if (cliente == null) return null;
+		var cliente = await clienteRepository.GetDetailsByIdAsync(request.Id, cancellationToken);
+		if (cliente is null)
+			return null;
 
-		var pedidosDto = cliente.Pedidos.Select(p => new PedidoRespondeDTO
-		{
-			Id = p.Id,
-			DataPedido = TimeZoneInfo.ConvertTimeFromUtc(p.DataPedido,
-				TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time")),
-			Total = p.Total,
-			ClienteId = p.ClienteId,
-			ClienteNome = p.Cliente.NomeCompleto,
-			Status = p.Status,
-			ItensPedidos = p.ItensPedidos.Select(ip => new ItemPedidoResponseDTO
-			{
-				Id = ip.Id,
-				ProdutoId = ip.ProdutoId,
-				ProdutoNome = ip.Produto.Nome,
-				Quantidade = ip.Quantidade,
-				PrecoUnitario = ip.PrecoUnitario,
-				Total = ip.Total
-				
-			}).ToList()
-		}).ToList();
+		var pedidosDto = cliente.Pedidos.Select(p => p.ToResponseDto()).ToList();
 
-		return new ClienteDetailsViewModel(
-			cliente.NomeCompleto,
-			cliente.Telefone,
-			pedidosDto
-		);
+		return new ClienteDetailsViewModel(cliente.NomeCompleto, cliente.Telefone, pedidosDto);
 	}
-	
 }

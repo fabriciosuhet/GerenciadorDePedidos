@@ -1,99 +1,81 @@
 using GerenciadorDePedidos.Core.Entities;
-using Xunit;
-using Assert = NUnit.Framework.Assert;
 
 namespace GerenciadorDePedidos.UnitTests.Core.Entities;
 
-public class ProdutoTestes
+public class ProdutoTests
 {
 	[Fact]
 	public void Construtor_DeveCriarProdutoComDadosCorretos()
 	{
-		// Arrange
 		const string nome = "produto 1";
-		const decimal preco = 0m;
+		const decimal preco = 10m;
 		const int estoque = 100;
-		
-		// Act
+
 		var produto = new Produto(nome, preco, estoque);
-		
-		// Assert
-		Assert.AreEqual(nome, produto.Nome);
-		Assert.AreEqual(preco, produto.Preco);
-		Assert.AreEqual(estoque, produto.Estoque);
-		
+
+		Assert.Equal(nome, produto.Nome);
+		Assert.Equal(preco, produto.Preco);
+		Assert.Equal(estoque, produto.Estoque);
 	}
 
 	[Fact]
 	public void AdicionarEstoque_DeveAdicionarCorretamente()
 	{
-		// Arrange
-		var produto = new Produto("produto 1", 15m, 0);
-		var quantidade = 1;
-		var estoque = 0;
-		var totalEsperado = produto.Estoque + quantidade;
-		
-		// Act
-		produto.AdicionarEstoque(quantidade);
+		var produto = new Produto("produto 1", 15m, 5);
 
-		// Assert
-		Assert.AreEqual(totalEsperado, produto.Estoque);
+		produto.AdicionarEstoque(3);
 
+		Assert.Equal(8, produto.Estoque);
 	}
 
 	[Fact]
 	public void AdicionarEstoque_DeveLancarExcecaoSeQuantidadeInvalida()
 	{
-		// Arrange
 		var produto = new Produto("produto 1", 15m, 0);
-		
-		// Act e Assert
+
 		var exception = Assert.Throws<ArgumentException>(() => produto.AdicionarEstoque(0));
-		Assert.AreEqual("O valor não pode ser menor ou igual a 0" , exception.Message);
+		Assert.Equal("O valor não pode ser menor ou igual a 0", exception.Message);
 	}
 
 	[Fact]
 	public void RemoverEstoque_DeveRemoverCorretamente()
 	{
-		// Arrange 
-		var produto = new Produto("produto 1", 15m, 1);
-		var quantidade = 1;
-		var estoque = 1;
-		var totalEsperado = produto.Estoque - quantidade;
-		
-		// Act
-		produto.RemoverEstoque(quantidade);
-		
-		// Assert
-		var exception = Assert.Throws<ArgumentException>(() => produto.RemoverEstoque(0));
-		Assert.AreEqual("O valor não pode ser menor ou igual a 0", exception.Message);
+		var produto = new Produto("produto 1", 15m, 5);
+
+		produto.RemoverEstoque(2);
+
+		Assert.Equal(3, produto.Estoque);
 	}
 
 	[Fact]
-	public void Nome_AlterarNomeCorretamente()
+	public void RemoverEstoque_QuantidadeInvalidaOuMaiorQueEstoque_DeveLancarExcecao()
 	{
-		// Arrange
-		var produto = new Produto("produto 1", 15m, 0);
-		var nome = "produto 2";
-		
-		// Act
-		produto.AlterarNome(nome);
-		
-		// Assert
-		Assert.AreEqual(nome, produto.Nome);
+		var produto = new Produto("produto 1", 15m, 5);
+
+		var zeroEx = Assert.Throws<ArgumentException>(() => produto.RemoverEstoque(0));
+		Assert.Equal("O valor não pode ser menor ou igual a 0", zeroEx.Message);
+
+		var excedeEx = Assert.Throws<ArgumentException>(() => produto.RemoverEstoque(10));
+		Assert.Equal("Não é possível remover 10 do estoque, pois excede o disponível: 5", excedeEx.Message);
 	}
 
 	[Fact]
-	public void Preco_AlterarPrecoCorretamente()
+	public void AlterarNome_DeveAtualizarNomeCorretamente()
 	{
-		// Arrange 
 		var produto = new Produto("produto 1", 15m, 0);
-		var preco = 30m;
-		
-		// Act
-		produto.AlterarPreco(preco);
-		
-		// Assert
-		Assert.AreEqual(preco, produto.Preco);
+
+		produto.AlterarNome("produto 2");
+
+		Assert.Equal("produto 2", produto.Nome);
+	}
+
+	[Fact]
+	public void AlterarPreco_DeveAtualizarPrecoCorretamente()
+	{
+		var produto = new Produto("produto 1", 15m, 0);
+
+		produto.AlterarPreco(30m);
+
+		Assert.Equal(30m, produto.Preco);
 	}
 }

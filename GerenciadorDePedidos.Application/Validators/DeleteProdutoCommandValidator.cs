@@ -1,15 +1,13 @@
 using FluentValidation;
-using GerenciadorDePedidos.Application.Commands.DeletePedido;
 using GerenciadorDePedidos.Application.Commands.DeleteProduto;
 
 namespace GerenciadorDePedidos.Application.Validators;
 
-public class DeleteProducoCommandValidator : AbstractValidator<DeleteProdutoCommand>
+public class DeleteProdutoCommandValidator : AbstractValidator<DeleteProdutoCommand>
 {
-	public DeleteProducoCommandValidator()
+	public DeleteProdutoCommandValidator()
 	{
 		RuleFor(p => p.Id)
-			.NotNull().WithMessage("O id nao pode ser nulo")
-			.NotEmpty().WithMessage("O id nao pode ser vazio");
+			.GreaterThan(0).WithMessage("O id deve ser maior que zero.");
 	}
 }

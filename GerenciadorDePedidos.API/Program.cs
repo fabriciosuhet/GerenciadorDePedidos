@@ -1,39 +1,34 @@
-using System.Text.Json.Serialization;
-using FluentValidation;
 using GerenciadorDePedidos.API.Filters;
-using GerenciadorDePedidos.Application.Commands.CreateProduto;
-using GerenciadorDePedidos.Application.Validators;
+using GerenciadorDePedidos.API.Middleware;
+using GerenciadorDePedidos.Application;
 using GerenciadorDePedidos.Infrastructure.Extensions;
 using GerenciadorDePedidos.Infrastructure.Persistence;
+using GerenciadorDePedidos.Infrastructure.Persistence.Seeders;
 using Microsoft.EntityFrameworkCore;
-using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddValidatorsFromAssemblyContaining<CreateClineteCommandValidator>();
-builder.Services.AddControllers(opt => opt.Filters.Add(typeof(ValidationFilter)));
-
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddControllers(opt => opt.Filters.Add<ValidationFilter>());
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-builder.Services.AddDatabase(builder.Configuration)
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+builder.Services
+	.AddApplication()
+	.AddDatabase(builder.Configuration)
 	.AddRepositories()
 	.AddAuthService()
 	.AddJwtAuthentication(builder.Configuration)
 	.AddCorsService()
 	.AddSwaggerService()
-	.AddFluentValidationServices()
 	.AddCacheService()
 	.AddPolicyController();
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateProdutoCommand).Assembly));
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
 	app.UseSwagger();
@@ -41,7 +36,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -49,8 +44,13 @@ app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<GerenciadorDePedidosDbContext>();
-    db.Database.Migrate();
+	var db = scope.ServiceProvider.GetRequiredService<GerenciadorDePedidosDbContext>();
+	if (db.Database.IsRelational())
+		db.Database.Migrate();
+
+	await AdminSeeder.SeedAsync(scope.ServiceProvider);
 }
 
 app.Run();
+
+public partial class Program;

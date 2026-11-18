@@ -1,53 +1,35 @@
 using GerenciadorDePedidos.Core.Entities;
-using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.CreatePedido;
 
-public class CreatePedidoCommandHandler : IRequestHandler<CreatePedidoCommand, int>
+public sealed class CreatePedidoCommandHandler(
+	IRepository<Pedido, int> pedidoRepository,
+	IProdutoRepository produtoRepository) : IRequestHandler<CreatePedidoCommand, int>
 {
-	private readonly IRepository<Pedido, int> _pedidoRepository;
-	private readonly IRepository<Produto, int> _produtoRepository;
-
-    public CreatePedidoCommandHandler(IRepository<Pedido, int> pedidoRepository, IRepository<Produto, int> produtoRepository)
-    {
-        _pedidoRepository = pedidoRepository;
-        _produtoRepository = produtoRepository;
-    }
-
-    public async Task<int> Handle(CreatePedidoCommand request, CancellationToken cancellationToken)
+	public async Task<int> Handle(CreatePedidoCommand request, CancellationToken cancellationToken)
 	{
-
-		if (request is null || request.ItensPedidos is null || !request.ItensPedidos.Any())
+		if (request.ItensPedidos is null || request.ItensPedidos.Count == 0)
 			throw new ArgumentException("O pedido deve conter pelo menos um item.");
 
-		var itens = new List<ItemPedido>();
-		foreach (var itemDto in request.ItensPedidos)
-		{
-			// buscar o produto no repositorio
-			var produto = await _produtoRepository.GetByIdAsync(itemDto.produtoId);
-			
-			if (produto is null)
-				throw new ArgumentException($"O produto com o ID {itemDto.produtoId} nao foi encontrado.");
-			
-			// cria o itemDto usando o preço do produto
-			var item = new ItemPedido(itemDto.produtoId, itemDto.Quantidade, produto.Preco);
-			itens.Add(item);
-		}
+		var produtoIds = request.ItensPedidos.Select(i => i.ProdutoId).Distinct().ToList();
+		var produtos = await produtoRepository.GetByIdsAsync(produtoIds, cancellationToken);
+		var produtosPorId = produtos.ToDictionary(p => p.Id);
 
-		var total = itens.Sum(item => item.Total);
 		var pedido = new Pedido(request.ClienteId, request.Status);
 
-        foreach (var itemDto in request.ItensPedidos)
-        {
-			var produto = await _produtoRepository.GetByIdAsync(itemDto.produtoId);
-			pedido.AdicionarItem(produto.Id, itemDto.Quantidade, produto.Preco);
-        }
+		foreach (var itemDto in request.ItensPedidos)
+		{
+			if (!produtosPorId.TryGetValue(itemDto.ProdutoId, out var produto))
+				throw new ArgumentException($"O produto com o ID {itemDto.ProdutoId} nao foi encontrado.");
 
-        await _pedidoRepository.AddAsync(pedido);
-		await _pedidoRepository.SaveChangesAsync();
+			pedido.AdicionarItem(produto, itemDto.Quantidade);
+		}
+
+		await pedidoRepository.AddAsync(pedido, cancellationToken);
+		await pedidoRepository.SaveChangesAsync(cancellationToken);
+
 		return pedido.Id;
-
 	}
 }

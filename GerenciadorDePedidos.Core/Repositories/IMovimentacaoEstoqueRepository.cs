@@ -4,6 +4,7 @@ namespace GerenciadorDePedidos.Core.Repositories;
 
 public interface IMovimentacaoEstoqueRepository : IRepository<MovimentacaoEstoque, int>
 {
-    Task<MovimentacaoEstoque?>? GetByIdMovimentacaoAsync(int id);
-    Task<IEnumerable<MovimentacaoEstoque?>>? GetAllMovimentacaoAsync(string? query);
+	Task<int> GetCountAsync(string? query, CancellationToken cancellationToken = default);
+	Task<List<MovimentacaoEstoque>> GetPagedAsync(string? query, int skip, int take, CancellationToken cancellationToken = default);
+	Task<MovimentacaoEstoque?> GetByIdMovimentacaoAsync(int id, CancellationToken cancellationToken = default);
 }

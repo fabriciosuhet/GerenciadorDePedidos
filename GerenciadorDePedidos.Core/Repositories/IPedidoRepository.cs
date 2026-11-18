@@ -4,7 +4,7 @@ namespace GerenciadorDePedidos.Core.Repositories;
 
 public interface IPedidoRepository : IRepository<Pedido, int>
 {
-	Task<int> GetCountAsync(string? query);
-	Task<List<Pedido>> GetPagedAsync(string? query, int skip, int take);
-	Task<Pedido?> GetByIdDetailsAsync(int id);
+	Task<int> GetCountAsync(string? query, CancellationToken cancellationToken = default);
+	Task<List<Pedido>> GetPagedAsync(string? query, int skip, int take, CancellationToken cancellationToken = default);
+	Task<Pedido?> GetByIdDetailsAsync(int id, CancellationToken cancellationToken = default);
 }

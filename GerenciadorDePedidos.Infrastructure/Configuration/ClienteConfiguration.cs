@@ -8,20 +8,16 @@ public class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
 {
 	public void Configure(EntityTypeBuilder<Cliente> builder)
 	{
-        builder.Property(c => c.NomeCompleto)
-               .IsRequired()
-               .HasMaxLength(150);
+		builder.Property(c => c.NomeCompleto)
+			.IsRequired()
+			.HasMaxLength(150);
 
-        builder.Property(c => c.Telefone)
-               .HasMaxLength(20);
+		builder.Property(c => c.Telefone)
+			.HasMaxLength(20);
 
-        builder.HasMany(c => c.Pedidos)
-               .WithOne(p => p.Cliente)
-               .HasForeignKey(p => p.ClienteId)
-               .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(c => c.MovimentacaoEstoque)
-               .WithOne()
-               .OnDelete(DeleteBehavior.Cascade);
-    }
+		builder.HasMany(c => c.Pedidos)
+			.WithOne(p => p.Cliente)
+			.HasForeignKey(p => p.ClienteId)
+			.OnDelete(DeleteBehavior.Restrict);
+	}
 }

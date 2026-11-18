@@ -3,12 +3,4 @@ using MediatR;
 
 namespace GerenciadorDePedidos.Application.Queries.GetMovimentacaoEstoque;
 
-public class GetMovimentacaoEstoqueQuery : IRequest<MovimentacaoEstoqueDetailsDTO>
-{
-	public int Id { get; private set; }
-
-	public GetMovimentacaoEstoqueQuery(int id)
-	{
-		Id = id;
-	}
-}
+public sealed record GetMovimentacaoEstoqueQuery(int Id) : IRequest<MovimentacaoEstoqueDetailsDTO?>;

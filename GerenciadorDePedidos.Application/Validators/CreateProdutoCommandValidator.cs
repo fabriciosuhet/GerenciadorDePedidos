@@ -8,20 +8,13 @@ public class CreateProdutoCommandValidator : AbstractValidator<CreateProdutoComm
 	public CreateProdutoCommandValidator()
 	{
 		RuleFor(p => p.Nome)
-			.NotNull().WithMessage("O nome nao pode ser nulo")
-			.NotEmpty().WithMessage("O nome nao pode ser vazio.")
-			.MaximumLength(255)
-			.WithMessage("Tamanho maximo de nome é de 255 caracteres");
+			.NotEmpty().WithMessage("O nome não pode ser vazio.")
+			.MaximumLength(255).WithMessage("Tamanho máximo de nome é de 255 caracteres.");
 
 		RuleFor(p => p.Preco)
-			.NotNull()
-			.NotEmpty()
-			.GreaterThan(0).WithMessage("O valor deve ser maior que 0")
-			.WithMessage("Nao pode ser vazio");
-		
+			.GreaterThan(0).WithMessage("O valor deve ser maior que 0.");
+
 		RuleFor(p => p.Estoque)
-			.NotNull()
-			.NotEmpty().WithMessage("O estoque nao deve ser vazio nem nulo")
-			.GreaterThan(0).WithMessage("O estoque deve ser maior que 0");
+			.GreaterThanOrEqualTo(0).WithMessage("O estoque deve ser maior ou igual a 0.");
 	}
 }

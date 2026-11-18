@@ -1,11 +1,8 @@
-using GerenciadorDePedidos.Application.Commands.AdicionarPedidoEstoque;
 using GerenciadorDePedidos.Application.Commands.AdicionarProdutoEstoque;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
 using Moq;
-using Xunit;
-using Assert = Xunit.Assert;
 
 namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 
@@ -14,86 +11,79 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 	[Fact]
 	public async Task Handle_CommandValid_AddsMovimentacaoEstoqueAndUpdatesProduto()
 	{
-		// Arrange
-		var produtoId = 1;
+		const int produtoId = 1;
 		var clienteId = Guid.NewGuid();
-		var produto = new Produto("Produto Teste", 11.99m, 10)
-		{
-			Id = produtoId,
-		};
+		var produto = new Produto("Produto Teste", 11.99m, 10) { Id = produtoId };
 
-		// Mock de IProdutoRepository
 		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
-		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync(produto);
-		produtoRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<Produto>()));
-		
-		// Mock de IMovimentacaoEstoqueRepository
-		var movimentacaoEstoqueRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
-		movimentacaoEstoqueRepositoryMock.Setup(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>()))
-			.Returns(Task.CompletedTask);
+		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync(produto);
+
+		var movimentacaoRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
+		var unitOfWorkMock = new Mock<IUnitOfWork>();
 
 		var command = new AdicionarProdutoEstoqueCommand(produtoId, 10, clienteId);
-		var handler = new AdicionarProdutoEstoqueCommandHandler(produtoRepositoryMock.Object, movimentacaoEstoqueRepositoryMock.Object);
-		
-		// Act
+		var handler = new AdicionarProdutoEstoqueCommandHandler(
+			produtoRepositoryMock.Object,
+			movimentacaoRepositoryMock.Object,
+			unitOfWorkMock.Object);
+
 		var result = await handler.Handle(command, CancellationToken.None);
-		
-		// Assert
+
 		Assert.Equal(produtoId, result);
-		produtoRepositoryMock.Verify(r => r.GetByIdAsync(produtoId), Times.Once());
-		produtoRepositoryMock.Verify(r => r.UpdateAsync(It.Is<Produto>(p => p == produto)), Times.Once());
-		movimentacaoEstoqueRepositoryMock.Verify(r => r.AddAsync(It.Is<MovimentacaoEstoque>(
-			m => m.Quantidade.Equals(10) && m.TipoMovimentacao.Equals(Tipo.Adicao) && m.ProdutoId.Equals(produtoId) &&
-			     m.ClienteId.Equals(clienteId))));
+		Assert.Equal(20, produto.Estoque);
+		produtoRepositoryMock.Verify(r => r.Update(produto), Times.Once);
+		movimentacaoRepositoryMock.Verify(r => r.AddAsync(
+			It.Is<MovimentacaoEstoque>(m =>
+				m.Quantidade == 10 &&
+				m.TipoMovimentacao == Tipo.Adicao &&
+				m.ProdutoId == produtoId &&
+				m.ClienteId == clienteId),
+			It.IsAny<CancellationToken>()), Times.Once);
+		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
 	public async Task Handle_InvalidProdutoId_ThrowsKeyNotFoundException()
 	{
-		// Arrange 
-		var produtoId = 1;
-		var clienteId = Guid.NewGuid();
-		
-		// Mock do IProdutoRepository
+		const int produtoId = 1;
 		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
-		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync((Produto)null);
-		
-		// Mock de IMovimentacaoEstoqueRepository 
-		var movimentacaoEstoqueRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
-		var command = new AdicionarProdutoEstoqueCommand(produtoId, 10, clienteId);
-		var handler = new AdicionarProdutoEstoqueCommandHandler(produtoRepositoryMock.Object, movimentacaoEstoqueRepositoryMock.Object);
-		
-		// Act e Assert
-		var excpetion = await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
-		Assert.Equal($"O ID: {produtoId} de produto nao foi encontrado", excpetion.Message);
-		movimentacaoEstoqueRepositoryMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>()), Times.Never());
+		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync((Produto?)null);
+
+		var movimentacaoRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
+		var unitOfWorkMock = new Mock<IUnitOfWork>();
+
+		var command = new AdicionarProdutoEstoqueCommand(produtoId, 10, Guid.NewGuid());
+		var handler = new AdicionarProdutoEstoqueCommandHandler(
+			produtoRepositoryMock.Object,
+			movimentacaoRepositoryMock.Object,
+			unitOfWorkMock.Object);
+
+		var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
+		Assert.Equal($"O ID: {produtoId} de produto nao foi encontrado", exception.Message);
+		movimentacaoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]
-	public async Task Handle_NegativeQuantidade_ThrowsKeyArgumentException()
+	public async Task Handle_NegativeQuantidade_ThrowsArgumentException()
 	{
-		// Arrange
-		var produtoId = 1;
-		var clienteId = Guid.NewGuid();
-		var produto = new Produto("Produto Teste", 10.99m, 10)
-		{
-			Id = produtoId,
-		};
-		
-		// Mock de IProdutoRepository
+		const int produtoId = 1;
+		var produto = new Produto("Produto Teste", 10.99m, 10) { Id = produtoId };
+
 		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
-        produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId)).ReturnsAsync(produto);
-		
-		// Mock de IMovimentacaoEstoqueRepository
-		var movimentacaoEstoqueRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
-        var command = new AdicionarProdutoEstoqueCommand(produtoId, -5, clienteId);
-		var handler = new AdicionarProdutoEstoqueCommandHandler(produtoRepositoryMock.Object, movimentacaoEstoqueRepositoryMock.Object);
-		
-		// Act e Assert
+		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync(produto);
+
+		var movimentacaoRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
+		var unitOfWorkMock = new Mock<IUnitOfWork>();
+
+		var command = new AdicionarProdutoEstoqueCommand(produtoId, -5, Guid.NewGuid());
+		var handler = new AdicionarProdutoEstoqueCommandHandler(
+			produtoRepositoryMock.Object,
+			movimentacaoRepositoryMock.Object,
+			unitOfWorkMock.Object);
+
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("O valor não pode ser menor ou igual a 0", exception.Message);
-		movimentacaoEstoqueRepositoryMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>()), Times.Never());
-		produtoRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Produto>()), Times.Never());
+		movimentacaoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()), Times.Never);
+		produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
 	}
-	
 }

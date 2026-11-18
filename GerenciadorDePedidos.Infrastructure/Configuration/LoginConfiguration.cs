@@ -2,28 +2,28 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GerenciadorDePedidos.Infrastructure.Configuration
+namespace GerenciadorDePedidos.Infrastructure.Configuration;
+
+public class LoginConfiguration : IEntityTypeConfiguration<Login>
 {
-    public class LoginConfiguration : IEntityTypeConfiguration<Login>
-    {
-        public void Configure(EntityTypeBuilder<Login> builder)
-        {
-            builder.Property(l => l.Email)
-                   .IsRequired()
-                   .HasMaxLength(150);
+	public void Configure(EntityTypeBuilder<Login> builder)
+	{
+		builder.ToTable("Login");
 
-            builder.Property(l => l.SenhaHash)
-                   .IsRequired()
-                   .HasMaxLength(256);
+		builder.Property(l => l.Email)
+			.IsRequired()
+			.HasMaxLength(150);
 
-            builder.HasIndex(l => l.Email)
-                   .IsUnique();
+		builder.Property(l => l.SenhaHash)
+			.IsRequired()
+			.HasMaxLength(256);
 
-            builder.HasOne(l => l.Cliente)
-                 .WithOne()
-                 .HasForeignKey<Login>(l => l.ClienteId)
-                 .OnDelete(DeleteBehavior.Cascade);
-        }
+		builder.HasIndex(l => l.Email)
+			.IsUnique();
 
-    }
+		builder.HasOne(l => l.Cliente)
+			.WithOne()
+			.HasForeignKey<Login>(l => l.ClienteId)
+			.OnDelete(DeleteBehavior.Cascade);
+	}
 }

@@ -1,39 +1,30 @@
+using GerenciadorDePedidos.Application.Mappings;
 using GerenciadorDePedidos.Core.DTOs;
-using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Queries.GetMovimentacaoEstoque;
 
-public class GetMovimentacaoEstoqueQueryHandler : IRequestHandler<GetMovimentacaoEstoqueQuery, MovimentacaoEstoqueDetailsDTO>
+public sealed class GetMovimentacaoEstoqueQueryHandler(IMovimentacaoEstoqueRepository movimentacaoEstoqueRepository)
+	: IRequestHandler<GetMovimentacaoEstoqueQuery, MovimentacaoEstoqueDetailsDTO?>
 {
-	private readonly IMovimentacaoEstoqueRepository _movimentacaoEstoqueRepository;
-
-    public GetMovimentacaoEstoqueQueryHandler(IMovimentacaoEstoqueRepository movimentacaoEstoqueRepository)
-    {
-        _movimentacaoEstoqueRepository = movimentacaoEstoqueRepository;
-    }
-
-    public async Task<MovimentacaoEstoqueDetailsDTO> Handle(GetMovimentacaoEstoqueQuery request, CancellationToken cancellationToken)
+	public async Task<MovimentacaoEstoqueDetailsDTO?> Handle(
+		GetMovimentacaoEstoqueQuery request,
+		CancellationToken cancellationToken)
 	{
-		var movimentacaoEstoque = await _movimentacaoEstoqueRepository.GetByIdMovimentacaoAsync(request.Id);
-		if (movimentacaoEstoque is null)
+		var movimentacao = await movimentacaoEstoqueRepository.GetByIdMovimentacaoAsync(request.Id, cancellationToken);
+		if (movimentacao is null)
 			return null;
 
-		var fusoHorarioBrasilia = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
-		
-		var movimentacaoEstoqueDetailsDto = new MovimentacaoEstoqueDetailsDTO
+		return new MovimentacaoEstoqueDetailsDTO
 		{
-			Id = movimentacaoEstoque.Id,
-			ProdutoId = movimentacaoEstoque.ProdutoId,
-			ProdutoNome = movimentacaoEstoque.Produto.Nome,
-			ClienteNome = movimentacaoEstoque.Cliente.NomeCompleto,
-			Data = TimeZoneInfo.ConvertTimeFromUtc(movimentacaoEstoque.DataMovimentacao, fusoHorarioBrasilia),
-			Quantidade = movimentacaoEstoque.Quantidade,
-			TipoMovimentacao = movimentacaoEstoque.TipoMovimentacao,
+			Id = movimentacao.Id,
+			ProdutoId = movimentacao.ProdutoId,
+			ProdutoNome = movimentacao.Produto?.Nome ?? string.Empty,
+			ClienteNome = movimentacao.Cliente?.NomeCompleto ?? string.Empty,
+			Data = movimentacao.DataMovimentacao.ToBrasiliaTime(),
+			Quantidade = movimentacao.Quantidade,
+			TipoMovimentacao = movimentacao.TipoMovimentacao
 		};
-		
-		return movimentacaoEstoqueDetailsDto;
-		
 	}
 }

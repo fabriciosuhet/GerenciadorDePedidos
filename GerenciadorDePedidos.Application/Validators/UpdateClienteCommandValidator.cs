@@ -8,18 +8,15 @@ public class UpdateClienteCommandValidator : AbstractValidator<UpdateClienteComm
 	public UpdateClienteCommandValidator()
 	{
 		RuleFor(uc => uc.Id)
-			.NotNull().WithMessage("O id nao pode ser nulo")
-			.NotEmpty().WithMessage("O id nao pode ser vazio")
-			.WithMessage("Insira um ID valido");
-		
+			.NotEmpty().WithMessage("O id não pode ser vazio.");
+
 		RuleFor(uc => uc.Email)
-			.NotNull().WithMessage("O Email nao pode ser nulo")
-			.NotEmpty().WithMessage("O Email nao pode ser vazio")
-			.MaximumLength(255).WithMessage("O email nao deve ser maior que 255 caracteres");
+			.NotEmpty().WithMessage("O Email não pode ser vazio.")
+			.EmailAddress().WithMessage("Email não válido.")
+			.MaximumLength(255).WithMessage("O email não deve ser maior que 255 caracteres.");
 
 		RuleFor(uc => uc.Telefone)
-			.NotNull().WithMessage("O Telefone nao pode ser nulo")
-			.NotEmpty().WithMessage("O telefone nao pode ser vazio")
-			.MaximumLength(11).WithMessage("O telefone nao deve ter mais de 11 digitos");
+			.NotEmpty().WithMessage("O telefone não pode ser vazio.")
+			.MaximumLength(20).WithMessage("O telefone não deve ter mais de 20 caracteres.");
 	}
 }
