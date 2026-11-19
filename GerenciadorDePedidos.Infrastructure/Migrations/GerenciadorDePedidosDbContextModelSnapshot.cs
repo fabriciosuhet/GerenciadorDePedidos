@@ -195,6 +195,45 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
                     b.ToTable("Produtos");
                 });
 
+            modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("LoginId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReplacedByToken")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LoginId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("RefreshTokens", (string)null);
+                });
+
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.ItemPedido", b =>
                 {
                     b.HasOne("GerenciadorDePedidos.Core.Entities.Pedido", null)
@@ -266,6 +305,17 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.Produto", b =>
                 {
                     b.Navigation("MovimentacaoEstoque");
+                });
+
+            modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("GerenciadorDePedidos.Core.Entities.Login", "Login")
+                        .WithMany()
+                        .HasForeignKey("LoginId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Login");
                 });
 #pragma warning restore 612, 618
         }

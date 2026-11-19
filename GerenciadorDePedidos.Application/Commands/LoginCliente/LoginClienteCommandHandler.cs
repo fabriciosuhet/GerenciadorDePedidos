@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
@@ -7,7 +8,9 @@ namespace GerenciadorDePedidos.Application.Commands.LoginCliente;
 
 public sealed class LoginClienteCommandHandler(
 	IAuthService authService,
-	ILoginRepository loginRepository) : IRequestHandler<LoginClienteCommand, LoginClienteViewModel?>
+	ILoginRepository loginRepository,
+	IRefreshTokenRepository refreshTokenRepository,
+	IUnitOfWork unitOfWork) : IRequestHandler<LoginClienteCommand, LoginClienteViewModel?>
 {
 	public async Task<LoginClienteViewModel?> Handle(LoginClienteCommand request, CancellationToken cancellationToken)
 	{
@@ -15,7 +18,14 @@ public sealed class LoginClienteCommandHandler(
 		if (login is null || !authService.VerifyPassword(request.Password, login.SenhaHash))
 			return null;
 
-		var token = authService.GenerateJwtToken(login.Email, login.Role.ToString());
-		return new LoginClienteViewModel(login.Email, token);
+		var accessToken = authService.GenerateJwtToken(login.Email, login.Role.ToString());
+		var refreshToken = authService.GenerateRefreshToken();
+
+		await refreshTokenRepository.AddAsync(
+			new Core.Entities.RefreshToken(login.Id, refreshToken, authService.GetRefreshTokenExpirationUtc()),
+			cancellationToken);
+		await unitOfWork.SaveChangesAsync(cancellationToken);
+
+		return new LoginClienteViewModel(login.Email, accessToken, refreshToken);
 	}
 }

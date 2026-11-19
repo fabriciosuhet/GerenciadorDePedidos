@@ -2,7 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
 using GerenciadorDePedidos.Application.Commands.LoginCliente;
+using GerenciadorDePedidos.Application.Commands.RefreshToken;
 using GerenciadorDePedidos.Application.Commands.RegisterCliente;
+using GerenciadorDePedidos.Application.Commands.RevokeToken;
 using GerenciadorDePedidos.Application.Commands.UpdateCliente;
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Core.Enums;
@@ -97,5 +99,66 @@ public class AuthAndClienteE2ETests
 
 		var getDeleted = await adminClient.GetAsync($"/api/cliente/{registered.Id}");
 		Assert.Equal(HttpStatusCode.NotFound, getDeleted.StatusCode);
+	}
+
+	[Fact]
+	public async Task RefreshToken_RotacaoDeteccaoDeReusoELogout_DeveFuncionar()
+	{
+		using var factory = new CustomWebApplicationFactory();
+		using var anonClient = factory.CreateClient();
+
+		// 1. Login retorna Access Token e Refresh Token
+		var loginResp = await anonClient.PostAsJsonAsync(
+			"/api/login",
+			new LoginClienteCommand("admin@teste.com", "Admin@123"));
+		Assert.Equal(HttpStatusCode.OK, loginResp.StatusCode);
+
+		var login1 = await loginResp.Content.ReadFromJsonAsync<LoginClienteViewModel>();
+		Assert.NotNull(login1);
+		Assert.False(string.IsNullOrWhiteSpace(login1.Token));
+		Assert.False(string.IsNullOrWhiteSpace(login1.RefreshToken));
+
+		// 2. Refresh rotaciona o par de tokens
+		var refreshResp = await anonClient.PostAsJsonAsync(
+			"/api/login/refresh",
+			new RefreshTokenCommand(login1.RefreshToken));
+		Assert.Equal(HttpStatusCode.OK, refreshResp.StatusCode);
+
+		var login2 = await refreshResp.Content.ReadFromJsonAsync<LoginClienteViewModel>();
+		Assert.NotNull(login2);
+		Assert.NotEqual(login1.RefreshToken, login2.RefreshToken);
+
+		// Novo access token autentica normalmente
+		using var authClient = factory.CreateAuthenticatedClient(login2.Token);
+		var clientesResp = await authClient.GetAsync("/api/cliente");
+		Assert.Equal(HttpStatusCode.OK, clientesResp.StatusCode);
+
+		// 3. Reuso do refresh token antigo deve retornar 401 e revogar o novo token também
+		var reuseResp = await anonClient.PostAsJsonAsync(
+			"/api/login/refresh",
+			new RefreshTokenCommand(login1.RefreshToken));
+		Assert.Equal(HttpStatusCode.Unauthorized, reuseResp.StatusCode);
+
+		var invalidatedResp = await anonClient.PostAsJsonAsync(
+			"/api/login/refresh",
+			new RefreshTokenCommand(login2.RefreshToken));
+		Assert.Equal(HttpStatusCode.Unauthorized, invalidatedResp.StatusCode);
+
+		// 4. Logout autenticado revoga o refresh token atual
+		var login3 = await (await anonClient.PostAsJsonAsync(
+			"/api/login",
+			new LoginClienteCommand("admin@teste.com", "Admin@123")))
+			.Content.ReadFromJsonAsync<LoginClienteViewModel>();
+
+		using var authClient3 = factory.CreateAuthenticatedClient(login3!.Token);
+		var logoutResp = await authClient3.PostAsJsonAsync(
+			"/api/login/logout",
+			new RevokeTokenCommand(login3.RefreshToken));
+		Assert.Equal(HttpStatusCode.NoContent, logoutResp.StatusCode);
+
+		var refreshAfterLogout = await anonClient.PostAsJsonAsync(
+			"/api/login/refresh",
+			new RefreshTokenCommand(login3.RefreshToken));
+		Assert.Equal(HttpStatusCode.Unauthorized, refreshAfterLogout.StatusCode);
 	}
 }
