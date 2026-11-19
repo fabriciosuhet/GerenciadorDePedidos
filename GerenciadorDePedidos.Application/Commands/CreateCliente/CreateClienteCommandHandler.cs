@@ -27,7 +27,7 @@ public sealed class CreateClienteCommandHandler(
 		await loginRepository.AddAsync(login, cancellationToken);
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 
-		var accessToken = authService.GenerateJwtToken(login.Email, login.Role.ToString());
+		var accessToken = authService.GenerateJwtToken(cliente.Id, login.Email, login.Role.ToString());
 		var refreshToken = authService.GenerateRefreshToken();
 
 		await refreshTokenRepository.AddAsync(

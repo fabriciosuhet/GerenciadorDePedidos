@@ -10,12 +10,22 @@ namespace GerenciadorDePedidos.Application.Commands.CreatePedido;
 public sealed class CreatePedidoCommandHandler(
 	IRepository<Pedido, int> pedidoRepository,
 	IProdutoRepository produtoRepository,
-	IEventBus eventBus) : IRequestHandler<CreatePedidoCommand, int>
+	IEventBus eventBus,
+	ICurrentUserService currentUserService) : IRequestHandler<CreatePedidoCommand, int>
 {
 	public async Task<int> Handle(CreatePedidoCommand request, CancellationToken cancellationToken)
 	{
 		if (request.ItensPedidos is null || request.ItensPedidos.Count == 0)
 			throw new ArgumentException("O pedido deve conter pelo menos um item.");
+
+		if (!currentUserService.IsAdmin)
+		{
+			if (currentUserService.ClienteId is null)
+				throw new UnauthorizedAccessException("Usuário não autenticado.");
+
+			if (request.ClienteId != currentUserService.ClienteId.Value)
+				throw new UnauthorizedAccessException("Você não pode criar pedidos em nome de outro cliente.");
+		}
 
 		var produtoIds = request.ItensPedidos.Select(i => i.ProdutoId).Distinct().ToList();
 		var produtos = await produtoRepository.GetByIdsAsync(produtoIds, cancellationToken);

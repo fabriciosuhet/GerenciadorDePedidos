@@ -34,7 +34,7 @@ public sealed class ProcessarPedidoCommandHandler(
 		{
 			pedido.Cancelar();
 			await unitOfWork.SaveChangesAsync(cancellationToken);
-			InvalidarCachePedido(pedido.Id);
+			InvalidarCachePedido(pedido.Id, pedido.ClienteId);
 			return false;
 		}
 
@@ -54,15 +54,16 @@ public sealed class ProcessarPedidoCommandHandler(
 		pedido.Concluir();
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 
-		InvalidarCachePedido(pedido.Id);
+		InvalidarCachePedido(pedido.Id, pedido.ClienteId);
 		cacheService.Remove(CacheKeyHelper.GetAllProdutosKey(null));
 
 		return true;
 	}
 
-	private void InvalidarCachePedido(int pedidoId)
+	private void InvalidarCachePedido(int pedidoId, Guid clienteId)
 	{
 		cacheService.Remove(CacheKeyHelper.GetPedidoByIdKey(pedidoId));
 		cacheService.Remove(CacheKeyHelper.GetAllPedidosKey(null));
+		cacheService.Remove(CacheKeyHelper.GetAllPedidosKey(null, clienteId));
 	}
 }

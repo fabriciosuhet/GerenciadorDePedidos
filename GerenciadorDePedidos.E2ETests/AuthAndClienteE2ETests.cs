@@ -56,11 +56,21 @@ public class AuthAndClienteE2ETests
 		Assert.NotEqual(Guid.Empty, registered.Id);
 		Assert.False(string.IsNullOrWhiteSpace(registered.Token));
 
-		// 6. Token retornado pelo auto-registro já autentica como Usuario, mas não dá acesso de Admin
+		// 6. Token retornado pelo auto-registro já autentica como Usuario, mas não dá acesso de Admin nem a dados de terceiros
 		using var userClient = factory.CreateAuthenticatedClient(registered.Token);
 
+		var meResp = await userClient.GetAsync("/api/cliente/me");
+		Assert.Equal(HttpStatusCode.OK, meResp.StatusCode);
+		var me = await meResp.Content.ReadFromJsonAsync<ClienteDetailsViewModel>();
+		Assert.NotNull(me);
+		Assert.Equal("Usuario Auto Registro", me.NomeCompleto);
+		Assert.Equal("11977776666", me.Telefone);
+
 		var listAsUser = await userClient.GetAsync("/api/cliente");
-		Assert.Equal(HttpStatusCode.OK, listAsUser.StatusCode);
+		Assert.Equal(HttpStatusCode.Forbidden, listAsUser.StatusCode);
+
+		var dashboardAsUser = await userClient.GetAsync("/api/dashboard");
+		Assert.Equal(HttpStatusCode.Forbidden, dashboardAsUser.StatusCode);
 
 		var createAsUser = await userClient.PostAsJsonAsync(
 			"/api/cliente",
@@ -70,12 +80,28 @@ public class AuthAndClienteE2ETests
 		var deleteAsUser = await userClient.DeleteAsync($"/api/cliente/deletar-cliente?id={registered.Id}");
 		Assert.Equal(HttpStatusCode.Forbidden, deleteAsUser.StatusCode);
 
-		// 7. Admin consegue criar outro usuário ou Admin e gerenciar clientes
+		// 7. Admin consegue criar outro usuário ou Admin, consultar dashboard e gerenciar clientes
 		using var adminClient = factory.CreateAuthenticatedClient(adminToken);
 		var createByAdminResp = await adminClient.PostAsJsonAsync(
 			"/api/cliente",
 			new CreateClienteCommand("Segundo Admin", Role.Admin, "Admin@456", "admin2@teste.com", "11955554444"));
 		Assert.Equal(HttpStatusCode.Created, createByAdminResp.StatusCode);
+		var secondAdmin = await createByAdminResp.Content.ReadFromJsonAsync<CreateClienteViewModel>();
+		Assert.NotNull(secondAdmin);
+
+		var getOtherAsUser = await userClient.GetAsync($"/api/cliente/{secondAdmin.Id}");
+		Assert.Equal(HttpStatusCode.Forbidden, getOtherAsUser.StatusCode);
+
+		var updateOtherAsUser = await userClient.PutAsJsonAsync(
+			"/api/cliente/atualizar-cliente",
+			new UpdateClienteCommand(secondAdmin.Id, "invasao@teste.com", "11900000000"));
+		Assert.Equal(HttpStatusCode.Forbidden, updateOtherAsUser.StatusCode);
+
+		var dashboardAsAdminResp = await adminClient.GetAsync("/api/dashboard");
+		Assert.Equal(HttpStatusCode.OK, dashboardAsAdminResp.StatusCode);
+		var dashboard = await dashboardAsAdminResp.Content.ReadFromJsonAsync<DashboardViewModel>();
+		Assert.NotNull(dashboard);
+		Assert.True(dashboard.TotalClientes >= 2);
 
 		// 8. Consulta por ID popula cache; atualização deve invalidar cache e refletir novos dados
 		var getBeforeUpdate = await adminClient.GetFromJsonAsync<ClienteDetailsViewModel>($"/api/cliente/{registered.Id}");

@@ -23,7 +23,9 @@ public class CreateClienteCommandHandlerTests
 
 		var authServiceMock = new Mock<IAuthService>();
 		authServiceMock.Setup(a => a.HashPassword("Teste@123")).Returns("hashedPassword");
-		authServiceMock.Setup(a => a.GenerateJwtToken("email@teste.com", nameof(Role.Admin))).Returns("jwt-token");
+		authServiceMock
+			.Setup(a => a.GenerateJwtToken(It.IsAny<Guid>(), "email@teste.com", nameof(Role.Admin)))
+			.Returns("jwt-token");
 		authServiceMock.Setup(a => a.GenerateRefreshToken()).Returns("refresh-token");
 		authServiceMock.Setup(a => a.GetRefreshTokenExpirationUtc()).Returns(DateTime.UtcNow.AddDays(7));
 

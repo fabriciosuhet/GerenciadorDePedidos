@@ -10,7 +10,7 @@ namespace GerenciadorDePedidos.Infrastructure.Auth;
 
 public class AuthService(IConfiguration configuration) : IAuthService
 {
-	public string GenerateJwtToken(string email, string role)
+	public string GenerateJwtToken(Guid clienteId, string email, string role)
 	{
 		var issuer = configuration["Jwt:Issuer"];
 		var audience = configuration["Jwt:Audience"];
@@ -24,6 +24,8 @@ public class AuthService(IConfiguration configuration) : IAuthService
 
 		var claims = new List<Claim>
 		{
+			new(ClaimTypes.NameIdentifier, clienteId.ToString()),
+			new("clienteId", clienteId.ToString()),
 			new("userName", email),
 			new(ClaimTypes.Role, role)
 		};

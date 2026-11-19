@@ -2,6 +2,7 @@ using GerenciadorDePedidos.Application.Commands.UpdateCliente;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
+using GerenciadorDePedidos.Core.Services;
 using Moq;
 
 namespace GerenciadorDePedidos.UnitTests.Application.Commands;
@@ -9,7 +10,7 @@ namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 public class UpdateClienteCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_ClienteExist_ShouldUpdateClienteAndLogin()
+	public async Task Handle_ProprioCliente_ShouldUpdateClienteAndLogin()
 	{
 		var cliente = new Cliente("Nome teste", "11111111111", Role.Usuario);
 		var login = new Login(cliente.Id, "old@test.com", "hash", Role.Usuario);
@@ -22,11 +23,15 @@ public class UpdateClienteCommandHandlerTests
 		loginRepositoryMock.Setup(r => r.GetByEmailAsync("new@test.com", It.IsAny<CancellationToken>())).ReturnsAsync((Login?)null);
 
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
+		var currentUserMock = new Mock<ICurrentUserService>();
+		currentUserMock.Setup(u => u.IsAdmin).Returns(false);
+		currentUserMock.Setup(u => u.ClienteId).Returns(cliente.Id);
 
 		var handler = new UpdateClienteCommandHandler(
 			clienteRepositoryMock.Object,
 			loginRepositoryMock.Object,
-			unitOfWorkMock.Object);
+			unitOfWorkMock.Object,
+			currentUserMock.Object);
 
 		var command = new UpdateClienteCommand(cliente.Id, "new@test.com", "11999999999");
 
@@ -40,19 +45,38 @@ public class UpdateClienteCommandHandlerTests
 	}
 
 	[Fact]
+	public async Task Handle_UsuarioComumAlterandoOutroCliente_DeveLancarUnauthorizedAccessException()
+	{
+		var outroId = Guid.NewGuid();
+		var currentUserMock = new Mock<ICurrentUserService>();
+		currentUserMock.Setup(u => u.IsAdmin).Returns(false);
+		currentUserMock.Setup(u => u.ClienteId).Returns(Guid.NewGuid());
+
+		var handler = new UpdateClienteCommandHandler(
+			new Mock<IClienteRepository>().Object,
+			new Mock<ILoginRepository>().Object,
+			new Mock<IUnitOfWork>().Object,
+			currentUserMock.Object);
+
+		await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+			handler.Handle(new UpdateClienteCommand(outroId, "x@y.com", "11999999999"), CancellationToken.None));
+	}
+
+	[Fact]
 	public async Task Handle_ClienteNaoExiste_DeveLancarKeyNotFoundException()
 	{
 		var clienteId = Guid.NewGuid();
 		var clienteRepositoryMock = new Mock<IClienteRepository>();
 		clienteRepositoryMock.Setup(r => r.GetByIdAsync(clienteId, It.IsAny<CancellationToken>())).ReturnsAsync((Cliente?)null);
 
-		var loginRepositoryMock = new Mock<ILoginRepository>();
-		var unitOfWorkMock = new Mock<IUnitOfWork>();
+		var currentUserMock = new Mock<ICurrentUserService>();
+		currentUserMock.Setup(u => u.IsAdmin).Returns(true);
 
 		var handler = new UpdateClienteCommandHandler(
 			clienteRepositoryMock.Object,
-			loginRepositoryMock.Object,
-			unitOfWorkMock.Object);
+			new Mock<ILoginRepository>().Object,
+			new Mock<IUnitOfWork>().Object,
+			currentUserMock.Object);
 
 		var command = new UpdateClienteCommand(clienteId, "novo@email.com", "99999999999");
 
