@@ -102,6 +102,28 @@ public class AuthAndClienteE2ETests
 	}
 
 	[Fact]
+	public async Task RateLimiting_ExcessoDeTentativasDeLogin_DeveRetornar429TooManyRequests()
+	{
+		using var factory = new CustomWebApplicationFactory();
+		using var client = factory.CreateClient();
+
+		HttpStatusCode? ultimoStatus = null;
+
+		for (var i = 0; i < 12; i++)
+		{
+			var resp = await client.PostAsJsonAsync(
+				"/api/login",
+				new LoginClienteCommand("admin@teste.com", "SenhaErrada@1"));
+			ultimoStatus = resp.StatusCode;
+
+			if (ultimoStatus == HttpStatusCode.TooManyRequests)
+				break;
+		}
+
+		Assert.Equal(HttpStatusCode.TooManyRequests, ultimoStatus);
+	}
+
+	[Fact]
 	public async Task RefreshToken_RotacaoDeteccaoDeReusoELogout_DeveFuncionar()
 	{
 		using var factory = new CustomWebApplicationFactory();

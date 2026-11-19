@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.API.Authorization;
+using GerenciadorDePedidos.API.Extensions;
 using GerenciadorDePedidos.API.Helpers;
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
 using GerenciadorDePedidos.Application.Commands.DeleteCliente;
@@ -11,6 +12,7 @@ using GerenciadorDePedidos.Core.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GerenciadorDePedidos.API.Controllers;
 
@@ -46,6 +48,7 @@ public class ClienteController(IMediator mediator, ICacheService cacheService)
 
 	[HttpPost("registrar")]
 	[AllowAnonymous]
+	[EnableRateLimiting(RateLimitingPolicies.AuthPolicy)]
 	public async Task<IActionResult> Registrar([FromBody] RegisterClienteCommand command, CancellationToken cancellationToken)
 	{
 		var result = await SendAsync(command, cancellationToken);

@@ -1,10 +1,13 @@
+using GerenciadorDePedidos.API.Extensions;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GerenciadorDePedidos.API.Controllers;
 
 [ApiController]
+[EnableRateLimiting(RateLimitingPolicies.ApiPadraoPolicy)]
 public abstract class ApiControllerBase(IMediator mediator, ICacheService? cacheService = null) : ControllerBase
 {
 	private static readonly TimeSpan DefaultCacheExpiration = TimeSpan.FromMinutes(5);
