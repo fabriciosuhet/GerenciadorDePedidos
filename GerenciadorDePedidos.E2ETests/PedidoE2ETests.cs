@@ -142,7 +142,14 @@ public class PedidoE2ETests
 			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prodA.Id, Quantidade = 1 }], user.Id, Status.Pendente));
 		Assert.Equal(HttpStatusCode.Forbidden, joaoCreateForMaria.StatusCode);
 
-		// 4. Usuario comum não pode deletar pedido (403 Forbidden)
+		// 4. Produto e cliente vinculados a pedidos não podem ser removidos (409 Conflict em vez de 500)
+		var deleteProdutoComPedido = await adminClient.DeleteAsync($"/api/produto/remover-produto?id={prodA.Id}");
+		Assert.Equal(HttpStatusCode.Conflict, deleteProdutoComPedido.StatusCode);
+
+		var deleteClienteComPedido = await adminClient.DeleteAsync($"/api/cliente/deletar-cliente?id={user.Id}");
+		Assert.Equal(HttpStatusCode.Conflict, deleteClienteComPedido.StatusCode);
+
+		// 5. Usuario comum não pode deletar pedido (403 Forbidden)
 		var deleteAsUser = await userClient.DeleteAsync($"/api/pedido/deletar-pedido?id={pedidoCreated.Id}");
 		Assert.Equal(HttpStatusCode.Forbidden, deleteAsUser.StatusCode);
 

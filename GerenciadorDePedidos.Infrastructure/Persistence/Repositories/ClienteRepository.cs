@@ -25,6 +25,10 @@ public class ClienteRepository(GerenciadorDePedidosDbContext context)
 			.AsNoTracking()
 			.SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
 
+	public async Task<bool> HasVinculosAsync(Guid clienteId, CancellationToken cancellationToken = default)
+		=> await _context.Set<Pedido>().AsNoTracking().AnyAsync(p => p.ClienteId == clienteId, cancellationToken)
+			|| await _context.Set<MovimentacaoEstoque>().AsNoTracking().AnyAsync(m => m.ClienteId == clienteId, cancellationToken);
+
 	private IQueryable<Cliente> BuildFilteredQuery(string? query)
 	{
 		var q = _dbSet.AsNoTracking();
