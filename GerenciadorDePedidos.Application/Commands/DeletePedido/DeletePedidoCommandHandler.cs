@@ -20,8 +20,8 @@ public sealed class DeletePedidoCommandHandler(
 		await pedidoRepository.SaveChangesAsync(cancellationToken);
 
 		cacheService.Remove(CacheKeyHelper.GetPedidoByIdKey(pedido.Id));
-		cacheService.Remove(CacheKeyHelper.GetAllPedidosKey(null));
-		cacheService.Remove(CacheKeyHelper.GetAllPedidosKey(null, pedido.ClienteId));
+		cacheService.RemoveByPrefix(CacheKeyHelper.GetAllPedidosAdminPrefix());
+		cacheService.RemoveByPrefix(CacheKeyHelper.GetAllPedidosClientePrefix(pedido.ClienteId));
 		cacheService.Remove(CacheKeyHelper.GetClienteByIdKey(pedido.ClienteId));
 		return Unit.Value;
 	}

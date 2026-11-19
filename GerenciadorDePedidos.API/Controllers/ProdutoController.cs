@@ -22,12 +22,19 @@ public class ProdutoController(IMediator mediator, ICacheService cacheService)
 	: ApiControllerBase(mediator, cacheService)
 {
 	[HttpGet]
-	public Task<IActionResult> GetAll([FromQuery] string? query, CancellationToken cancellationToken)
-		=> GetCachedOrNotFoundAsync<PagedResultModel<ProdutoViewModel>>(
-			CacheKeyHelper.GetAllProdutosKey(query),
-			new GetAllProdutosQuery(query),
+	public Task<IActionResult> GetAll(
+		[FromQuery] string? query,
+		[FromQuery] int pageNumber = 1,
+		[FromQuery] int pageSize = 10,
+		CancellationToken cancellationToken = default)
+	{
+		var (pagina, tamanho) = NormalizarPaginacao(pageNumber, pageSize);
+		return GetCachedOrNotFoundAsync<PagedResultModel<ProdutoViewModel>>(
+			CacheKeyHelper.GetAllProdutosKey(query, pagina, tamanho),
+			new GetAllProdutosQuery(query, pagina, tamanho),
 			"Produtos nao encontrados",
 			cancellationToken);
+	}
 
 	[HttpGet("{id:int}")]
 	public Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
@@ -39,11 +46,18 @@ public class ProdutoController(IMediator mediator, ICacheService cacheService)
 
 	[HttpGet("movimentacao-estoque")]
 	[AcessoRestrito]
-	public Task<IActionResult> GetAllMovimentacaoEstoque([FromQuery] string? query, CancellationToken cancellationToken)
-		=> GetOrNotFoundAsync(
-			new GetAllMovimentacaoEstoqueQuery(query),
+	public Task<IActionResult> GetAllMovimentacaoEstoque(
+		[FromQuery] string? query,
+		[FromQuery] int pageNumber = 1,
+		[FromQuery] int pageSize = 10,
+		CancellationToken cancellationToken = default)
+	{
+		var (pagina, tamanho) = NormalizarPaginacao(pageNumber, pageSize);
+		return GetOrNotFoundAsync(
+			new GetAllMovimentacaoEstoqueQuery(query, pagina, tamanho),
 			"Movimentacoes nao encontradas",
 			cancellationToken);
+	}
 
 	[HttpGet("movimentacao-estoque/{id:int}")]
 	[AcessoRestrito]
@@ -58,7 +72,7 @@ public class ProdutoController(IMediator mediator, ICacheService cacheService)
 	public async Task<IActionResult> Post([FromBody] CreateProdutoCommand command, CancellationToken cancellationToken)
 	{
 		var produtoId = await SendAsync(command, cancellationToken);
-		CacheService?.Remove(CacheKeyHelper.GetAllProdutosKey(null));
+		CacheService?.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix);
 		return CreatedAtAction(nameof(GetById), new { id = produtoId }, new { id = produtoId });
 	}
 
@@ -101,6 +115,6 @@ public class ProdutoController(IMediator mediator, ICacheService cacheService)
 	private void InvalidarCacheProduto(int id)
 	{
 		CacheService?.Remove(CacheKeyHelper.GetProdutoByIdKey(id));
-		CacheService?.Remove(CacheKeyHelper.GetAllProdutosKey(null));
+		CacheService?.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix);
 	}
 }

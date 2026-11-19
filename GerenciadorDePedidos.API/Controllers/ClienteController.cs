@@ -26,12 +26,19 @@ public class ClienteController(
 {
 	[HttpGet]
 	[AcessoRestrito]
-	public Task<IActionResult> GetAll([FromQuery] string? query, CancellationToken cancellationToken)
-		=> GetCachedOrNotFoundAsync<PagedResultModel<ClienteViewModel>>(
-			CacheKeyHelper.GetAllClientesKey(query),
-			new GetAllClientesQuery(query),
+	public Task<IActionResult> GetAll(
+		[FromQuery] string? query,
+		[FromQuery] int pageNumber = 1,
+		[FromQuery] int pageSize = 10,
+		CancellationToken cancellationToken = default)
+	{
+		var (pagina, tamanho) = NormalizarPaginacao(pageNumber, pageSize);
+		return GetCachedOrNotFoundAsync<PagedResultModel<ClienteViewModel>>(
+			CacheKeyHelper.GetAllClientesKey(query, pagina, tamanho),
+			new GetAllClientesQuery(query, pagina, tamanho),
 			"Clientes nao encontrados",
 			cancellationToken);
+	}
 
 	[HttpGet("me")]
 	public Task<IActionResult> GetMe(CancellationToken cancellationToken)
@@ -60,7 +67,7 @@ public class ClienteController(
 	public async Task<IActionResult> Post([FromBody] CreateClienteCommand command, CancellationToken cancellationToken)
 	{
 		var result = await SendAsync(command, cancellationToken);
-		CacheService?.Remove(CacheKeyHelper.GetAllClientesKey(null));
+		CacheService?.RemoveByPrefix(CacheKeyHelper.AllClientesPrefix);
 		return CreatedAtAction(nameof(GetById), new { id = result.Id }, new { id = result.Id });
 	}
 
@@ -70,7 +77,7 @@ public class ClienteController(
 	public async Task<IActionResult> Registrar([FromBody] RegisterClienteCommand command, CancellationToken cancellationToken)
 	{
 		var result = await SendAsync(command, cancellationToken);
-		CacheService?.Remove(CacheKeyHelper.GetAllClientesKey(null));
+		CacheService?.RemoveByPrefix(CacheKeyHelper.AllClientesPrefix);
 		return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
 	}
 
@@ -79,7 +86,7 @@ public class ClienteController(
 	{
 		await SendAsync(command, cancellationToken);
 		CacheService?.Remove(CacheKeyHelper.GetClienteByIdKey(command.Id));
-		CacheService?.Remove(CacheKeyHelper.GetAllClientesKey(null));
+		CacheService?.RemoveByPrefix(CacheKeyHelper.AllClientesPrefix);
 		return NoContent();
 	}
 
@@ -89,7 +96,7 @@ public class ClienteController(
 	{
 		await SendAsync(new DeleteClienteCommand(id), cancellationToken);
 		CacheService?.Remove(CacheKeyHelper.GetClienteByIdKey(id));
-		CacheService?.Remove(CacheKeyHelper.GetAllClientesKey(null));
+		CacheService?.RemoveByPrefix(CacheKeyHelper.AllClientesPrefix);
 		return Ok("Cliente deletado com sucesso");
 	}
 }

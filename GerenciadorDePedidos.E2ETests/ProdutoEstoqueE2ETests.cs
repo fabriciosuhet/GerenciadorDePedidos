@@ -103,5 +103,30 @@ public class ProdutoEstoqueE2ETests
 
 		var getDeletedProd = await userClient.GetAsync($"/api/produto/{prod1.Id}");
 		Assert.Equal(HttpStatusCode.NotFound, getDeletedProd.StatusCode);
+
+		// 6. Paginação em GET /api/produto e invalidação de páginas em cache ao criar novos produtos
+		for (var i = 1; i <= 11; i++)
+		{
+			var resp = await adminClient.PostAsJsonAsync("/api/produto", new CreateProdutoCommand($"Item Pag {i:D2}", 10m + i, 5));
+			Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
+		}
+
+		var pagina1 = await userClient.GetFromJsonAsync<PagedResultModel<ProdutoViewModel>>("/api/produto?pageNumber=1&pageSize=10");
+		var pagina2 = await userClient.GetFromJsonAsync<PagedResultModel<ProdutoViewModel>>("/api/produto?pageNumber=2&pageSize=10");
+		Assert.NotNull(pagina1);
+		Assert.NotNull(pagina2);
+		Assert.Equal(12, pagina1.TotalCount);
+		Assert.Equal(10, pagina1.Items.Count);
+		Assert.Equal(2, pagina2.Items.Count);
+
+		// Cria mais um produto e valida que o cache da página 2 foi invalidado
+		var extraResp = await adminClient.PostAsJsonAsync("/api/produto", new CreateProdutoCommand("Item Pag 12", 99m, 5));
+		Assert.Equal(HttpStatusCode.Created, extraResp.StatusCode);
+
+		var pagina2Atualizada = await userClient.GetFromJsonAsync<PagedResultModel<ProdutoViewModel>>("/api/produto?pageNumber=2&pageSize=10");
+		Assert.NotNull(pagina2Atualizada);
+		Assert.Equal(13, pagina2Atualizada.TotalCount);
+		Assert.Equal(3, pagina2Atualizada.Items.Count);
+		Assert.Contains(pagina2Atualizada.Items, p => p.Nome == "Item Pag 12");
 	}
 }

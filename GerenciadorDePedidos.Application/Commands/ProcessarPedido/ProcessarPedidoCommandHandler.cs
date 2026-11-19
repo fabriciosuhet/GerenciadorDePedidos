@@ -55,7 +55,7 @@ public sealed class ProcessarPedidoCommandHandler(
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 
 		InvalidarCachePedido(pedido.Id, pedido.ClienteId);
-		cacheService.Remove(CacheKeyHelper.GetAllProdutosKey(null));
+		cacheService.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix);
 
 		return true;
 	}
@@ -63,8 +63,8 @@ public sealed class ProcessarPedidoCommandHandler(
 	private void InvalidarCachePedido(int pedidoId, Guid clienteId)
 	{
 		cacheService.Remove(CacheKeyHelper.GetPedidoByIdKey(pedidoId));
-		cacheService.Remove(CacheKeyHelper.GetAllPedidosKey(null));
-		cacheService.Remove(CacheKeyHelper.GetAllPedidosKey(null, clienteId));
+		cacheService.RemoveByPrefix(CacheKeyHelper.GetAllPedidosAdminPrefix());
+		cacheService.RemoveByPrefix(CacheKeyHelper.GetAllPedidosClientePrefix(clienteId));
 		cacheService.Remove(CacheKeyHelper.GetClienteByIdKey(clienteId));
 	}
 }

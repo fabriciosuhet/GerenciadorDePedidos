@@ -29,7 +29,7 @@ public class DeletePedidoCommandHandlerTests
 		pedidoRepositoryMock.Verify(p => p.DeleteAsync(pedidoId, It.IsAny<CancellationToken>()), Times.Once);
 		pedidoRepositoryMock.Verify(p => p.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetClienteByIdKey(clienteId)), Times.Once);
-		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetAllPedidosKey(null, clienteId)), Times.Once);
+		cacheMock.Verify(c => c.RemoveByPrefix(CacheKeyHelper.GetAllPedidosClientePrefix(clienteId)), Times.Once);
 	}
 
 	[Fact]

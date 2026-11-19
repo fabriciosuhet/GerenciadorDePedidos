@@ -21,12 +21,17 @@ public class PedidoController(
 	: ApiControllerBase(mediator, cacheService)
 {
 	[HttpGet]
-	public Task<IActionResult> GetAll([FromQuery] string? query, CancellationToken cancellationToken)
+	public Task<IActionResult> GetAll(
+		[FromQuery] string? query,
+		[FromQuery] int pageNumber = 1,
+		[FromQuery] int pageSize = 10,
+		CancellationToken cancellationToken = default)
 	{
+		var (pagina, tamanho) = NormalizarPaginacao(pageNumber, pageSize);
 		var clienteScope = currentUserService.IsAdmin ? null : currentUserService.ClienteId;
 		return GetCachedOrNotFoundAsync<PagedResultModel<PedidoViewModel>>(
-			CacheKeyHelper.GetAllPedidosKey(query, clienteScope),
-			new GetAllPedidosQuery(query),
+			CacheKeyHelper.GetAllPedidosKey(query, clienteScope, pagina, tamanho),
+			new GetAllPedidosQuery(query, pagina, tamanho),
 			"Pedidos nao encontrados",
 			cancellationToken);
 	}
@@ -54,8 +59,8 @@ public class PedidoController(
 	public async Task<IActionResult> Post([FromBody] CreatePedidoCommand command, CancellationToken cancellationToken)
 	{
 		var pedidoId = await SendAsync(command, cancellationToken);
-		CacheService?.Remove(CacheKeyHelper.GetAllPedidosKey(null));
-		CacheService?.Remove(CacheKeyHelper.GetAllPedidosKey(null, command.ClienteId));
+		CacheService?.RemoveByPrefix(CacheKeyHelper.GetAllPedidosAdminPrefix());
+		CacheService?.RemoveByPrefix(CacheKeyHelper.GetAllPedidosClientePrefix(command.ClienteId));
 		CacheService?.Remove(CacheKeyHelper.GetClienteByIdKey(command.ClienteId));
 		return CreatedAtAction(nameof(GetById), new { id = pedidoId }, new { id = pedidoId });
 	}
@@ -66,7 +71,7 @@ public class PedidoController(
 	{
 		await SendAsync(new DeletePedidoCommand(id), cancellationToken);
 		CacheService?.Remove(CacheKeyHelper.GetPedidoByIdKey(id));
-		CacheService?.Remove(CacheKeyHelper.GetAllPedidosKey(null));
+		CacheService?.RemoveByPrefix(CacheKeyHelper.AllPedidosPrefix);
 		return Ok("pedido deletado com sucesso");
 	}
 }
