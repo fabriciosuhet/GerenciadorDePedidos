@@ -1,5 +1,6 @@
 using GerenciadorDePedidos.Application.Commands.DeleteProduto;
 using GerenciadorDePedidos.Core.Entities;
+using GerenciadorDePedidos.Core.Exceptions;
 using GerenciadorDePedidos.Core.Repositories;
 using Moq;
 
@@ -13,8 +14,9 @@ public class DeleteProdutoCommandHandlerTests
 		const int produtoId = 1;
 		var produtoMock = new Produto("Produto", 10m, 5) { Id = produtoId };
 
-		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
+		var produtoRepositoryMock = new Mock<IProdutoRepository>();
 		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync(produtoMock);
+		produtoRepositoryMock.Setup(r => r.HasPedidoVinculadoAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
 		var handler = new DeleteProdutoCommandHandler(produtoRepositoryMock.Object);
 		var command = new DeleteProdutoCommand(produtoId);
@@ -26,10 +28,28 @@ public class DeleteProdutoCommandHandlerTests
 	}
 
 	[Fact]
+	public async Task Handle_ProdutoComPedidoVinculado_ThrowsConflictException()
+	{
+		const int produtoId = 2;
+		var produtoMock = new Produto("Produto", 10m, 5) { Id = produtoId };
+
+		var produtoRepositoryMock = new Mock<IProdutoRepository>();
+		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync(produtoMock);
+		produtoRepositoryMock.Setup(r => r.HasPedidoVinculadoAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+		var handler = new DeleteProdutoCommandHandler(produtoRepositoryMock.Object);
+		var command = new DeleteProdutoCommand(produtoId);
+
+		await Assert.ThrowsAsync<ConflictException>(() => handler.Handle(command, CancellationToken.None));
+		produtoRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+		produtoRepositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
 	public async Task Handle_ProdutoNotExist_ThrowsKeyNotFoundException()
 	{
 		const int produtoId = 1;
-		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
+		var produtoRepositoryMock = new Mock<IProdutoRepository>();
 		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync((Produto?)null);
 
 		var handler = new DeleteProdutoCommandHandler(produtoRepositoryMock.Object);

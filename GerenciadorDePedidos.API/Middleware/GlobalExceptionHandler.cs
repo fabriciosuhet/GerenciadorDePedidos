@@ -1,5 +1,7 @@
 using FluentValidation;
+using GerenciadorDePedidos.Core.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 
 namespace GerenciadorDePedidos.API.Middleware;
 
@@ -24,6 +26,14 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
 				StatusCodes.Status404NotFound,
 				new { error = notFoundEx.Message }),
 
+			ConflictException conflictEx => (
+				StatusCodes.Status409Conflict,
+				new { error = conflictEx.Message }),
+
+			DbUpdateException dbUpdateEx when IsForeignKeyViolation(dbUpdateEx) => (
+				StatusCodes.Status409Conflict,
+				new { error = "Não é possível excluir este registro porque existem outros registros vinculados a ele." }),
+
 			UnauthorizedAccessException unauthorizedEx => (
 				httpContext.User.Identity?.IsAuthenticated == true
 					? StatusCodes.Status403Forbidden
@@ -41,5 +51,13 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
 		httpContext.Response.StatusCode = statusCode;
 		await httpContext.Response.WriteAsJsonAsync(payload, cancellationToken);
 		return true;
+	}
+
+	private static bool IsForeignKeyViolation(DbUpdateException exception)
+	{
+		var message = exception.InnerException?.Message ?? exception.Message;
+		return message.Contains("FOREIGN KEY", StringComparison.OrdinalIgnoreCase)
+			|| message.Contains("REFERENCE constraint", StringComparison.OrdinalIgnoreCase)
+			|| message.Contains("violates foreign key constraint", StringComparison.OrdinalIgnoreCase);
 	}
 }
