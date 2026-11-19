@@ -56,6 +56,7 @@ public class PedidoController(
 		var pedidoId = await SendAsync(command, cancellationToken);
 		CacheService?.Remove(CacheKeyHelper.GetAllPedidosKey(null));
 		CacheService?.Remove(CacheKeyHelper.GetAllPedidosKey(null, command.ClienteId));
+		CacheService?.Remove(CacheKeyHelper.GetClienteByIdKey(command.ClienteId));
 		return CreatedAtAction(nameof(GetById), new { id = pedidoId }, new { id = pedidoId });
 	}
 

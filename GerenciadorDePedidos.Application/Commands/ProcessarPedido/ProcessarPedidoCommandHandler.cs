@@ -65,5 +65,6 @@ public sealed class ProcessarPedidoCommandHandler(
 		cacheService.Remove(CacheKeyHelper.GetPedidoByIdKey(pedidoId));
 		cacheService.Remove(CacheKeyHelper.GetAllPedidosKey(null));
 		cacheService.Remove(CacheKeyHelper.GetAllPedidosKey(null, clienteId));
+		cacheService.Remove(CacheKeyHelper.GetClienteByIdKey(clienteId));
 	}
 }

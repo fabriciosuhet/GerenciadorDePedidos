@@ -35,6 +35,11 @@ public class PedidoE2ETests
 		var userToken = await factory.LoginAsync(anonClient, "maria@teste.com", "Maria@123");
 		using var userClient = factory.CreateAuthenticatedClient(userToken);
 
+		// Popula cache de /api/cliente/me antes de criar pedido para validar invalidação posterior
+		var meAntes = await userClient.GetFromJsonAsync<ClienteDetailsViewModel>("/api/cliente/me");
+		Assert.NotNull(meAntes);
+		Assert.Empty(meAntes.Pedidos);
+
 		// 1. Pedido sem itens ou com produto inexistente deve retornar 400 BadRequest
 		var emptyPedidoResp = await userClient.PostAsJsonAsync(
 			"/api/pedido",
@@ -65,6 +70,11 @@ public class PedidoE2ETests
 		Assert.Equal(3300m, pedidoDetails.Total);
 		Assert.Equal("Maria Silva", pedidoDetails.ClienteNome);
 		Assert.Equal(2, pedidoDetails.ItensPedidos.Count);
+
+		// /api/cliente/me deve refletir o novo pedido (cache de cliente invalidado após criação e processamento)
+		var meDepois = await userClient.GetFromJsonAsync<ClienteDetailsViewModel>("/api/cliente/me");
+		Assert.NotNull(meDepois);
+		Assert.Contains(meDepois.Pedidos, p => p.Id == pedidoCreated.Id && p.Status == Status.Concluido);
 
 		// Valida que o estoque dos produtos foi reduzido automaticamente após conclusão
 		var prodAAtualizado = await userClient.GetFromJsonAsync<ProdutoDetailsViewModel>($"/api/produto/{prodA.Id}");
