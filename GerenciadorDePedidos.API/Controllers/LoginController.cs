@@ -1,7 +1,9 @@
-﻿using GerenciadorDePedidos.Application.Commands.LoginCliente;
+﻿using GerenciadorDePedidos.API.Extensions;
+using GerenciadorDePedidos.Application.Commands.LoginCliente;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GerenciadorDePedidos.API.Controllers;
 
@@ -10,6 +12,7 @@ public class LoginController(IMediator mediator) : ApiControllerBase(mediator)
 {
 	[HttpPost]
 	[AllowAnonymous]
+	[EnableRateLimiting(RateLimitingPolicies.AuthPolicy)]
 	public async Task<IActionResult> Login([FromBody] LoginClienteCommand command, CancellationToken cancellationToken)
 	{
 		var loginResult = await SendAsync(command, cancellationToken);

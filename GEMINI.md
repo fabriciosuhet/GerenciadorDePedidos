@@ -26,3 +26,5 @@
 ## Modo de Execução e Autonomia
 - Aplique edições de arquivos, criações de classes e refatorações diretamente sem pedir confirmação passo a passo, mantendo o código compilável.
 - Sempre que criar ou alterar código estrutural, valide se a solução compila usando `dotnet build`.
+- Antes de iniciar novas alterações, vá sempre para a branch `main`, execute `git pull` e crie uma nova branch baseada na `main`.
+- Após concluir a implementação e validar que todos os testes passam, faça o commit detalhado (sem coautor), execute o `git push` da branch e abra o PR para a `main` automaticamente (ou forneça o link direto de criação do PR caso o `gh` CLI não esteja disponível), sem perguntar se deve fazê-lo.

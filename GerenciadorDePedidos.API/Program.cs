@@ -1,3 +1,4 @@
+using GerenciadorDePedidos.API.Extensions;
 using GerenciadorDePedidos.API.Filters;
 using GerenciadorDePedidos.API.Middleware;
 using GerenciadorDePedidos.Application;
@@ -23,7 +24,8 @@ builder.Services
 	.AddCorsService()
 	.AddSwaggerService()
 	.AddCacheService()
-	.AddPolicyController();
+	.AddPolicyController()
+	.AddRateLimitingService(builder.Configuration);
 
 var app = builder.Build();
 
@@ -38,6 +40,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapControllers();
