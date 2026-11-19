@@ -24,26 +24,34 @@ public class CreateClienteCommandHandlerTests
 		var authServiceMock = new Mock<IAuthService>();
 		authServiceMock.Setup(a => a.HashPassword("Teste@123")).Returns("hashedPassword");
 		authServiceMock.Setup(a => a.GenerateJwtToken("email@teste.com", nameof(Role.Admin))).Returns("jwt-token");
+		authServiceMock.Setup(a => a.GenerateRefreshToken()).Returns("refresh-token");
+		authServiceMock.Setup(a => a.GetRefreshTokenExpirationUtc()).Returns(DateTime.UtcNow.AddDays(7));
 
+		var refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 
 		var handler = new CreateClienteCommandHandler(
 			authServiceMock.Object,
 			clienteRepositoryMock.Object,
 			loginRepositoryMock.Object,
+			refreshTokenRepositoryMock.Object,
 			unitOfWorkMock.Object);
 
 		var result = await handler.Handle(command, CancellationToken.None);
 
 		Assert.NotEqual(Guid.Empty, result.Id);
 		Assert.Equal("jwt-token", result.Token);
+		Assert.Equal("refresh-token", result.RefreshToken);
 		clienteRepositoryMock.Verify(r => r.AddAsync(
 			It.Is<Cliente>(c => c.NomeCompleto == "Nome teste" && c.Telefone == "123456789" && c.Role == Role.Admin),
 			It.IsAny<CancellationToken>()), Times.Once);
 		loginRepositoryMock.Verify(r => r.AddAsync(
 			It.Is<Login>(l => l.Email == "email@teste.com" && l.SenhaHash == "hashedPassword"),
 			It.IsAny<CancellationToken>()), Times.Once);
-		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+		refreshTokenRepositoryMock.Verify(r => r.AddAsync(
+			It.Is<RefreshToken>(rt => rt.Token == "refresh-token"),
+			It.IsAny<CancellationToken>()), Times.Once);
+		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
 	}
 
 	[Fact]
@@ -57,12 +65,14 @@ public class CreateClienteCommandHandlerTests
 			.ReturnsAsync(new Login(Guid.NewGuid(), command.Email, "hash", Role.Usuario));
 
 		var authServiceMock = new Mock<IAuthService>();
+		var refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 
 		var handler = new CreateClienteCommandHandler(
 			authServiceMock.Object,
 			clienteRepositoryMock.Object,
 			loginRepositoryMock.Object,
+			refreshTokenRepositoryMock.Object,
 			unitOfWorkMock.Object);
 
 		await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
@@ -72,7 +82,7 @@ public class CreateClienteCommandHandlerTests
 	[Fact]
 	public async Task RegisterHandler_DeveSempreForcarRoleUsuario()
 	{
-		var esperado = new CreateClienteViewModel(Guid.NewGuid(), "user-token");
+		var esperado = new CreateClienteViewModel(Guid.NewGuid(), "user-token", "user-refresh-token");
 		var senderMock = new Mock<ISender>();
 		senderMock
 			.Setup(s => s.Send(It.IsAny<CreateClienteCommand>(), It.IsAny<CancellationToken>()))
