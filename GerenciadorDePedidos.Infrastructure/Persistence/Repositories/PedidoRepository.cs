@@ -28,6 +28,11 @@ public class PedidoRepository(GerenciadorDePedidosDbContext context)
 			.AsNoTracking()
 			.SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
 
+	public Task<Pedido?> GetByIdWithItensAsync(int id, CancellationToken cancellationToken = default)
+		=> _dbSet
+			.Include(p => p.ItensPedidos)
+			.SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
+
 	private IQueryable<Pedido> BuildFilteredQuery(string? query)
 	{
 		var q = _dbSet.AsNoTracking();

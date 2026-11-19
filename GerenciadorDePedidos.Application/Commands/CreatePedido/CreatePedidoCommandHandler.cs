@@ -1,12 +1,16 @@
 using GerenciadorDePedidos.Core.Entities;
+using GerenciadorDePedidos.Core.Enums;
+using GerenciadorDePedidos.Core.Events;
 using GerenciadorDePedidos.Core.Repositories;
+using GerenciadorDePedidos.Core.Services;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.CreatePedido;
 
 public sealed class CreatePedidoCommandHandler(
 	IRepository<Pedido, int> pedidoRepository,
-	IProdutoRepository produtoRepository) : IRequestHandler<CreatePedidoCommand, int>
+	IProdutoRepository produtoRepository,
+	IEventBus eventBus) : IRequestHandler<CreatePedidoCommand, int>
 {
 	public async Task<int> Handle(CreatePedidoCommand request, CancellationToken cancellationToken)
 	{
@@ -17,7 +21,7 @@ public sealed class CreatePedidoCommandHandler(
 		var produtos = await produtoRepository.GetByIdsAsync(produtoIds, cancellationToken);
 		var produtosPorId = produtos.ToDictionary(p => p.Id);
 
-		var pedido = new Pedido(request.ClienteId, request.Status);
+		var pedido = new Pedido(request.ClienteId, Status.Pendente);
 
 		foreach (var itemDto in request.ItensPedidos)
 		{
@@ -29,6 +33,8 @@ public sealed class CreatePedidoCommandHandler(
 
 		await pedidoRepository.AddAsync(pedido, cancellationToken);
 		await pedidoRepository.SaveChangesAsync(cancellationToken);
+
+		await eventBus.PublishAsync(new PedidoCriadoEvent(pedido.Id), cancellationToken);
 
 		return pedido.Id;
 	}
