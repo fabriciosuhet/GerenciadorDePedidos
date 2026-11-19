@@ -1,5 +1,4 @@
 using GerenciadorDePedidos.API.Authorization;
-using GerenciadorDePedidos.API.Helpers;
 using GerenciadorDePedidos.Application.Commands.AdicionarProdutoEstoque;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
 using GerenciadorDePedidos.Application.Commands.DeleteProduto;
@@ -10,6 +9,7 @@ using GerenciadorDePedidos.Application.Queries.GetAllMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetAllProdutos;
 using GerenciadorDePedidos.Application.Queries.GetMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetProduto;
+using GerenciadorDePedidos.Core.Helpers;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

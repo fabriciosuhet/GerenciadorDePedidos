@@ -32,4 +32,18 @@ public class PedidoTests
 		Assert.Single(pedido.ItensPedidos);
 		Assert.Equal(500m, pedido.Total);
 	}
+
+	[Fact]
+	public void TransicoesDeStatus_DevemSeguirCicloValido()
+	{
+		var pedido = new Pedido(Guid.NewGuid(), Status.Pendente);
+
+		pedido.MarcarComoProcessado();
+		Assert.Equal(Status.Processado, pedido.Status);
+
+		pedido.Concluir();
+		Assert.Equal(Status.Concluido, pedido.Status);
+
+		Assert.Throws<InvalidOperationException>(() => pedido.Cancelar());
+	}
 }

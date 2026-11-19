@@ -2,7 +2,9 @@ using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
+using GerenciadorDePedidos.Core.Events;
 using GerenciadorDePedidos.Core.Repositories;
+using GerenciadorDePedidos.Core.Services;
 using Moq;
 
 namespace GerenciadorDePedidos.UnitTests.Application.Commands;
@@ -10,7 +12,7 @@ namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 public class CreatePedidoCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_ValidCommand_ShouldCreatePedidoWithSingleBatchQuery()
+	public async Task Handle_ValidCommand_ShouldCreatePedidoAndPublishEvent()
 	{
 		const int produtoId1 = 1;
 		const int produtoId2 = 2;
@@ -32,7 +34,11 @@ public class CreatePedidoCommandHandlerTests
 			.ReturnsAsync([produto1, produto2]);
 
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
-		var handler = new CreatePedidoCommandHandler(pedidoRepositoryMock.Object, produtoRepositoryMock.Object);
+		var eventBusMock = new Mock<IEventBus>();
+		var handler = new CreatePedidoCommandHandler(
+			pedidoRepositoryMock.Object,
+			produtoRepositoryMock.Object,
+			eventBusMock.Object);
 
 		var result = await handler.Handle(command, CancellationToken.None);
 
@@ -46,6 +52,9 @@ public class CreatePedidoCommandHandlerTests
 			p.ItensPedidos.Count == 2 &&
 			p.Total == 80m), It.IsAny<CancellationToken>()), Times.Once);
 		pedidoRepositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+		eventBusMock.Verify(e => e.PublishAsync(
+			It.Is<PedidoCriadoEvent>(ev => ev.PedidoId == result),
+			It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -55,12 +64,17 @@ public class CreatePedidoCommandHandlerTests
 
 		var produtoRepositoryMock = new Mock<IProdutoRepository>();
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
-		var handler = new CreatePedidoCommandHandler(pedidoRepositoryMock.Object, produtoRepositoryMock.Object);
+		var eventBusMock = new Mock<IEventBus>();
+		var handler = new CreatePedidoCommandHandler(
+			pedidoRepositoryMock.Object,
+			produtoRepositoryMock.Object,
+			eventBusMock.Object);
 
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("O pedido deve conter pelo menos um item.", exception.Message);
 		produtoRepositoryMock.Verify(r => r.GetByIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()), Times.Never);
 		pedidoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Pedido>(), It.IsAny<CancellationToken>()), Times.Never);
+		eventBusMock.Verify(e => e.PublishAsync(It.IsAny<PedidoCriadoEvent>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]
@@ -78,11 +92,16 @@ public class CreatePedidoCommandHandlerTests
 			.ReturnsAsync([]);
 
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
-		var handler = new CreatePedidoCommandHandler(pedidoRepositoryMock.Object, produtoRepositoryMock.Object);
+		var eventBusMock = new Mock<IEventBus>();
+		var handler = new CreatePedidoCommandHandler(
+			pedidoRepositoryMock.Object,
+			produtoRepositoryMock.Object,
+			eventBusMock.Object);
 
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal($"O produto com o ID {produtoId} nao foi encontrado.", exception.Message);
 		produtoRepositoryMock.Verify(r => r.GetByIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()), Times.Once);
 		pedidoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Pedido>(), It.IsAny<CancellationToken>()), Times.Never);
+		eventBusMock.Verify(e => e.PublishAsync(It.IsAny<PedidoCriadoEvent>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 }

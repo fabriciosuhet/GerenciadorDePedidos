@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace GerenciadorDePedidos.E2ETests.Infrastructure;
 
@@ -27,6 +28,11 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 	{
 		builder.UseEnvironment("Testing");
 
+		builder.ConfigureLogging(logging =>
+		{
+			logging.ClearProviders();
+		});
+
 		builder.ConfigureAppConfiguration((_, config) =>
 		{
 			config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -34,6 +40,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 				["Jwt:Key"] = "ChaveSecretaExclusivaParaTestesE2EComMaisDe32Bytes!",
 				["Jwt:Issuer"] = "GerenciadorDePedidos",
 				["Jwt:Audience"] = "ClientesProdutos",
+				["RabbitMQ:UseInMemory"] = "true",
 				["AdminSeed:NomeCompleto"] = "Administrador",
 				["AdminSeed:Telefone"] = "11999999999",
 				["AdminSeed:Email"] = "admin@teste.com",

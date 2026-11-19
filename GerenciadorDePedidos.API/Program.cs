@@ -1,3 +1,4 @@
+using GerenciadorDePedidos.API.Consumers;
 using GerenciadorDePedidos.API.Extensions;
 using GerenciadorDePedidos.API.Filters;
 using GerenciadorDePedidos.API.Middleware;
@@ -25,7 +26,8 @@ builder.Services
 	.AddSwaggerService()
 	.AddCacheService()
 	.AddPolicyController()
-	.AddRateLimitingService(builder.Configuration);
+	.AddRateLimitingService(builder.Configuration)
+	.AddMessaging(builder.Configuration, typeof(PedidoCriadoConsumer).Assembly);
 
 var app = builder.Build();
 

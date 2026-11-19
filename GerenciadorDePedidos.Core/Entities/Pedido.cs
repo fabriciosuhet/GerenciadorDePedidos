@@ -30,4 +30,28 @@ public class Pedido : BaseEntity<int>
 		var item = new ItemPedido(produto.Id, quantidade, produto.Preco);
 		ItensPedidos.Add(item);
 	}
+
+	public void MarcarComoProcessado()
+	{
+		if (Status != Status.Pendente)
+			throw new InvalidOperationException($"Não é possível processar um pedido com status {Status}.");
+
+		Status = Status.Processado;
+	}
+
+	public void Concluir()
+	{
+		if (Status != Status.Processado)
+			throw new InvalidOperationException($"Não é possível concluir um pedido com status {Status}.");
+
+		Status = Status.Concluido;
+	}
+
+	public void Cancelar()
+	{
+		if (Status == Status.Concluido)
+			throw new InvalidOperationException("Não é possível cancelar um pedido já concluído.");
+
+		Status = Status.Cancelado;
+	}
 }

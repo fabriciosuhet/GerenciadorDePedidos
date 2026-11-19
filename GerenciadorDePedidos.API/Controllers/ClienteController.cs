@@ -1,6 +1,5 @@
 using GerenciadorDePedidos.API.Authorization;
 using GerenciadorDePedidos.API.Extensions;
-using GerenciadorDePedidos.API.Helpers;
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
 using GerenciadorDePedidos.Application.Commands.DeleteCliente;
 using GerenciadorDePedidos.Application.Commands.RegisterCliente;
@@ -8,6 +7,7 @@ using GerenciadorDePedidos.Application.Commands.UpdateCliente;
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Application.Queries.GetAllClientes;
 using GerenciadorDePedidos.Application.Queries.GetCliente;
+using GerenciadorDePedidos.Core.Helpers;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

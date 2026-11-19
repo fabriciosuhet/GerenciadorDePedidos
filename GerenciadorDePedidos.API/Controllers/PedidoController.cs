@@ -1,11 +1,11 @@
 using GerenciadorDePedidos.API.Authorization;
-using GerenciadorDePedidos.API.Helpers;
 using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Application.Commands.DeletePedido;
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Application.Queries.GetAllPedidos;
 using GerenciadorDePedidos.Application.Queries.GetPedido;
 using GerenciadorDePedidos.Core.DTOs;
+using GerenciadorDePedidos.Core.Helpers;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
