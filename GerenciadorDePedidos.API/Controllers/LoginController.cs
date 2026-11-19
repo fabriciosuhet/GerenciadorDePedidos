@@ -1,5 +1,7 @@
-﻿using GerenciadorDePedidos.API.Extensions;
+using GerenciadorDePedidos.API.Extensions;
 using GerenciadorDePedidos.Application.Commands.LoginCliente;
+using GerenciadorDePedidos.Application.Commands.RefreshToken;
+using GerenciadorDePedidos.Application.Commands.RevokeToken;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,5 +19,22 @@ public class LoginController(IMediator mediator) : ApiControllerBase(mediator)
 	{
 		var loginResult = await SendAsync(command, cancellationToken);
 		return loginResult is null ? NotFound("Email ou senha invalidos") : Ok(loginResult);
+	}
+
+	[HttpPost("refresh")]
+	[AllowAnonymous]
+	[EnableRateLimiting(RateLimitingPolicies.AuthPolicy)]
+	public async Task<IActionResult> Refresh([FromBody] RefreshTokenCommand command, CancellationToken cancellationToken)
+	{
+		var result = await SendAsync(command, cancellationToken);
+		return Ok(result);
+	}
+
+	[HttpPost("logout")]
+	[Authorize]
+	public async Task<IActionResult> Logout([FromBody] RevokeTokenCommand command, CancellationToken cancellationToken)
+	{
+		await SendAsync(command, cancellationToken);
+		return NoContent();
 	}
 }

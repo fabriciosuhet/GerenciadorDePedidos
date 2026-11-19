@@ -19,6 +19,7 @@ public static class ServicesCollectionExtensions
 		services.AddScoped<IPedidoRepository, PedidoRepository>();
 		services.AddScoped<IMovimentacaoEstoqueRepository, MovimentacaoEstoqueRepository>();
 		services.AddScoped<ILoginRepository, LoginRepository>();
+		services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 		services.AddScoped<IUnitOfWork, UnitOfWork>();
 		services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
 		return services;

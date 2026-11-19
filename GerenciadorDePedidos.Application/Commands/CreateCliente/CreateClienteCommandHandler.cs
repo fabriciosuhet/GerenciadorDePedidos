@@ -10,6 +10,7 @@ public sealed class CreateClienteCommandHandler(
 	IAuthService authService,
 	IClienteRepository clienteRepository,
 	ILoginRepository loginRepository,
+	IRefreshTokenRepository refreshTokenRepository,
 	IUnitOfWork unitOfWork) : IRequestHandler<CreateClienteCommand, CreateClienteViewModel>
 {
 	public async Task<CreateClienteViewModel> Handle(CreateClienteCommand request, CancellationToken cancellationToken)
@@ -26,7 +27,14 @@ public sealed class CreateClienteCommandHandler(
 		await loginRepository.AddAsync(login, cancellationToken);
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 
-		var token = authService.GenerateJwtToken(login.Email, login.Role.ToString());
-		return new CreateClienteViewModel(cliente.Id, token);
+		var accessToken = authService.GenerateJwtToken(login.Email, login.Role.ToString());
+		var refreshToken = authService.GenerateRefreshToken();
+
+		await refreshTokenRepository.AddAsync(
+			new Core.Entities.RefreshToken(login.Id, refreshToken, authService.GetRefreshTokenExpirationUtc()),
+			cancellationToken);
+		await unitOfWork.SaveChangesAsync(cancellationToken);
+
+		return new CreateClienteViewModel(cliente.Id, accessToken, refreshToken);
 	}
 }
