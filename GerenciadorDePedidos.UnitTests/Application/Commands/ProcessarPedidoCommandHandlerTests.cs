@@ -1,6 +1,7 @@
 using GerenciadorDePedidos.Application.Commands.ProcessarPedido;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
+using GerenciadorDePedidos.Core.Helpers;
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
 using Moq;
@@ -52,6 +53,7 @@ public class ProcessarPedidoCommandHandlerTests
 			It.Is<MovimentacaoEstoque>(m => m.ProdutoId == 2 && m.Quantidade == 3 && m.TipoMovimentacao == Tipo.Remocao && m.ClienteId == clienteId),
 			It.IsAny<CancellationToken>()), Times.Once);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetClienteByIdKey(clienteId)), Times.Once);
 	}
 
 	[Fact]
@@ -90,6 +92,7 @@ public class ProcessarPedidoCommandHandlerTests
 		Assert.Equal(3, produto.Estoque);
 		movimentacaoRepoMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()), Times.Never);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetClienteByIdKey(clienteId)), Times.Once);
 	}
 
 	[Fact]

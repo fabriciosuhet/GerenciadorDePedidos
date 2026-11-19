@@ -20,7 +20,11 @@ public sealed class GetClienteQueryHandler(
 		if (cliente is null)
 			return null;
 
-		var pedidosDto = cliente.Pedidos.Select(p => p.ToResponseDto()).ToList();
+		var pedidosDto = cliente.Pedidos
+			.OrderByDescending(p => p.DataPedido)
+			.ThenByDescending(p => p.Id)
+			.Select(p => p.ToResponseDto())
+			.ToList();
 
 		return new ClienteDetailsViewModel(cliente.NomeCompleto, cliente.Telefone, pedidosDto);
 	}

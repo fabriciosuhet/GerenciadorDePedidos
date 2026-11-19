@@ -1,10 +1,14 @@
 using GerenciadorDePedidos.Core.Entities;
+using GerenciadorDePedidos.Core.Helpers;
 using GerenciadorDePedidos.Core.Repositories;
+using GerenciadorDePedidos.Core.Services;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.DeletePedido;
 
-public sealed class DeletePedidoCommandHandler(IRepository<Pedido, int> pedidoRepository)
+public sealed class DeletePedidoCommandHandler(
+	IRepository<Pedido, int> pedidoRepository,
+	ICacheService cacheService)
 	: IRequestHandler<DeletePedidoCommand, Unit>
 {
 	public async Task<Unit> Handle(DeletePedidoCommand request, CancellationToken cancellationToken)
@@ -14,6 +18,11 @@ public sealed class DeletePedidoCommandHandler(IRepository<Pedido, int> pedidoRe
 
 		await pedidoRepository.DeleteAsync(pedido.Id, cancellationToken);
 		await pedidoRepository.SaveChangesAsync(cancellationToken);
+
+		cacheService.Remove(CacheKeyHelper.GetPedidoByIdKey(pedido.Id));
+		cacheService.Remove(CacheKeyHelper.GetAllPedidosKey(null));
+		cacheService.Remove(CacheKeyHelper.GetAllPedidosKey(null, pedido.ClienteId));
+		cacheService.Remove(CacheKeyHelper.GetClienteByIdKey(pedido.ClienteId));
 		return Unit.Value;
 	}
 }
