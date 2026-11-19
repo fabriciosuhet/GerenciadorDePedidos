@@ -26,7 +26,10 @@ public sealed class RefreshTokenCommandHandler(
 		if (existingToken.IsExpired)
 			throw new UnauthorizedAccessException("Refresh token expirado.");
 
-		var newAccessToken = authService.GenerateJwtToken(existingToken.Login.Email, existingToken.Login.Role.ToString());
+		var newAccessToken = authService.GenerateJwtToken(
+			existingToken.Login.ClienteId,
+			existingToken.Login.Email,
+			existingToken.Login.Role.ToString());
 		var newRefreshToken = authService.GenerateRefreshToken();
 
 		existingToken.Revogar(newRefreshToken);

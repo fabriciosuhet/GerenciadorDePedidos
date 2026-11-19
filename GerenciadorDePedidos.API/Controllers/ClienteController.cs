@@ -18,10 +18,14 @@ namespace GerenciadorDePedidos.API.Controllers;
 
 [Route("api/cliente")]
 [AcessoPadrao]
-public class ClienteController(IMediator mediator, ICacheService cacheService)
+public class ClienteController(
+	IMediator mediator,
+	ICacheService cacheService,
+	ICurrentUserService currentUserService)
 	: ApiControllerBase(mediator, cacheService)
 {
 	[HttpGet]
+	[AcessoRestrito]
 	public Task<IActionResult> GetAll([FromQuery] string? query, CancellationToken cancellationToken)
 		=> GetCachedOrNotFoundAsync<PagedResultModel<ClienteViewModel>>(
 			CacheKeyHelper.GetAllClientesKey(query),
@@ -29,13 +33,27 @@ public class ClienteController(IMediator mediator, ICacheService cacheService)
 			"Clientes nao encontrados",
 			cancellationToken);
 
+	[HttpGet("me")]
+	public Task<IActionResult> GetMe(CancellationToken cancellationToken)
+	{
+		if (currentUserService.ClienteId is null)
+			return Task.FromResult<IActionResult>(Unauthorized());
+
+		return GetById(currentUserService.ClienteId.Value, cancellationToken);
+	}
+
 	[HttpGet("{id:guid}")]
 	public Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
-		=> GetCachedOrNotFoundAsync<ClienteDetailsViewModel>(
+	{
+		if (!currentUserService.IsAdmin && currentUserService.ClienteId != id)
+			return Task.FromResult<IActionResult>(Forbid());
+
+		return GetCachedOrNotFoundAsync<ClienteDetailsViewModel>(
 			CacheKeyHelper.GetClienteByIdKey(id),
 			new GetClienteQuery(id),
 			"Cliente nao encontrado",
 			cancellationToken);
+	}
 
 	[HttpPost]
 	[AcessoRestrito]

@@ -18,7 +18,7 @@ public sealed class LoginClienteCommandHandler(
 		if (login is null || !authService.VerifyPassword(request.Password, login.SenhaHash))
 			return null;
 
-		var accessToken = authService.GenerateJwtToken(login.Email, login.Role.ToString());
+		var accessToken = authService.GenerateJwtToken(login.ClienteId, login.Email, login.Role.ToString());
 		var refreshToken = authService.GenerateRefreshToken();
 
 		await refreshTokenRepository.AddAsync(

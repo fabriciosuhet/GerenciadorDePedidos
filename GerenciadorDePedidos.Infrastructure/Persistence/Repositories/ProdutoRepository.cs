@@ -34,6 +34,9 @@ public class ProdutoRepository(GerenciadorDePedidosDbContext context)
 			.Take(take)
 			.ToListAsync(cancellationToken);
 
+	public Task<int> GetLowStockCountAsync(int threshold = 5, CancellationToken cancellationToken = default)
+		=> _dbSet.AsNoTracking().CountAsync(p => p.Estoque <= threshold, cancellationToken);
+
 	private IQueryable<Produto> BuildFilteredQuery(string? query)
 	{
 		var q = _dbSet.AsNoTracking();

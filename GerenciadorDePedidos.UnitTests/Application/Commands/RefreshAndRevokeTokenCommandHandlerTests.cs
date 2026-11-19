@@ -13,12 +13,13 @@ public class RefreshAndRevokeTokenCommandHandlerTests
 	[Fact]
 	public async Task RefreshHandle_TokenAtivo_DeveRotacionarERetornarNovosTokens()
 	{
-		var login = new Login(Guid.NewGuid(), "user@teste.com", "hash", Role.Usuario) { Id = 5 };
+		var clienteId = Guid.NewGuid();
+		var login = new Login(clienteId, "user@teste.com", "hash", Role.Usuario) { Id = 5 };
 		var existingToken = new RefreshToken(5, "old-refresh", DateTime.UtcNow.AddDays(3));
 		typeof(RefreshToken).GetProperty(nameof(RefreshToken.Login))!.SetValue(existingToken, login);
 
 		var authServiceMock = new Mock<IAuthService>();
-		authServiceMock.Setup(a => a.GenerateJwtToken("user@teste.com", nameof(Role.Usuario))).Returns("new-access");
+		authServiceMock.Setup(a => a.GenerateJwtToken(clienteId, "user@teste.com", nameof(Role.Usuario))).Returns("new-access");
 		authServiceMock.Setup(a => a.GenerateRefreshToken()).Returns("new-refresh");
 		authServiceMock.Setup(a => a.GetRefreshTokenExpirationUtc()).Returns(DateTime.UtcNow.AddDays(7));
 

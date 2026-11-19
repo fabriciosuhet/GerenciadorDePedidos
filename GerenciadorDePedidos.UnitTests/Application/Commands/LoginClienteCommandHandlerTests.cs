@@ -19,11 +19,12 @@ public class LoginClienteCommandHandlerTests
 		const string refreshTokenFake = "refresh_token_fake";
 		const Role role = Role.Usuario;
 
-		var login = new Login(Guid.NewGuid(), email, senhaHash, role) { Id = 10 };
+		var clienteId = Guid.NewGuid();
+		var login = new Login(clienteId, email, senhaHash, role) { Id = 10 };
 
 		var authServiceMock = new Mock<IAuthService>();
 		authServiceMock.Setup(a => a.VerifyPassword(senha, senhaHash)).Returns(true);
-		authServiceMock.Setup(a => a.GenerateJwtToken(email, role.ToString())).Returns(tokenFake);
+		authServiceMock.Setup(a => a.GenerateJwtToken(clienteId, email, role.ToString())).Returns(tokenFake);
 		authServiceMock.Setup(a => a.GenerateRefreshToken()).Returns(refreshTokenFake);
 		authServiceMock.Setup(a => a.GetRefreshTokenExpirationUtc()).Returns(DateTime.UtcNow.AddDays(7));
 

@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.Core.Repositories;
+using GerenciadorDePedidos.Core.Services;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.UpdateCliente;
@@ -6,10 +7,14 @@ namespace GerenciadorDePedidos.Application.Commands.UpdateCliente;
 public sealed class UpdateClienteCommandHandler(
 	IClienteRepository clienteRepository,
 	ILoginRepository loginRepository,
-	IUnitOfWork unitOfWork) : IRequestHandler<UpdateClienteCommand, Unit>
+	IUnitOfWork unitOfWork,
+	ICurrentUserService currentUserService) : IRequestHandler<UpdateClienteCommand, Unit>
 {
 	public async Task<Unit> Handle(UpdateClienteCommand request, CancellationToken cancellationToken)
 	{
+		if (!currentUserService.IsAdmin && currentUserService.ClienteId != request.Id)
+			throw new UnauthorizedAccessException("Você não tem permissão para atualizar os dados de outro cliente.");
+
 		var cliente = await clienteRepository.GetByIdAsync(request.Id, cancellationToken)
 			?? throw new KeyNotFoundException("Cliente nao encontrado");
 

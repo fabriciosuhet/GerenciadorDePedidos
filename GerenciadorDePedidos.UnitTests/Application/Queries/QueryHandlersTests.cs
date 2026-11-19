@@ -3,18 +3,37 @@ using GerenciadorDePedidos.Application.Queries.GetAllMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetAllPedidos;
 using GerenciadorDePedidos.Application.Queries.GetAllProdutos;
 using GerenciadorDePedidos.Application.Queries.GetCliente;
+using GerenciadorDePedidos.Application.Queries.GetDashboard;
 using GerenciadorDePedidos.Application.Queries.GetMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetPedido;
 using GerenciadorDePedidos.Application.Queries.GetProduto;
+using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
+using GerenciadorDePedidos.Core.Services;
 using Moq;
 
 namespace GerenciadorDePedidos.UnitTests.Application.Queries;
 
 public class QueryHandlersTests
 {
+	private static ICurrentUserService AdminUser()
+	{
+		var mock = new Mock<ICurrentUserService>();
+		mock.Setup(u => u.IsAdmin).Returns(true);
+		mock.Setup(u => u.ClienteId).Returns(Guid.NewGuid());
+		return mock.Object;
+	}
+
+	private static ICurrentUserService CommonUser(Guid clienteId)
+	{
+		var mock = new Mock<ICurrentUserService>();
+		mock.Setup(u => u.IsAdmin).Returns(false);
+		mock.Setup(u => u.ClienteId).Returns(clienteId);
+		return mock.Object;
+	}
+
 	[Fact]
 	public async Task GetAllClientes_QuandoVazio_DeveRetornarListaVazia()
 	{
@@ -49,10 +68,18 @@ public class QueryHandlersTests
 		var repoMock = new Mock<IClienteRepository>();
 		repoMock.Setup(r => r.GetDetailsByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Cliente?)null);
 
-		var handler = new GetClienteQueryHandler(repoMock.Object);
+		var handler = new GetClienteQueryHandler(repoMock.Object, AdminUser());
 		var result = await handler.Handle(new GetClienteQuery(Guid.NewGuid()), CancellationToken.None);
 
 		Assert.Null(result);
+	}
+
+	[Fact]
+	public async Task GetCliente_UsuarioComumConsultandoOutro_DeveLancarUnauthorizedAccessException()
+	{
+		var handler = new GetClienteQueryHandler(new Mock<IClienteRepository>().Object, CommonUser(Guid.NewGuid()));
+		await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+			handler.Handle(new GetClienteQuery(Guid.NewGuid()), CancellationToken.None));
 	}
 
 	[Fact]
@@ -87,16 +114,17 @@ public class QueryHandlersTests
 	}
 
 	[Fact]
-	public async Task GetAllPedidos_ComRegistros_DeveCalcularTotalCorretamente()
+	public async Task GetAllPedidos_UsuarioComum_DeveFiltrarPeloProprioClienteId()
 	{
-		var pedido = new Pedido(Guid.NewGuid(), Status.Pendente) { Id = 1 };
+		var clienteId = Guid.NewGuid();
+		var pedido = new Pedido(clienteId, Status.Pendente) { Id = 1 };
 		pedido.AdicionarItem(new Produto("Monitor", 1000m, 5) { Id = 10 }, 2);
 
 		var repoMock = new Mock<IPedidoRepository>();
-		repoMock.Setup(r => r.GetCountAsync(null, It.IsAny<CancellationToken>())).ReturnsAsync(1);
-		repoMock.Setup(r => r.GetPagedAsync(null, 0, 10, It.IsAny<CancellationToken>())).ReturnsAsync([pedido]);
+		repoMock.Setup(r => r.GetCountAsync(null, clienteId, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+		repoMock.Setup(r => r.GetPagedAsync(null, 0, 10, clienteId, It.IsAny<CancellationToken>())).ReturnsAsync([pedido]);
 
-		var handler = new GetAllPedidosQueryHandler(repoMock.Object);
+		var handler = new GetAllPedidosQueryHandler(repoMock.Object, CommonUser(clienteId));
 		var result = await handler.Handle(new GetAllPedidosQuery(), CancellationToken.None);
 
 		Assert.Single(result.Items);
@@ -104,20 +132,58 @@ public class QueryHandlersTests
 	}
 
 	[Fact]
-	public async Task GetPedido_Encontrado_DeveMapearItens()
+	public async Task GetPedido_DonoDoPedido_DeveMapearItens()
 	{
-		var pedido = new Pedido(Guid.NewGuid(), Status.Pendente) { Id = 1 };
+		var clienteId = Guid.NewGuid();
+		var pedido = new Pedido(clienteId, Status.Pendente) { Id = 1 };
 		pedido.AdicionarItem(new Produto("Cabo", 25m, 10) { Id = 2 }, 3);
 
 		var repoMock = new Mock<IPedidoRepository>();
 		repoMock.Setup(r => r.GetByIdDetailsAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(pedido);
 
-		var handler = new GetPedidoQueryHandler(repoMock.Object);
+		var handler = new GetPedidoQueryHandler(repoMock.Object, CommonUser(clienteId));
 		var result = await handler.Handle(new GetPedidoQuery(1), CancellationToken.None);
 
 		Assert.NotNull(result);
 		Assert.Equal(75m, result.Total);
 		Assert.Single(result.ItensPedidos);
+	}
+
+	[Fact]
+	public async Task GetPedido_UsuarioConsultandoPedidoDeOutro_DeveLancarUnauthorizedAccessException()
+	{
+		var pedido = new Pedido(Guid.NewGuid(), Status.Pendente) { Id = 1 };
+		var repoMock = new Mock<IPedidoRepository>();
+		repoMock.Setup(r => r.GetByIdDetailsAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(pedido);
+
+		var handler = new GetPedidoQueryHandler(repoMock.Object, CommonUser(Guid.NewGuid()));
+		await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+			handler.Handle(new GetPedidoQuery(1), CancellationToken.None));
+	}
+
+	[Fact]
+	public async Task GetDashboard_DeveRetornarMetricasConsolidadas()
+	{
+		var clienteRepo = new Mock<IClienteRepository>();
+		clienteRepo.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(5);
+
+		var produtoRepo = new Mock<IProdutoRepository>();
+		produtoRepo.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(12);
+		produtoRepo.Setup(r => r.GetLowStockCountAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(2);
+
+		var pedidoRepo = new Mock<IPedidoRepository>();
+		pedidoRepo.Setup(r => r.GetDashboardStatsAsync(It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PedidoDashboardStatsDTO(20, 3, 15, 2, 12500m));
+
+		var handler = new GetDashboardQueryHandler(clienteRepo.Object, produtoRepo.Object, pedidoRepo.Object);
+		var result = await handler.Handle(new GetDashboardQuery(), CancellationToken.None);
+
+		Assert.Equal(5, result.TotalClientes);
+		Assert.Equal(12, result.TotalProdutos);
+		Assert.Equal(2, result.ProdutosComEstoqueBaixo);
+		Assert.Equal(20, result.TotalPedidos);
+		Assert.Equal(15, result.PedidosConcluidos);
+		Assert.Equal(12500m, result.FaturamentoTotalConcluido);
 	}
 
 	[Fact]

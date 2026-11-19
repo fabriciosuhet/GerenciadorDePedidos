@@ -35,10 +35,15 @@ public class CreatePedidoCommandHandlerTests
 
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
 		var eventBusMock = new Mock<IEventBus>();
+		var currentUserMock = new Mock<ICurrentUserService>();
+		currentUserMock.Setup(u => u.IsAdmin).Returns(false);
+		currentUserMock.Setup(u => u.ClienteId).Returns(clienteId);
+
 		var handler = new CreatePedidoCommandHandler(
 			pedidoRepositoryMock.Object,
 			produtoRepositoryMock.Object,
-			eventBusMock.Object);
+			eventBusMock.Object,
+			currentUserMock.Object);
 
 		var result = await handler.Handle(command, CancellationToken.None);
 
@@ -58,6 +63,27 @@ public class CreatePedidoCommandHandlerTests
 	}
 
 	[Fact]
+	public async Task Handle_UsuarioCriandoPedidoParaOutroCliente_ThrowsUnauthorizedAccessException()
+	{
+		var command = new CreatePedidoCommand(
+			[new ItemPedidoDTO { ProdutoId = 1, Quantidade = 1 }],
+			Guid.NewGuid(),
+			Status.Pendente);
+
+		var currentUserMock = new Mock<ICurrentUserService>();
+		currentUserMock.Setup(u => u.IsAdmin).Returns(false);
+		currentUserMock.Setup(u => u.ClienteId).Returns(Guid.NewGuid());
+
+		var handler = new CreatePedidoCommandHandler(
+			new Mock<IRepository<Pedido, int>>().Object,
+			new Mock<IProdutoRepository>().Object,
+			new Mock<IEventBus>().Object,
+			currentUserMock.Object);
+
+		await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(command, CancellationToken.None));
+	}
+
+	[Fact]
 	public async Task Handle_EmptyItensPedidos_ThrowsArgumentException()
 	{
 		var command = new CreatePedidoCommand([], Guid.NewGuid(), Status.Pendente);
@@ -65,10 +91,14 @@ public class CreatePedidoCommandHandlerTests
 		var produtoRepositoryMock = new Mock<IProdutoRepository>();
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
 		var eventBusMock = new Mock<IEventBus>();
+		var currentUserMock = new Mock<ICurrentUserService>();
+		currentUserMock.Setup(u => u.IsAdmin).Returns(true);
+
 		var handler = new CreatePedidoCommandHandler(
 			pedidoRepositoryMock.Object,
 			produtoRepositoryMock.Object,
-			eventBusMock.Object);
+			eventBusMock.Object,
+			currentUserMock.Object);
 
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("O pedido deve conter pelo menos um item.", exception.Message);
@@ -93,10 +123,14 @@ public class CreatePedidoCommandHandlerTests
 
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
 		var eventBusMock = new Mock<IEventBus>();
+		var currentUserMock = new Mock<ICurrentUserService>();
+		currentUserMock.Setup(u => u.IsAdmin).Returns(true);
+
 		var handler = new CreatePedidoCommandHandler(
 			pedidoRepositoryMock.Object,
 			produtoRepositoryMock.Object,
-			eventBusMock.Object);
+			eventBusMock.Object,
+			currentUserMock.Object);
 
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal($"O produto com o ID {produtoId} nao foi encontrado.", exception.Message);

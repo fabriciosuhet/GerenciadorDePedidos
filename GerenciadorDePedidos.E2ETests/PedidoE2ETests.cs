@@ -100,6 +100,38 @@ public class PedidoE2ETests
 		var prodAAposCancelamento = await userClient.GetFromJsonAsync<ProdutoDetailsViewModel>($"/api/produto/{prodA.Id}");
 		Assert.Equal(8, prodAAposCancelamento!.Estoque);
 
+		// 3b. Isolamento de dono e dashboard administrativo
+		var mariaPedidosAll = await userClient.GetFromJsonAsync<PagedResultModel<PedidoViewModel>>("/api/pedido");
+		Assert.NotNull(mariaPedidosAll);
+		Assert.Equal(2, mariaPedidosAll.TotalCount);
+
+		var dashboardResp = await adminClient.GetAsync("/api/dashboard");
+		Assert.Equal(HttpStatusCode.OK, dashboardResp.StatusCode);
+		var dashboard = await dashboardResp.Content.ReadFromJsonAsync<DashboardViewModel>();
+		Assert.NotNull(dashboard);
+		Assert.Equal(1, dashboard.PedidosConcluidos);
+		Assert.Equal(1, dashboard.PedidosCancelados);
+		Assert.Equal(3300m, dashboard.FaturamentoTotalConcluido);
+
+		await adminClient.PostAsJsonAsync(
+			"/api/cliente",
+			new CreateClienteCommand("Joao Souza", Role.Usuario, "Joao@123", "joao@teste.com", "11933332222"));
+		var joaoToken = await factory.LoginAsync(anonClient, "joao@teste.com", "Joao@123");
+		using var joaoClient = factory.CreateAuthenticatedClient(joaoToken);
+
+		var joaoPedidos = await joaoClient.GetFromJsonAsync<PagedResultModel<PedidoViewModel>>("/api/pedido");
+		Assert.NotNull(joaoPedidos);
+		Assert.Empty(joaoPedidos.Items);
+		Assert.Equal(0, joaoPedidos.TotalCount);
+
+		var joaoGetMariaPedido = await joaoClient.GetAsync($"/api/pedido/{pedidoCreated.Id}");
+		Assert.Equal(HttpStatusCode.Forbidden, joaoGetMariaPedido.StatusCode);
+
+		var joaoCreateForMaria = await joaoClient.PostAsJsonAsync(
+			"/api/pedido",
+			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prodA.Id, Quantidade = 1 }], user.Id, Status.Pendente));
+		Assert.Equal(HttpStatusCode.Forbidden, joaoCreateForMaria.StatusCode);
+
 		// 4. Usuario comum não pode deletar pedido (403 Forbidden)
 		var deleteAsUser = await userClient.DeleteAsync($"/api/pedido/deletar-pedido?id={pedidoCreated.Id}");
 		Assert.Equal(HttpStatusCode.Forbidden, deleteAsUser.StatusCode);

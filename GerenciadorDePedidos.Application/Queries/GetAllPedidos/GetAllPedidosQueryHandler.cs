@@ -1,16 +1,24 @@
 using GerenciadorDePedidos.Application.Mappings;
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Core.Repositories;
+using GerenciadorDePedidos.Core.Services;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Queries.GetAllPedidos;
 
-public sealed class GetAllPedidosQueryHandler(IPedidoRepository pedidoRepository)
+public sealed class GetAllPedidosQueryHandler(
+	IPedidoRepository pedidoRepository,
+	ICurrentUserService currentUserService)
 	: IRequestHandler<GetAllPedidosQuery, PagedResultModel<PedidoViewModel>>
 {
 	public async Task<PagedResultModel<PedidoViewModel>> Handle(GetAllPedidosQuery request, CancellationToken cancellationToken)
 	{
-		var totalCount = await pedidoRepository.GetCountAsync(request.Query, cancellationToken);
+		Guid? clienteIdFiltro = currentUserService.IsAdmin ? null : currentUserService.ClienteId;
+
+		if (!currentUserService.IsAdmin && clienteIdFiltro is null)
+			throw new UnauthorizedAccessException("Usuário não autenticado.");
+
+		var totalCount = await pedidoRepository.GetCountAsync(request.Query, clienteIdFiltro, cancellationToken);
 		if (totalCount == 0)
 			return new PagedResultModel<PedidoViewModel>([], 0, request.PageNumber, request.PageSize);
 
@@ -18,6 +26,7 @@ public sealed class GetAllPedidosQueryHandler(IPedidoRepository pedidoRepository
 			request.Query,
 			(request.PageNumber - 1) * request.PageSize,
 			request.PageSize,
+			clienteIdFiltro,
 			cancellationToken);
 
 		var items = pedidos
