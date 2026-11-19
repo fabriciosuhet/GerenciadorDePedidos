@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using GerenciadorDePedidos.API.Consumers;
 using GerenciadorDePedidos.Application.Commands.LoginCliente;
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Infrastructure.Persistence;
+using MassTransit;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -55,6 +57,24 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
 			services.AddDbContext<GerenciadorDePedidosDbContext>(options =>
 				options.UseInMemoryDatabase(_databaseName));
+
+			// Substitui o transporte RabbitMQ pelo transporte InMemory do MassTransit nos testes E2E
+			var massTransitDescriptors = services
+				.Where(d => d.ServiceType.Namespace?.StartsWith("MassTransit") == true
+					|| d.ImplementationType?.Namespace?.StartsWith("MassTransit") == true)
+				.ToList();
+			foreach (var descriptor in massTransitDescriptors)
+				services.Remove(descriptor);
+
+			services.AddMassTransit(x =>
+			{
+				x.AddConsumers(typeof(PedidoCriadoConsumer).Assembly);
+				x.UsingInMemory((context, cfg) =>
+				{
+					cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromMilliseconds(200)));
+					cfg.ConfigureEndpoints(context);
+				});
+			});
 		});
 	}
 

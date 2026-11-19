@@ -13,7 +13,10 @@ public static class AuthServiceExtensions
 	public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
 	{
 		services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-			.AddJwtBearer(opt =>
+			.AddJwtBearer();
+
+		services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+			.Configure<IConfiguration>((opt, cfg) =>
 			{
 				opt.TokenValidationParameters = new TokenValidationParameters
 				{
@@ -23,13 +26,13 @@ public static class AuthServiceExtensions
 					ValidateIssuerSigningKey = true,
 					ClockSkew = TimeSpan.Zero,
 
-					ValidIssuer = configuration["Jwt:Issuer"],
-					ValidAudience = configuration["Jwt:Audience"],
-					IssuerSigningKey = new SymmetricSecurityKey
-						(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? string.Empty))
+					ValidIssuer = cfg["Jwt:Issuer"],
+					ValidAudience = cfg["Jwt:Audience"],
+					IssuerSigningKey = new SymmetricSecurityKey(
+						Encoding.UTF8.GetBytes(cfg["Jwt:Key"] ?? string.Empty))
 				};
 			});
-		
+
 		return services;
 	}
 
@@ -38,5 +41,4 @@ public static class AuthServiceExtensions
 		services.AddScoped<IAuthService, AuthService>();
 		return services;
 	}
-
 }
