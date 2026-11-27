@@ -2,6 +2,7 @@ using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Events;
 using GerenciadorDePedidos.Core.Helpers;
+using GerenciadorDePedidos.Core.Observability;
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
@@ -38,6 +39,7 @@ public sealed class ProcessarPedidoCommandHandler(
 		{
 			pedido.Cancelar();
 			await unitOfWork.SaveChangesAsync(cancellationToken);
+			AppDiagnostics.PedidosCancelados.Add(1, new KeyValuePair<string, object?>("motivo", "estoque_insuficiente"));
 			InvalidarCachePedido(pedido.Id, pedido.ClienteId);
 			return false;
 		}
@@ -81,6 +83,7 @@ public sealed class ProcessarPedidoCommandHandler(
 			await eventBus.PublishAsync(evento, cancellationToken);
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);
+		AppDiagnostics.PedidosConcluidos.Add(1);
 
 		InvalidarCachePedido(pedido.Id, pedido.ClienteId);
 		cacheService.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix);
