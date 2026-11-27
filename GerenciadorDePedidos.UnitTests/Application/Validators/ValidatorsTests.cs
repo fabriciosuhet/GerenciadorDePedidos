@@ -83,15 +83,40 @@ public class ValidatorsTests
 	}
 
 	[Fact]
-	public void EstoqueValidators_QuantidadeZero_DevemFalhar()
+	public void EstoqueValidators_QuantidadeZeroOuExcessiva_DevemFalhar()
 	{
 		var addValidator = new AdicionarProdutoEstoqueCommandValidator();
 		var remValidator = new RemoverProdutoEstoqueCommandValidator();
 
-		var addResult = addValidator.Validate(new AdicionarProdutoEstoqueCommand(1, 0, Guid.NewGuid()));
-		var remResult = remValidator.Validate(new RemoverProdutoEstoqueCommand(1, 0, Guid.NewGuid()));
+		Assert.False(addValidator.Validate(new AdicionarProdutoEstoqueCommand(1, 0)).IsValid);
+		Assert.False(remValidator.Validate(new RemoverProdutoEstoqueCommand(1, 0)).IsValid);
+		Assert.False(addValidator.Validate(new AdicionarProdutoEstoqueCommand(1, 100_001)).IsValid);
+		Assert.False(remValidator.Validate(new RemoverProdutoEstoqueCommand(1, 100_001)).IsValid);
+	}
 
-		Assert.False(addResult.IsValid);
-		Assert.False(remResult.IsValid);
+	[Fact]
+	public void RegisterClienteValidator_NomeComControleOuMuitoLongo_DeveFalhar()
+	{
+		var validator = new RegisterClienteCommandValidator();
+
+		var comControle = validator.Validate(new RegisterClienteCommand("Joao\r\nAdmin", "User@1234", "joao@teste.com", "11999999999"));
+		var muitoLongo = validator.Validate(new RegisterClienteCommand(new string('A', 151), "User@1234", "joao2@teste.com", "11999999999"));
+
+		Assert.False(comControle.IsValid);
+		Assert.False(muitoLongo.IsValid);
+	}
+
+	[Fact]
+	public void CreatePedidoValidator_ItensExcessivosOuQuantidadeAcimaDoLimite_DeveFalhar()
+	{
+		var validator = new CreatePedidoCommandValidator();
+
+		var muitosItens = Enumerable.Range(1, 101)
+			.Select(i => new ItemPedidoDTO { ProdutoId = i, Quantidade = 1 })
+			.ToList();
+		Assert.False(validator.Validate(new CreatePedidoCommand(muitosItens, Guid.NewGuid(), Status.Pendente)).IsValid);
+
+		var qtdExcessiva = new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = 1, Quantidade = 10_001 }], Guid.NewGuid(), Status.Pendente);
+		Assert.False(validator.Validate(qtdExcessiva).IsValid);
 	}
 }

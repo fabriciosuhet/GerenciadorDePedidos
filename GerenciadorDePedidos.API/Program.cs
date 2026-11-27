@@ -1,3 +1,4 @@
+using System.Net;
 using GerenciadorDePedidos.API.Consumers;
 using GerenciadorDePedidos.API.Extensions;
 using GerenciadorDePedidos.API.Filters;
@@ -6,11 +7,28 @@ using GerenciadorDePedidos.Application;
 using GerenciadorDePedidos.Infrastructure.Extensions;
 using GerenciadorDePedidos.Infrastructure.Persistence;
 using GerenciadorDePedidos.Infrastructure.Persistence.Seeders;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddObservability();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+	options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+	options.ForwardLimit = 1;
+
+	var knownProxies = builder.Configuration
+		.GetSection("ForwardedHeaders:KnownProxies")
+		.Get<string[]>() ?? [];
+
+	foreach (var proxy in knownProxies)
+	{
+		if (IPAddress.TryParse(proxy, out var ip))
+			options.KnownProxies.Add(ip);
+	}
+});
 
 builder.Services.AddControllers(opt => opt.Filters.Add<ValidationFilter>());
 builder.Services.AddEndpointsApiExplorer();
@@ -24,7 +42,7 @@ builder.Services
 	.AddRepositories()
 	.AddAuthService()
 	.AddJwtAuthentication(builder.Configuration)
-	.AddCorsService()
+	.AddCorsService(builder.Configuration)
 	.AddSwaggerService()
 	.AddCacheService(builder.Configuration)
 	.AddReportServices()
@@ -35,6 +53,7 @@ builder.Services
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();
 app.UseObservabilityRequestLogging();
@@ -44,9 +63,13 @@ if (app.Environment.IsDevelopment())
 	app.UseSwagger();
 	app.UseSwaggerUI();
 }
+else if (!app.Environment.IsEnvironment("Testing"))
+{
+	app.UseHsts();
+}
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+app.UseCors(CorsPolicies.Default);
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();

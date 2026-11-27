@@ -10,6 +10,14 @@ namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 
 public class RemoverProdutoEstoqueCommandHandlerTests
 {
+	private static ICurrentUserService CreateUser(Guid? clienteId)
+	{
+		var mock = new Mock<ICurrentUserService>();
+		mock.Setup(u => u.ClienteId).Returns(clienteId);
+		mock.Setup(u => u.IsAdmin).Returns(true);
+		return mock.Object;
+	}
+
 	[Fact]
 	public async Task Handle_CommandValid_RemoveMovimentacaoProdutoEstoqueAndUpdatesProduto()
 	{
@@ -24,12 +32,13 @@ public class RemoverProdutoEstoqueCommandHandlerTests
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 		var eventBusMock = new Mock<IEventBus>();
 
-		var command = new RemoverProdutoEstoqueCommand(produtoId, 10, clienteId);
+		var command = new RemoverProdutoEstoqueCommand(produtoId, 10);
 		var handler = new RemoverProdutoEstoqueCommandHandler(
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
 			unitOfWorkMock.Object,
-			eventBusMock.Object);
+			eventBusMock.Object,
+			CreateUser(clienteId));
 
 		var result = await handler.Handle(command, CancellationToken.None);
 
@@ -68,9 +77,10 @@ public class RemoverProdutoEstoqueCommandHandlerTests
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
 			unitOfWorkMock.Object,
-			eventBusMock.Object);
+			eventBusMock.Object,
+			CreateUser(clienteId));
 
-		await handler.Handle(new RemoverProdutoEstoqueCommand(produtoId, 3, clienteId), CancellationToken.None);
+		await handler.Handle(new RemoverProdutoEstoqueCommand(produtoId, 3), CancellationToken.None);
 
 		Assert.Equal(4, produto.Estoque);
 		eventBusMock.Verify(e => e.PublishAsync(
@@ -92,12 +102,13 @@ public class RemoverProdutoEstoqueCommandHandlerTests
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 		var eventBusMock = new Mock<IEventBus>();
 
-		var command = new RemoverProdutoEstoqueCommand(produtoId, 10, Guid.NewGuid());
+		var command = new RemoverProdutoEstoqueCommand(produtoId, 10);
 		var handler = new RemoverProdutoEstoqueCommandHandler(
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
 			unitOfWorkMock.Object,
-			eventBusMock.Object);
+			eventBusMock.Object,
+			CreateUser(Guid.NewGuid()));
 
 		var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal($"O ID: {produtoId} do produto nao foi encontrado", exception.Message);
@@ -117,12 +128,13 @@ public class RemoverProdutoEstoqueCommandHandlerTests
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 		var eventBusMock = new Mock<IEventBus>();
 
-		var command = new RemoverProdutoEstoqueCommand(produtoId, -5, Guid.NewGuid());
+		var command = new RemoverProdutoEstoqueCommand(produtoId, -5);
 		var handler = new RemoverProdutoEstoqueCommandHandler(
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
 			unitOfWorkMock.Object,
-			eventBusMock.Object);
+			eventBusMock.Object,
+			CreateUser(Guid.NewGuid()));
 
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("O valor não pode ser menor ou igual a 0", exception.Message);
@@ -143,16 +155,31 @@ public class RemoverProdutoEstoqueCommandHandlerTests
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 		var eventBusMock = new Mock<IEventBus>();
 
-		var command = new RemoverProdutoEstoqueCommand(produtoId, 10, Guid.NewGuid());
+		var command = new RemoverProdutoEstoqueCommand(produtoId, 10);
 		var handler = new RemoverProdutoEstoqueCommandHandler(
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
 			unitOfWorkMock.Object,
-			eventBusMock.Object);
+			eventBusMock.Object,
+			CreateUser(Guid.NewGuid()));
 
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("Não é possível remover 10 do estoque, pois excede o disponível: 5", exception.Message);
 		produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
 		movimentacaoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task Handle_UsuarioNaoAutenticado_ThrowsUnauthorizedAccessException()
+	{
+		var handler = new RemoverProdutoEstoqueCommandHandler(
+			new Mock<IRepository<Produto, int>>().Object,
+			new Mock<IRepository<MovimentacaoEstoque, int>>().Object,
+			new Mock<IUnitOfWork>().Object,
+			new Mock<IEventBus>().Object,
+			CreateUser(null));
+
+		await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+			handler.Handle(new RemoverProdutoEstoqueCommand(1, 5), CancellationToken.None));
 	}
 }

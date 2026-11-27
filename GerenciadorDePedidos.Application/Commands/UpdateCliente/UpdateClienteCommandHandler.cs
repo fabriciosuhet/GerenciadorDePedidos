@@ -7,6 +7,7 @@ namespace GerenciadorDePedidos.Application.Commands.UpdateCliente;
 public sealed class UpdateClienteCommandHandler(
 	IClienteRepository clienteRepository,
 	ILoginRepository loginRepository,
+	IRefreshTokenRepository refreshTokenRepository,
 	IUnitOfWork unitOfWork,
 	ICurrentUserService currentUserService) : IRequestHandler<UpdateClienteCommand, Unit>
 {
@@ -26,10 +27,11 @@ public sealed class UpdateClienteCommandHandler(
 		{
 			var emailOwner = await loginRepository.GetByEmailAsync(request.Email, cancellationToken);
 			if (emailOwner is not null && emailOwner.ClienteId != cliente.Id)
-				throw new ArgumentException("Já existe um cliente cadastrado com este e-mail.");
+				throw new ArgumentException("Não foi possível atualizar o e-mail informado.");
 
 			login.AlterarEmail(request.Email);
 			loginRepository.Update(login);
+			await refreshTokenRepository.RevokeAllActiveByLoginIdAsync(login.Id, cancellationToken);
 		}
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);

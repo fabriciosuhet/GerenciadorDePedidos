@@ -53,13 +53,17 @@ public static class MessagingExtensions
 					endpointConfigurator.UseEntityFrameworkOutbox<GerenciadorDePedidosDbContext>(context);
 				});
 
-				var host = configuration["RabbitMQ:Host"] ?? "localhost";
-				var virtualHost = configuration["RabbitMQ:VirtualHost"] ?? "/";
-				var username = configuration["RabbitMQ:Username"] ?? "guest";
-				var password = configuration["RabbitMQ:Password"] ?? "guest";
-
 				x.UsingRabbitMq((context, cfg) =>
 				{
+					var cfgRoot = context.GetRequiredService<IConfiguration>();
+					var host = cfgRoot["RabbitMQ:Host"] ?? "localhost";
+					var virtualHost = cfgRoot["RabbitMQ:VirtualHost"] ?? "/";
+					var username = cfgRoot["RabbitMQ:Username"];
+					var password = cfgRoot["RabbitMQ:Password"];
+
+					if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+						throw new InvalidOperationException("RabbitMQ:Username e RabbitMQ:Password devem ser configurados.");
+
 					cfg.Host(host, virtualHost, h =>
 					{
 						h.Username(username);

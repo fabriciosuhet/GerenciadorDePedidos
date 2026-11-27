@@ -1,17 +1,18 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using GerenciadorDePedidos.Core.Observability;
 using GerenciadorDePedidos.Core.Services;
 using Serilog.Context;
 
 namespace GerenciadorDePedidos.API.Middleware;
 
-public sealed class CorrelationIdMiddleware(RequestDelegate next)
+public sealed partial class CorrelationIdMiddleware(RequestDelegate next)
 {
 	public async Task InvokeAsync(HttpContext httpContext, ICorrelationContext correlationContext)
 	{
-		var incomingHeader = httpContext.Request.Headers[AppDiagnostics.CorrelationIdHeader].FirstOrDefault();
-		var correlationId = !string.IsNullOrWhiteSpace(incomingHeader) && incomingHeader.Length <= 128
-			? incomingHeader.Trim()
+		var incomingHeader = httpContext.Request.Headers[AppDiagnostics.CorrelationIdHeader].FirstOrDefault()?.Trim();
+		var correlationId = !string.IsNullOrEmpty(incomingHeader) && ValidCorrelationIdRegex().IsMatch(incomingHeader)
+			? incomingHeader
 			: Guid.NewGuid().ToString("D");
 
 		httpContext.TraceIdentifier = correlationId;
@@ -30,5 +31,8 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next)
 
 		await next(httpContext);
 	}
+
+	[GeneratedRegex(@"^[A-Za-z0-9\-_.]{1,64}$")]
+	private static partial Regex ValidCorrelationIdRegex();
 }
 

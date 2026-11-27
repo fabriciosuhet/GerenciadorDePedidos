@@ -16,7 +16,7 @@ public abstract class ApiControllerBase(IMediator mediator, ICacheService? cache
 	protected ICacheService? CacheService => cacheService;
 
 	protected static (int PageNumber, int PageSize) NormalizarPaginacao(int pageNumber, int pageSize)
-		=> (Math.Max(1, pageNumber), Math.Clamp(pageSize, 1, 100));
+		=> (Math.Clamp(pageNumber, 1, 100_000), Math.Clamp(pageSize, 1, 100));
 
 	protected Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken)
 		=> mediator.Send(request, cancellationToken);

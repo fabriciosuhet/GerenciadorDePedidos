@@ -13,7 +13,7 @@ public class UpdateClienteCommandValidator : AbstractValidator<UpdateClienteComm
 		RuleFor(uc => uc.Email)
 			.NotEmpty().WithMessage("O Email não pode ser vazio.")
 			.EmailAddress().WithMessage("Email não válido.")
-			.MaximumLength(255).WithMessage("O email não deve ser maior que 255 caracteres.");
+			.MaximumLength(150).WithMessage("O email não deve ser maior que 150 caracteres.");
 
 		RuleFor(uc => uc.Telefone)
 			.NotEmpty().WithMessage("O telefone não pode ser vazio.")

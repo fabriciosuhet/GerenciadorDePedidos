@@ -17,7 +17,7 @@ public sealed class CreateClienteCommandHandler(
 	{
 		var existingLogin = await loginRepository.GetByEmailAsync(request.Email, cancellationToken);
 		if (existingLogin is not null)
-			throw new ArgumentException("Já existe um cliente cadastrado com este e-mail.");
+			throw new ArgumentException("Não foi possível concluir o cadastro com os dados informados.");
 
 		var passwordHash = authService.HashPassword(request.Senha);
 		var cliente = new Cliente(request.NomeCompleto, request.Telefone, request.Role);
@@ -29,9 +29,10 @@ public sealed class CreateClienteCommandHandler(
 
 		var accessToken = authService.GenerateJwtToken(cliente.Id, login.Email, login.Role.ToString());
 		var refreshToken = authService.GenerateRefreshToken();
+		var refreshTokenHash = authService.HashToken(refreshToken);
 
 		await refreshTokenRepository.AddAsync(
-			new Core.Entities.RefreshToken(login.Id, refreshToken, authService.GetRefreshTokenExpirationUtc()),
+			new Core.Entities.RefreshToken(login.Id, refreshTokenHash, authService.GetRefreshTokenExpirationUtc()),
 			cancellationToken);
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 

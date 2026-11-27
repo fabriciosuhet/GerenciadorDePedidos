@@ -4,5 +4,4 @@ namespace GerenciadorDePedidos.Application.Commands.AdicionarProdutoEstoque;
 
 public sealed record AdicionarProdutoEstoqueCommand(
 	int ProdutoId,
-	int Quantidade,
-	Guid ClienteId) : IRequest<int>;
+	int Quantidade) : IRequest<int>;

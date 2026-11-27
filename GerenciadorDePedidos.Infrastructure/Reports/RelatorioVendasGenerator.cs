@@ -446,10 +446,24 @@ public sealed class RelatorioVendasGenerator : IRelatorioVendasGenerator
 		if (string.IsNullOrEmpty(valor))
 			return string.Empty;
 
-		if (valor.Contains(';') || valor.Contains('"') || valor.Contains('\n') || valor.Contains('\r'))
-			return $"\"{valor.Replace("\"", "\"\"")}\"";
+		var sanitizado = valor;
+		var semEspacosIniciais = sanitizado.TrimStart();
+		if ((semEspacosIniciais.Length > 0 && semEspacosIniciais[0] is '=' or '+' or '-' or '@' or '\t' or '\r')
+			|| sanitizado[0] is '\t' or '\r')
+		{
+			sanitizado = $"'{sanitizado}";
+		}
 
-		return valor;
+		if (sanitizado.Contains(';')
+			|| sanitizado.Contains('"')
+			|| sanitizado.Contains('\n')
+			|| sanitizado.Contains('\r')
+			|| sanitizado.StartsWith('\''))
+		{
+			return $"\"{sanitizado.Replace("\"", "\"\"")}\"";
+		}
+
+		return sanitizado;
 	}
 }
 

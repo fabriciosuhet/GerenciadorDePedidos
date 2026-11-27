@@ -16,7 +16,9 @@ public class CreatePedidoCommandValidator : AbstractValidator<CreatePedidoComman
 			.NotNull()
 			.WithMessage("A lista de pedidos nao pode ser nula")
 			.NotEmpty()
-			.WithMessage("A lista de itens pedidos deve conter pelo menos um item");
+			.WithMessage("A lista de itens pedidos deve conter pelo menos um item")
+			.Must(itens => itens is null || itens.Count <= 100)
+			.WithMessage("O pedido não pode conter mais de 100 itens.");
 
 		RuleForEach(p => p.ItensPedidos)
 			.SetValidator(new ItemPedidoDtoValidator());

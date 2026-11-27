@@ -20,7 +20,8 @@ public class CacheService(IMemoryCache memoryCache) : ICacheService
 
 		var options = new MemoryCacheEntryOptions
 		{
-			AbsoluteExpirationRelativeToNow = expiration
+			AbsoluteExpirationRelativeToNow = expiration,
+			Size = 1
 		};
 		options.RegisterPostEvictionCallback((evictedKey, _, _, _) =>
 		{

@@ -33,7 +33,7 @@ RUN dotnet publish "./GerenciadorDePedidos.API.csproj" -c $BUILD_CONFIGURATION -
 # Fase final (produção/execução)
 FROM base AS final
 ENV ASPNETCORE_URLS="http://+:8080"
-ENV ASPNETCORE_ENVIRONMENT="Development"
+ENV ASPNETCORE_ENVIRONMENT="Production"
 
 WORKDIR /app
 COPY --from=publish /app/publish .
