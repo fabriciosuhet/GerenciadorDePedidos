@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using GerenciadorDePedidos.API.Consumers;
 using GerenciadorDePedidos.Application.Commands.LoginCliente;
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Infrastructure.Messaging;
 using GerenciadorDePedidos.Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.AspNetCore.Hosting;
@@ -72,6 +73,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 				x.AddConsumers(typeof(PedidoCriadoConsumer).Assembly);
 				x.UsingInMemory((context, cfg) =>
 				{
+					cfg.UseConsumeFilter(typeof(CorrelationIdConsumeFilter<>), context);
 					cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromMilliseconds(200)));
 					cfg.ConfigureEndpoints(context);
 				});

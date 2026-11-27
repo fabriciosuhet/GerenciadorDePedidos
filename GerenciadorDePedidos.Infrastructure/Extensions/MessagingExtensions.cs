@@ -1,6 +1,7 @@
 using System.Reflection;
 using GerenciadorDePedidos.Core.Services;
 using GerenciadorDePedidos.Infrastructure.Messaging;
+using GerenciadorDePedidos.Infrastructure.Observability;
 using GerenciadorDePedidos.Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public static class MessagingExtensions
 		IConfiguration configuration,
 		Assembly? consumersAssembly = null)
 	{
+		services.AddSingleton<ICorrelationContext, CorrelationContext>();
 		services.AddScoped<IEventBus, MassTransitEventBus>();
 
 		var useInMemory = configuration.GetValue("RabbitMQ:UseInMemory", false);
@@ -29,6 +31,7 @@ public static class MessagingExtensions
 			{
 				x.UsingInMemory((context, cfg) =>
 				{
+					cfg.UseConsumeFilter(typeof(CorrelationIdConsumeFilter<>), context);
 					cfg.UseMessageRetry(r =>
 					{
 						r.Handle<DbUpdateConcurrencyException>();
@@ -63,6 +66,7 @@ public static class MessagingExtensions
 						h.Password(password);
 					});
 
+					cfg.UseConsumeFilter(typeof(CorrelationIdConsumeFilter<>), context);
 					cfg.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(1)));
 					cfg.ConfigureEndpoints(context);
 				});

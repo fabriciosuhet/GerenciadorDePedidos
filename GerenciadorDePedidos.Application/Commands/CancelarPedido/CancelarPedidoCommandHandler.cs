@@ -2,6 +2,7 @@ using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Helpers;
+using GerenciadorDePedidos.Core.Observability;
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
@@ -72,6 +73,7 @@ public sealed class CancelarPedidoCommandHandler(
 		}
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);
+		AppDiagnostics.PedidosCancelados.Add(1, new KeyValuePair<string, object?>("motivo", "cancelamento_manual"));
 
 		cacheService.Remove(CacheKeyHelper.GetPedidoByIdKey(pedido.Id));
 		cacheService.RemoveByPrefix(CacheKeyHelper.GetAllPedidosAdminPrefix());

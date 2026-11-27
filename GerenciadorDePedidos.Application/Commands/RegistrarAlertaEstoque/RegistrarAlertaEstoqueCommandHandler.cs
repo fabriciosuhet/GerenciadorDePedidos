@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.Core.Entities;
+using GerenciadorDePedidos.Core.Observability;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
@@ -35,6 +36,7 @@ public sealed class RegistrarAlertaEstoqueCommandHandler(
 
 		await alertaEstoqueRepository.AddAsync(novoAlerta, cancellationToken);
 		await unitOfWork.SaveChangesAsync(cancellationToken);
+		AppDiagnostics.AlertasEstoqueBaixo.Add(1);
 
 		return novoAlerta.Id;
 	}

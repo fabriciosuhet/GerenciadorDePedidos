@@ -1,6 +1,7 @@
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Events;
+using GerenciadorDePedidos.Core.Observability;
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
@@ -52,6 +53,7 @@ public sealed class CreatePedidoCommandHandler(
 			await unitOfWork.SaveChangesAsync(ct);
 		}, cancellationToken);
 
+		AppDiagnostics.PedidosCriados.Add(1);
 		return pedido.Id;
 	}
 }

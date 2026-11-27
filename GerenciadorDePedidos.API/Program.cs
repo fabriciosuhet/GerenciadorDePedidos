@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddObservability();
+
 builder.Services.AddControllers(opt => opt.Filters.Add<ValidationFilter>());
 builder.Services.AddEndpointsApiExplorer();
 
@@ -28,11 +30,14 @@ builder.Services
 	.AddReportServices()
 	.AddPolicyController()
 	.AddRateLimitingService(builder.Configuration)
-	.AddMessaging(builder.Configuration, typeof(PedidoCriadoConsumer).Assembly);
+	.AddMessaging(builder.Configuration, typeof(PedidoCriadoConsumer).Assembly)
+	.AddAppHealthChecks(builder.Configuration);
 
 var app = builder.Build();
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();
+app.UseObservabilityRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
@@ -46,6 +51,7 @@ app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
 
+app.MapAppHealthChecks();
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
