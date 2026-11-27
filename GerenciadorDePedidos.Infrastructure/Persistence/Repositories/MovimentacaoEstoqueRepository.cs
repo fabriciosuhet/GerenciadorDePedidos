@@ -21,6 +21,7 @@ public class MovimentacaoEstoqueRepository(GerenciadorDePedidosDbContext context
 
 	public Task<MovimentacaoEstoque?> GetByIdMovimentacaoAsync(int id, CancellationToken cancellationToken = default)
 		=> _dbSet
+			.IgnoreQueryFilters()
 			.AsNoTracking()
 			.Include(me => me.Produto)
 			.Include(me => me.Cliente)
@@ -31,6 +32,7 @@ public class MovimentacaoEstoqueRepository(GerenciadorDePedidosDbContext context
 		DateTime dataFimExclusiva,
 		CancellationToken cancellationToken = default)
 		=> _dbSet
+			.IgnoreQueryFilters()
 			.AsNoTracking()
 			.Include(me => me.Produto)
 			.Include(me => me.Cliente)
@@ -40,7 +42,7 @@ public class MovimentacaoEstoqueRepository(GerenciadorDePedidosDbContext context
 
 	private IQueryable<MovimentacaoEstoque> BuildFilteredQuery(string? query)
 	{
-		var q = _dbSet.AsNoTracking().Include(me => me.Produto).AsQueryable();
+		var q = _dbSet.IgnoreQueryFilters().AsNoTracking().Include(me => me.Produto).AsQueryable();
 
 		if (string.IsNullOrWhiteSpace(query))
 			return q;

@@ -30,6 +30,10 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
 				StatusCodes.Status409Conflict,
 				new { error = conflictEx.Message }),
 
+			InvalidOperationException invalidOpEx => (
+				StatusCodes.Status409Conflict,
+				new { error = invalidOpEx.Message }),
+
 			DbUpdateException dbUpdateEx when IsForeignKeyViolation(dbUpdateEx) => (
 				StatusCodes.Status409Conflict,
 				new { error = "Não é possível excluir este registro porque existem outros registros vinculados a ele." }),

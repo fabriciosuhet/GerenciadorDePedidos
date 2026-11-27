@@ -28,6 +28,18 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DesativadoEm")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("NomeCompleto")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -56,6 +68,18 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DesativadoEm")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int?>("PedidoId")
                         .HasColumnType("int");
@@ -89,8 +113,20 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<Guid>("ClienteId")
                         .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DesativadoEm")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -124,11 +160,34 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<Guid>("ClienteId")
                         .HasColumnType("char(36)");
 
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("DataMovimentacao")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DesativadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Motivo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int?>("PedidoId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PrecoUnitario")
+                        .HasColumnType("decimal(15,2)");
 
                     b.Property<int>("ProdutoId")
                         .HasColumnType("int");
@@ -143,6 +202,8 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
 
                     b.HasIndex("ClienteId");
 
+                    b.HasIndex("PedidoId");
+
                     b.HasIndex("ProdutoId");
 
                     b.ToTable("MovimentacaoEstoques");
@@ -156,10 +217,22 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<Guid>("ClienteId")
                         .HasColumnType("char(36)");
 
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("DataPedido")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DesativadoEm")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("Status")
@@ -179,6 +252,18 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DesativadoEm")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("Estoque")
                         .HasColumnType("int");
@@ -203,7 +288,19 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DesativadoEm")
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("ExpiresAt")
@@ -268,13 +365,20 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("GerenciadorDePedidos.Core.Entities.Pedido", "Pedido")
+                        .WithMany()
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("GerenciadorDePedidos.Core.Entities.Produto", "Produto")
                         .WithMany("MovimentacaoEstoque")
                         .HasForeignKey("ProdutoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Cliente");
+
+                    b.Navigation("Pedido");
 
                     b.Navigation("Produto");
                 });

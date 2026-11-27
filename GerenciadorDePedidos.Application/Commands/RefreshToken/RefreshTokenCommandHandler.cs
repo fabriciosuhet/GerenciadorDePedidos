@@ -26,6 +26,13 @@ public sealed class RefreshTokenCommandHandler(
 		if (existingToken.IsExpired)
 			throw new UnauthorizedAccessException("Refresh token expirado.");
 
+		if (!existingToken.Login.Ativo || existingToken.Login.Cliente is { Ativo: false })
+		{
+			await refreshTokenRepository.RevokeAllActiveByLoginIdAsync(existingToken.LoginId, cancellationToken);
+			await unitOfWork.SaveChangesAsync(cancellationToken);
+			throw new UnauthorizedAccessException("Conta desativada.");
+		}
+
 		var newAccessToken = authService.GenerateJwtToken(
 			existingToken.Login.ClienteId,
 			existingToken.Login.Email,

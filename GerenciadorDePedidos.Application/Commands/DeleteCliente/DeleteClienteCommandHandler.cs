@@ -1,10 +1,13 @@
-using GerenciadorDePedidos.Core.Exceptions;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.DeleteCliente;
 
-public sealed class DeleteClienteCommandHandler(IClienteRepository clienteRepository)
+public sealed class DeleteClienteCommandHandler(
+	IClienteRepository clienteRepository,
+	ILoginRepository loginRepository,
+	IRefreshTokenRepository refreshTokenRepository,
+	IUnitOfWork unitOfWork)
 	: IRequestHandler<DeleteClienteCommand, Unit>
 {
 	public async Task<Unit> Handle(DeleteClienteCommand request, CancellationToken cancellationToken)
@@ -12,11 +15,18 @@ public sealed class DeleteClienteCommandHandler(IClienteRepository clienteReposi
 		var cliente = await clienteRepository.GetByIdAsync(request.Id, cancellationToken)
 			?? throw new KeyNotFoundException("O cliente nao foi encontrado");
 
-		if (await clienteRepository.HasVinculosAsync(cliente.Id, cancellationToken))
-			throw new ConflictException("Não é possível excluir este cliente porque ele possui pedidos ou movimentações de estoque vinculadas.");
+		cliente.Desativar();
+		clienteRepository.Update(cliente);
 
-		await clienteRepository.DeleteAsync(cliente.Id, cancellationToken);
-		await clienteRepository.SaveChangesAsync(cancellationToken);
+		var login = await loginRepository.GetByClienteIdAsync(cliente.Id, cancellationToken);
+		if (login is not null)
+		{
+			login.Desativar();
+			loginRepository.Update(login);
+			await refreshTokenRepository.RevokeAllActiveByLoginIdAsync(login.Id, cancellationToken);
+		}
+
+		await unitOfWork.SaveChangesAsync(cancellationToken);
 		return Unit.Value;
 	}
 }

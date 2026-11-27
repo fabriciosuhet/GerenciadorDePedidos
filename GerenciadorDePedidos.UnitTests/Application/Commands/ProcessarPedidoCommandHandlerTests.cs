@@ -47,10 +47,24 @@ public class ProcessarPedidoCommandHandlerTests
 		Assert.Equal(8, produto1.Estoque);
 		Assert.Equal(2, produto2.Estoque);
 		movimentacaoRepoMock.Verify(r => r.AddAsync(
-			It.Is<MovimentacaoEstoque>(m => m.ProdutoId == 1 && m.Quantidade == 2 && m.TipoMovimentacao == Tipo.Remocao && m.ClienteId == clienteId),
+			It.Is<MovimentacaoEstoque>(m =>
+				m.ProdutoId == 1 &&
+				m.Quantidade == 2 &&
+				m.TipoMovimentacao == Tipo.Remocao &&
+				m.ClienteId == clienteId &&
+				m.PrecoUnitario == 1000m &&
+				m.Motivo == MotivoMovimentacao.VendaPedido &&
+				m.PedidoId == 42),
 			It.IsAny<CancellationToken>()), Times.Once);
 		movimentacaoRepoMock.Verify(r => r.AddAsync(
-			It.Is<MovimentacaoEstoque>(m => m.ProdutoId == 2 && m.Quantidade == 3 && m.TipoMovimentacao == Tipo.Remocao && m.ClienteId == clienteId),
+			It.Is<MovimentacaoEstoque>(m =>
+				m.ProdutoId == 2 &&
+				m.Quantidade == 3 &&
+				m.TipoMovimentacao == Tipo.Remocao &&
+				m.ClienteId == clienteId &&
+				m.PrecoUnitario == 100m &&
+				m.Motivo == MotivoMovimentacao.VendaPedido &&
+				m.PedidoId == 42),
 			It.IsAny<CancellationToken>()), Times.Once);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetClienteByIdKey(clienteId)), Times.Once);

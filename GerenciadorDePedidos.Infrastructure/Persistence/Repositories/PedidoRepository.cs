@@ -14,6 +14,7 @@ public class PedidoRepository(GerenciadorDePedidosDbContext context)
 
 	public Task<List<Pedido>> GetPagedAsync(string? query, int skip, int take, Guid? clienteId = null, CancellationToken cancellationToken = default)
 		=> BuildFilteredQuery(query, clienteId)
+			.IgnoreQueryFilters()
 			.Include(p => p.ItensPedidos)
 				.ThenInclude(i => i.Produto)
 			.OrderByDescending(p => p.DataPedido)
@@ -23,6 +24,7 @@ public class PedidoRepository(GerenciadorDePedidosDbContext context)
 
 	public Task<Pedido?> GetByIdDetailsAsync(int id, CancellationToken cancellationToken = default)
 		=> _dbSet
+			.IgnoreQueryFilters()
 			.Include(p => p.ItensPedidos)
 				.ThenInclude(i => i.Produto)
 			.Include(p => p.Cliente)
@@ -31,6 +33,7 @@ public class PedidoRepository(GerenciadorDePedidosDbContext context)
 
 	public Task<Pedido?> GetByIdWithItensAsync(int id, CancellationToken cancellationToken = default)
 		=> _dbSet
+			.IgnoreQueryFilters()
 			.Include(p => p.ItensPedidos)
 			.SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
 

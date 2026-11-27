@@ -6,6 +6,7 @@ public interface IProdutoRepository : IRepository<Produto, int>
 {
 	Task<List<Produto>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default);
 	Task<List<Produto>> GetByIdsForUpdateAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default);
+	Task<List<Produto>> GetByIdsIncludingInactiveForUpdateAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default);
 	Task<int> GetCountAsync(string? query, CancellationToken cancellationToken = default);
 	Task<List<Produto>> GetPagedAsync(string? query, int skip, int take, CancellationToken cancellationToken = default);
 	Task<int> GetLowStockCountAsync(int threshold = 5, CancellationToken cancellationToken = default);

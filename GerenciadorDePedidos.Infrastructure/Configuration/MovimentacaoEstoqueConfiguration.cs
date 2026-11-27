@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.Core.Entities;
+using GerenciadorDePedidos.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,9 +13,19 @@ public class MovimentacaoEstoqueConfiguration : IEntityTypeConfiguration<Movimen
 			.HasKey(m => m.Id);
 
 		builder
+			.Property(m => m.PrecoUnitario)
+			.HasColumnType("decimal(15,2)");
+
+		builder
+			.Property(m => m.Motivo)
+			.HasConversion<int>()
+			.HasDefaultValue(MotivoMovimentacao.AjusteManual);
+
+		builder
 			.HasOne(m => m.Produto)
 			.WithMany(p => p.MovimentacaoEstoque)
-			.HasForeignKey(m => m.ProdutoId);
+			.HasForeignKey(m => m.ProdutoId)
+			.OnDelete(DeleteBehavior.Restrict);
 
 		builder
 			.HasOne(m => m.Cliente)
@@ -22,5 +33,10 @@ public class MovimentacaoEstoqueConfiguration : IEntityTypeConfiguration<Movimen
 			.HasForeignKey(m => m.ClienteId)
 			.OnDelete(DeleteBehavior.Restrict);
 
+		builder
+			.HasOne(m => m.Pedido)
+			.WithMany()
+			.HasForeignKey(m => m.PedidoId)
+			.OnDelete(DeleteBehavior.SetNull);
 	}
 }

@@ -1,4 +1,3 @@
-using GerenciadorDePedidos.Core.Exceptions;
 using GerenciadorDePedidos.Core.Repositories;
 using MediatR;
 
@@ -12,10 +11,8 @@ public sealed class DeleteProdutoCommandHandler(IProdutoRepository produtoReposi
 		var produto = await produtoRepository.GetByIdAsync(request.Id, cancellationToken)
 			?? throw new KeyNotFoundException("Produto nao encontrado");
 
-		if (await produtoRepository.HasPedidoVinculadoAsync(produto.Id, cancellationToken))
-			throw new ConflictException("Não é possível excluir este produto porque ele está vinculado a pedidos.");
-
-		await produtoRepository.DeleteAsync(produto.Id, cancellationToken);
+		produto.Desativar();
+		produtoRepository.Update(produto);
 		await produtoRepository.SaveChangesAsync(cancellationToken);
 		return Unit.Value;
 	}

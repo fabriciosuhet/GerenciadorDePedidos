@@ -8,7 +8,9 @@ public class LoginRepository(GerenciadorDePedidosDbContext context)
 	: Repository<Login, int>(context), ILoginRepository
 {
 	public Task<Login?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
-		=> _dbSet.AsNoTracking()
+		=> _dbSet
+			.IgnoreQueryFilters()
+			.AsNoTracking()
 			.Include(l => l.Cliente)
 			.SingleOrDefaultAsync(l => l.Email == email, cancellationToken);
 

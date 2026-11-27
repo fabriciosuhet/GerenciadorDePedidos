@@ -19,5 +19,7 @@ public class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
 			.WithOne(p => p.Cliente)
 			.HasForeignKey(p => p.ClienteId)
 			.OnDelete(DeleteBehavior.Restrict);
+
+		builder.HasQueryFilter(c => c.Ativo);
 	}
 }

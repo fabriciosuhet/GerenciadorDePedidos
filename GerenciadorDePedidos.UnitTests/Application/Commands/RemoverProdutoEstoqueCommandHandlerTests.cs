@@ -37,7 +37,10 @@ public class RemoverProdutoEstoqueCommandHandlerTests
 				m.ProdutoId == produtoId &&
 				m.Quantidade == 10 &&
 				m.TipoMovimentacao == Tipo.Remocao &&
-				m.ClienteId == clienteId),
+				m.ClienteId == clienteId &&
+				m.PrecoUnitario == 19.99m &&
+				m.Motivo == MotivoMovimentacao.AjusteManual &&
+				m.PedidoId == null),
 			It.IsAny<CancellationToken>()), Times.Once);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}

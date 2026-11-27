@@ -19,11 +19,12 @@ public class ClienteRepository(GerenciadorDePedidosDbContext context)
 
 	public Task<Cliente?> GetDetailsByIdAsync(Guid id, CancellationToken cancellationToken = default)
 		=> _dbSet
+			.IgnoreQueryFilters()
 			.Include(c => c.Pedidos)
 				.ThenInclude(p => p.ItensPedidos)
 					.ThenInclude(ip => ip.Produto)
 			.AsNoTracking()
-			.SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
+			.SingleOrDefaultAsync(c => c.Ativo && c.Id == id, cancellationToken);
 
 	public async Task<bool> HasVinculosAsync(Guid clienteId, CancellationToken cancellationToken = default)
 		=> await _context.Set<Pedido>().AsNoTracking().AnyAsync(p => p.ClienteId == clienteId, cancellationToken)

@@ -106,4 +106,29 @@ public class RefreshAndRevokeTokenCommandHandlerTests
 		await Assert.ThrowsAsync<KeyNotFoundException>(() =>
 			handler.Handle(new RevokeTokenCommand("missing"), CancellationToken.None));
 	}
+
+	[Fact]
+	public async Task RefreshHandle_LoginDesativado_DeveRevogarTokensELancarUnauthorizedAccessException()
+	{
+		var cliente = new Cliente("Desativado", "11999999999", Role.Usuario);
+		cliente.Desativar();
+		var login = new Login(cliente.Id, "desativado@teste.com", "hash", Role.Usuario) { Id = 8 };
+		login.Desativar();
+		typeof(Login).GetProperty(nameof(Login.Cliente))!.SetValue(login, cliente);
+
+		var existingToken = new RefreshToken(8, "token-inativo", DateTime.UtcNow.AddDays(3));
+		typeof(RefreshToken).GetProperty(nameof(RefreshToken.Login))!.SetValue(existingToken, login);
+
+		var repoMock = new Mock<IRefreshTokenRepository>();
+		repoMock.Setup(r => r.GetByTokenWithLoginAsync("token-inativo", It.IsAny<CancellationToken>())).ReturnsAsync(existingToken);
+
+		var unitOfWorkMock = new Mock<IUnitOfWork>();
+		var handler = new RefreshTokenCommandHandler(new Mock<IAuthService>().Object, repoMock.Object, unitOfWorkMock.Object);
+
+		await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+			handler.Handle(new RefreshTokenCommand("token-inativo"), CancellationToken.None));
+
+		repoMock.Verify(r => r.RevokeAllActiveByLoginIdAsync(8, It.IsAny<CancellationToken>()), Times.Once);
+		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+	}
 }

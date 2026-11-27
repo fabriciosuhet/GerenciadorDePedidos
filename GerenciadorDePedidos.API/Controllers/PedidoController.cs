@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.API.Authorization;
+using GerenciadorDePedidos.Application.Commands.CancelarPedido;
 using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Application.Commands.DeletePedido;
 using GerenciadorDePedidos.Application.Models;
@@ -63,6 +64,13 @@ public class PedidoController(
 		CacheService?.RemoveByPrefix(CacheKeyHelper.GetAllPedidosClientePrefix(command.ClienteId));
 		CacheService?.Remove(CacheKeyHelper.GetClienteByIdKey(command.ClienteId));
 		return CreatedAtAction(nameof(GetById), new { id = pedidoId }, new { id = pedidoId });
+	}
+
+	[HttpPatch("{id:int}/cancelar")]
+	public async Task<IActionResult> Cancelar(int id, CancellationToken cancellationToken)
+	{
+		var resultado = await SendAsync(new CancelarPedidoCommand(id), cancellationToken);
+		return Ok(resultado);
 	}
 
 	[HttpDelete("deletar-pedido")]

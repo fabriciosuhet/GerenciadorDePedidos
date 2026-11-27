@@ -65,9 +65,12 @@ public class ExportarRelatorioMovimentacaoEstoqueTests
 		var notebook = new Produto("Notebook", 4000m, 12) { Id = 1 };
 		var mouse = new Produto("Mouse", 100m, 30) { Id = 2 };
 
-		var mov1 = CriarMovimentacao(10, 5, Tipo.Adicao, notebook, admin, new DateTime(2026, 11, 10, 10, 0, 0, DateTimeKind.Utc));
-		var mov2 = CriarMovimentacao(11, 2, Tipo.Remocao, notebook, admin, new DateTime(2026, 11, 12, 14, 0, 0, DateTimeKind.Utc));
-		var mov3 = CriarMovimentacao(12, 10, Tipo.Adicao, mouse, admin, new DateTime(2026, 11, 15, 9, 0, 0, DateTimeKind.Utc));
+		var mov1 = CriarMovimentacao(10, 5, Tipo.Adicao, notebook, admin, new DateTime(2026, 11, 10, 10, 0, 0, DateTimeKind.Utc), 4000m, MotivoMovimentacao.AjusteManual);
+		var mov2 = CriarMovimentacao(11, 2, Tipo.Remocao, notebook, admin, new DateTime(2026, 11, 12, 14, 0, 0, DateTimeKind.Utc), 4000m, MotivoMovimentacao.VendaPedido, 99);
+		var mov3 = CriarMovimentacao(12, 10, Tipo.Adicao, mouse, admin, new DateTime(2026, 11, 15, 9, 0, 0, DateTimeKind.Utc), 100m, MotivoMovimentacao.AjusteManual);
+
+		// Altera preço do notebook após as movimentações para validar que o relatório preserva o snapshot
+		notebook.AlterarPreco(5500m);
 
 		var repoMock = new Mock<IMovimentacaoEstoqueRepository>();
 		repoMock
@@ -150,9 +153,12 @@ public class ExportarRelatorioMovimentacaoEstoqueTests
 		Tipo tipo,
 		Produto produto,
 		Cliente cliente,
-		DateTime dataUtc)
+		DateTime dataUtc,
+		decimal precoUnitario = 0m,
+		MotivoMovimentacao motivo = MotivoMovimentacao.AjusteManual,
+		int? pedidoId = null)
 	{
-		var mov = new MovimentacaoEstoque(quantidade, tipo, produto.Id, cliente.Id) { Id = id };
+		var mov = new MovimentacaoEstoque(quantidade, tipo, produto.Id, cliente.Id, precoUnitario, motivo, pedidoId) { Id = id };
 		typeof(MovimentacaoEstoque)
 			.GetProperty(nameof(MovimentacaoEstoque.Produto), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
 			.SetValue(mov, produto);

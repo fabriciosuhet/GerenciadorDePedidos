@@ -15,7 +15,7 @@ public sealed class LoginClienteCommandHandler(
 	public async Task<LoginClienteViewModel?> Handle(LoginClienteCommand request, CancellationToken cancellationToken)
 	{
 		var login = await loginRepository.GetByEmailAsync(request.Email, cancellationToken);
-		if (login is null || !authService.VerifyPassword(request.Password, login.SenhaHash))
+		if (login is null || !login.Ativo || login.Cliente is { Ativo: false } || !authService.VerifyPassword(request.Password, login.SenhaHash))
 			return null;
 
 		var accessToken = authService.GenerateJwtToken(login.ClienteId, login.Email, login.Role.ToString());

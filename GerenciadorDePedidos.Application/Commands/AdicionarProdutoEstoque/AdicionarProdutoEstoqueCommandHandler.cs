@@ -17,7 +17,13 @@ public sealed class AdicionarProdutoEstoqueCommandHandler(
 
 		produto.AdicionarEstoque(request.Quantidade);
 
-		var movimentacao = new MovimentacaoEstoque(request.Quantidade, Tipo.Adicao, produto.Id, request.ClienteId);
+		var movimentacao = new MovimentacaoEstoque(
+			request.Quantidade,
+			Tipo.Adicao,
+			produto.Id,
+			request.ClienteId,
+			produto.Preco,
+			MotivoMovimentacao.AjusteManual);
 
 		await movimentacaoEstoqueRepository.AddAsync(movimentacao, cancellationToken);
 		produtoRepository.Update(produto);

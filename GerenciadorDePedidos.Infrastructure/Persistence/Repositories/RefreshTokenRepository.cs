@@ -9,7 +9,9 @@ public class RefreshTokenRepository(GerenciadorDePedidosDbContext context)
 {
 	public Task<RefreshToken?> GetByTokenWithLoginAsync(string token, CancellationToken cancellationToken = default)
 		=> _dbSet
+			.IgnoreQueryFilters()
 			.Include(rt => rt.Login)
+				.ThenInclude(l => l.Cliente)
 			.SingleOrDefaultAsync(rt => rt.Token == token, cancellationToken);
 
 	public async Task RevokeAllActiveByLoginIdAsync(int loginId, CancellationToken cancellationToken = default)

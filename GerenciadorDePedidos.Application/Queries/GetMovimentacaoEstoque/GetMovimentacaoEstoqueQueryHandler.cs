@@ -16,6 +16,10 @@ public sealed class GetMovimentacaoEstoqueQueryHandler(IMovimentacaoEstoqueRepos
 		if (movimentacao is null)
 			return null;
 
+		var precoUnitario = movimentacao.PrecoUnitario > 0m
+			? movimentacao.PrecoUnitario
+			: movimentacao.Produto?.Preco ?? 0m;
+
 		return new MovimentacaoEstoqueDetailsDTO
 		{
 			Id = movimentacao.Id,
@@ -24,7 +28,11 @@ public sealed class GetMovimentacaoEstoqueQueryHandler(IMovimentacaoEstoqueRepos
 			ClienteNome = movimentacao.Cliente?.NomeCompleto ?? string.Empty,
 			Data = movimentacao.DataMovimentacao.ToBrasiliaTime(),
 			Quantidade = movimentacao.Quantidade,
-			TipoMovimentacao = movimentacao.TipoMovimentacao
+			PrecoUnitario = precoUnitario,
+			ValorTotal = movimentacao.Quantidade * precoUnitario,
+			TipoMovimentacao = movimentacao.TipoMovimentacao,
+			Motivo = movimentacao.Motivo,
+			PedidoId = movimentacao.PedidoId
 		};
 	}
 }
