@@ -15,8 +15,8 @@ public class AuthService(IConfiguration configuration) : IAuthService
 		var issuer = configuration["Jwt:Issuer"];
 		var audience = configuration["Jwt:Audience"];
 		var key = configuration["Jwt:Key"];
-		if (string.IsNullOrWhiteSpace(key))
-			throw new InvalidOperationException("Jwt:Key não configurada.");
+		if (string.IsNullOrWhiteSpace(key) || Encoding.UTF8.GetByteCount(key) < 32)
+			throw new InvalidOperationException("Jwt:Key não configurada ou com tamanho inferior a 32 bytes.");
 
 		var expirationMinutes = configuration.GetValue("Jwt:AccessTokenExpirationMinutes", 15);
 		var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
@@ -47,6 +47,13 @@ public class AuthService(IConfiguration configuration) : IAuthService
 			.Replace("+", "-")
 			.Replace("/", "_")
 			.TrimEnd('=');
+	}
+
+	public string HashToken(string token)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(token);
+		var hash = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+		return Convert.ToHexString(hash).ToLowerInvariant();
 	}
 
 	public DateTime GetRefreshTokenExpirationUtc()

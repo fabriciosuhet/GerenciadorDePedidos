@@ -56,7 +56,7 @@ public static class ServicesCollectionExtensions
 		}
 		else
 		{
-			services.AddMemoryCache();
+			services.AddMemoryCache(opt => opt.SizeLimit = 10_000);
 			services.AddScoped<ICacheService, CacheService>();
 		}
 

@@ -27,6 +27,7 @@ public class CreateClienteCommandHandlerTests
 			.Setup(a => a.GenerateJwtToken(It.IsAny<Guid>(), "email@teste.com", nameof(Role.Admin)))
 			.Returns("jwt-token");
 		authServiceMock.Setup(a => a.GenerateRefreshToken()).Returns("refresh-token");
+		authServiceMock.Setup(a => a.HashToken("refresh-token")).Returns("hashed-refresh-token");
 		authServiceMock.Setup(a => a.GetRefreshTokenExpirationUtc()).Returns(DateTime.UtcNow.AddDays(7));
 
 		var refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
@@ -51,7 +52,7 @@ public class CreateClienteCommandHandlerTests
 			It.Is<Login>(l => l.Email == "email@teste.com" && l.SenhaHash == "hashedPassword"),
 			It.IsAny<CancellationToken>()), Times.Once);
 		refreshTokenRepositoryMock.Verify(r => r.AddAsync(
-			It.Is<RefreshToken>(rt => rt.Token == "refresh-token"),
+			It.Is<RefreshToken>(rt => rt.Token == "hashed-refresh-token"),
 			It.IsAny<CancellationToken>()), Times.Once);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
 	}

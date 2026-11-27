@@ -11,10 +11,14 @@ public sealed class RemoverProdutoEstoqueCommandHandler(
 	IRepository<Produto, int> produtoRepository,
 	IRepository<MovimentacaoEstoque, int> movimentacaoEstoqueRepository,
 	IUnitOfWork unitOfWork,
-	IEventBus eventBus) : IRequestHandler<RemoverProdutoEstoqueCommand, int>
+	IEventBus eventBus,
+	ICurrentUserService currentUserService) : IRequestHandler<RemoverProdutoEstoqueCommand, int>
 {
 	public async Task<int> Handle(RemoverProdutoEstoqueCommand request, CancellationToken cancellationToken)
 	{
+		var responsavelId = currentUserService.ClienteId
+			?? throw new UnauthorizedAccessException("Usuário não autenticado.");
+
 		var produto = await produtoRepository.GetByIdAsync(request.ProdutoId, cancellationToken)
 			?? throw new KeyNotFoundException($"O ID: {request.ProdutoId} do produto nao foi encontrado");
 
@@ -24,7 +28,7 @@ public sealed class RemoverProdutoEstoqueCommandHandler(
 			request.Quantidade,
 			Tipo.Remocao,
 			produto.Id,
-			request.ClienteId,
+			responsavelId,
 			produto.Preco,
 			MotivoMovimentacao.AjusteManual);
 

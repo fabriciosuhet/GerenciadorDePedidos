@@ -60,18 +60,18 @@ public class ProdutoEstoqueE2ETests
 		// 4. Admin adiciona e remove estoque e verifica movimentações
 		var addResp = await adminClient.PutAsJsonAsync(
 			"/api/produto/adicionar-estoque",
-			new AdicionarProdutoEstoqueCommand(prod1.Id, 5, adminId));
+			new AdicionarProdutoEstoqueCommand(prod1.Id, 5));
 		Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
 
 		var remResp = await adminClient.PutAsJsonAsync(
 			"/api/produto/remover-estoque",
-			new RemoverProdutoEstoqueCommand(prod2!.Id, 3, adminId));
+			new RemoverProdutoEstoqueCommand(prod2!.Id, 3));
 		Assert.Equal(HttpStatusCode.OK, remResp.StatusCode);
 
 		// Tentativa de remover além do estoque disponível deve retornar 400
 		var overRemoveResp = await adminClient.PutAsJsonAsync(
 			"/api/produto/remover-estoque",
-			new RemoverProdutoEstoqueCommand(prod1.Id, 999, adminId));
+			new RemoverProdutoEstoqueCommand(prod1.Id, 999));
 		Assert.Equal(HttpStatusCode.BadRequest, overRemoveResp.StatusCode);
 
 		// Verifica estoque atualizado (incluindo invalidação de cache)
@@ -162,12 +162,12 @@ public class ProdutoEstoqueE2ETests
 
 		var addResp = await adminClient.PutAsJsonAsync(
 			"/api/produto/adicionar-estoque",
-			new AdicionarProdutoEstoqueCommand(prod1!.Id, 4, adminId));
+			new AdicionarProdutoEstoqueCommand(prod1!.Id, 4));
 		Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
 
 		var remResp = await adminClient.PutAsJsonAsync(
 			"/api/produto/remover-estoque",
-			new RemoverProdutoEstoqueCommand(prod2!.Id, 3, adminId));
+			new RemoverProdutoEstoqueCommand(prod2!.Id, 3));
 		Assert.Equal(HttpStatusCode.OK, remResp.StatusCode);
 
 		// 1. Download CSV (Mensal)
@@ -242,7 +242,7 @@ public class ProdutoEstoqueE2ETests
 		// 2. Remove 2 unidades (estoque = 4 <= 5) -> dispara EstoqueBaixoEvent -> EstoqueBaixoConsumer persiste alerta
 		var remResp = await adminClient.PutAsJsonAsync(
 			"/api/produto/remover-estoque",
-			new RemoverProdutoEstoqueCommand(prod!.Id, 2, adminId));
+			new RemoverProdutoEstoqueCommand(prod!.Id, 2));
 		Assert.Equal(HttpStatusCode.OK, remResp.StatusCode);
 
 		var alertasPendentes = await AguardarAlertasPendentesAsync(adminClient, prod.Id);
@@ -255,7 +255,7 @@ public class ProdutoEstoqueE2ETests
 		// 3. Repõe estoque acima do mínimo (+10 -> estoque = 14 > 5) -> alerta é resolvido automaticamente
 		var addResp = await adminClient.PutAsJsonAsync(
 			"/api/produto/adicionar-estoque",
-			new AdicionarProdutoEstoqueCommand(prod.Id, 10, adminId));
+			new AdicionarProdutoEstoqueCommand(prod.Id, 10));
 		Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
 
 		var pendentesAposReposicao = await adminClient.GetFromJsonAsync<List<AlertaEstoqueViewModel>>(

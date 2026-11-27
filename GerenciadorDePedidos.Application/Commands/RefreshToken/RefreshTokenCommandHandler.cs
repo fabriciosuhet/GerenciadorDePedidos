@@ -12,7 +12,8 @@ public sealed class RefreshTokenCommandHandler(
 {
 	public async Task<LoginClienteViewModel> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
 	{
-		var existingToken = await refreshTokenRepository.GetByTokenWithLoginAsync(request.RefreshToken, cancellationToken)
+		var tokenHash = authService.HashToken(request.RefreshToken);
+		var existingToken = await refreshTokenRepository.GetByTokenWithLoginAsync(tokenHash, cancellationToken)
 			?? throw new UnauthorizedAccessException("Refresh token inválido.");
 
 		// Detecção de reuso: se um token já revogado for reapresentado, revoga todas as sessões ativas do usuário
@@ -38,11 +39,12 @@ public sealed class RefreshTokenCommandHandler(
 			existingToken.Login.Email,
 			existingToken.Login.Role.ToString());
 		var newRefreshToken = authService.GenerateRefreshToken();
+		var newRefreshTokenHash = authService.HashToken(newRefreshToken);
 
-		existingToken.Revogar(newRefreshToken);
+		existingToken.Revogar(newRefreshTokenHash);
 
 		await refreshTokenRepository.AddAsync(
-			new Core.Entities.RefreshToken(existingToken.LoginId, newRefreshToken, authService.GetRefreshTokenExpirationUtc()),
+			new Core.Entities.RefreshToken(existingToken.LoginId, newRefreshTokenHash, authService.GetRefreshTokenExpirationUtc()),
 			cancellationToken);
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -19,6 +19,9 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 		builder.Property(rt => rt.ReplacedByToken)
 			.HasMaxLength(256);
 
+		builder.Property(rt => rt.RevokedAt)
+			.IsConcurrencyToken();
+
 		builder.HasIndex(rt => rt.Token)
 			.IsUnique();
 

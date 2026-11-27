@@ -10,10 +10,10 @@ namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 public class UpdateClienteCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_ProprioCliente_ShouldUpdateClienteAndLogin()
+	public async Task Handle_ProprioClienteAlterandoEmail_ShouldUpdateClienteLoginAndRevokeRefreshTokens()
 	{
 		var cliente = new Cliente("Nome teste", "11111111111", Role.Usuario);
-		var login = new Login(cliente.Id, "old@test.com", "hash", Role.Usuario);
+		var login = new Login(cliente.Id, "old@test.com", "hash", Role.Usuario) { Id = 7 };
 
 		var clienteRepositoryMock = new Mock<IClienteRepository>();
 		clienteRepositoryMock.Setup(r => r.GetByIdAsync(cliente.Id, It.IsAny<CancellationToken>())).ReturnsAsync(cliente);
@@ -22,6 +22,7 @@ public class UpdateClienteCommandHandlerTests
 		loginRepositoryMock.Setup(r => r.GetByClienteIdAsync(cliente.Id, It.IsAny<CancellationToken>())).ReturnsAsync(login);
 		loginRepositoryMock.Setup(r => r.GetByEmailAsync("new@test.com", It.IsAny<CancellationToken>())).ReturnsAsync((Login?)null);
 
+		var refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 		var currentUserMock = new Mock<ICurrentUserService>();
 		currentUserMock.Setup(u => u.IsAdmin).Returns(false);
@@ -30,6 +31,7 @@ public class UpdateClienteCommandHandlerTests
 		var handler = new UpdateClienteCommandHandler(
 			clienteRepositoryMock.Object,
 			loginRepositoryMock.Object,
+			refreshTokenRepositoryMock.Object,
 			unitOfWorkMock.Object,
 			currentUserMock.Object);
 
@@ -41,6 +43,7 @@ public class UpdateClienteCommandHandlerTests
 		Assert.Equal("new@test.com", login.Email);
 		clienteRepositoryMock.Verify(r => r.Update(cliente), Times.Once);
 		loginRepositoryMock.Verify(r => r.Update(login), Times.Once);
+		refreshTokenRepositoryMock.Verify(r => r.RevokeAllActiveByLoginIdAsync(7, It.IsAny<CancellationToken>()), Times.Once);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 
@@ -55,6 +58,7 @@ public class UpdateClienteCommandHandlerTests
 		var handler = new UpdateClienteCommandHandler(
 			new Mock<IClienteRepository>().Object,
 			new Mock<ILoginRepository>().Object,
+			new Mock<IRefreshTokenRepository>().Object,
 			new Mock<IUnitOfWork>().Object,
 			currentUserMock.Object);
 
@@ -75,6 +79,7 @@ public class UpdateClienteCommandHandlerTests
 		var handler = new UpdateClienteCommandHandler(
 			clienteRepositoryMock.Object,
 			new Mock<ILoginRepository>().Object,
+			new Mock<IRefreshTokenRepository>().Object,
 			new Mock<IUnitOfWork>().Object,
 			currentUserMock.Object);
 

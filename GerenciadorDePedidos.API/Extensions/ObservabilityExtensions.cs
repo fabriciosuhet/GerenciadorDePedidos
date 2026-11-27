@@ -142,6 +142,16 @@ public static class ObservabilityExtensions
 
 	private static Task WriteHealthResponseAsync(HttpContext context, HealthReport report)
 	{
+		var logger = context.RequestServices
+			.GetService<ILoggerFactory>()?
+			.CreateLogger("HealthChecks");
+
+		foreach (var (name, entry) in report.Entries)
+		{
+			if (entry.Exception is not null)
+				logger?.LogError(entry.Exception, "Falha no health check {HealthCheckName}.", name);
+		}
+
 		context.Response.ContentType = "application/json; charset=utf-8";
 
 		var payload = new
@@ -154,9 +164,9 @@ public static class ObservabilityExtensions
 				name = entry.Key,
 				status = entry.Value.Status.ToString(),
 				durationMs = Math.Round(entry.Value.Duration.TotalMilliseconds, 2),
-				description = entry.Value.Description,
-				error = entry.Value.Exception?.Message,
-				data = entry.Value.Data.Count > 0 ? entry.Value.Data : null
+				description = entry.Value.Status == HealthStatus.Healthy
+					? entry.Value.Description
+					: "Dependência indisponível."
 			})
 		};
 

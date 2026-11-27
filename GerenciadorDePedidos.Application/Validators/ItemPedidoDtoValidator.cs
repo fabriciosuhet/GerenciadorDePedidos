@@ -13,6 +13,8 @@ public class ItemPedidoDtoValidator : AbstractValidator<ItemPedidoDTO>
 
 		RuleFor(ip => ip.Quantidade)
 			.GreaterThan(0)
-			.WithMessage("A quantidade deve ser maior que zero.");
+			.WithMessage("A quantidade deve ser maior que zero.")
+			.LessThanOrEqualTo(10_000)
+			.WithMessage("A quantidade por item não pode exceder 10.000 unidades.");
 	}
 }

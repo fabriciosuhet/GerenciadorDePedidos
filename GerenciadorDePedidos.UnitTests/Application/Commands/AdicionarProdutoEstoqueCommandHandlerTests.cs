@@ -2,12 +2,21 @@ using GerenciadorDePedidos.Application.Commands.AdicionarProdutoEstoque;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
+using GerenciadorDePedidos.Core.Services;
 using Moq;
 
 namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 
 public class AdicionarProdutoEstoqueCommandHandlerTests
 {
+	private static ICurrentUserService CreateUser(Guid? clienteId)
+	{
+		var mock = new Mock<ICurrentUserService>();
+		mock.Setup(u => u.ClienteId).Returns(clienteId);
+		mock.Setup(u => u.IsAdmin).Returns(true);
+		return mock.Object;
+	}
+
 	[Fact]
 	public async Task Handle_CommandValid_AddsMovimentacaoEstoqueUpdatesProdutoAndResolvesAlert()
 	{
@@ -25,12 +34,13 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 			.ReturnsAsync(alertaPendente);
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 
-		var command = new AdicionarProdutoEstoqueCommand(produtoId, 10, clienteId);
+		var command = new AdicionarProdutoEstoqueCommand(produtoId, 10);
 		var handler = new AdicionarProdutoEstoqueCommandHandler(
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
 			alertaRepositoryMock.Object,
-			unitOfWorkMock.Object);
+			unitOfWorkMock.Object,
+			CreateUser(clienteId));
 
 		var result = await handler.Handle(command, CancellationToken.None);
 
@@ -64,12 +74,13 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 		var alertaRepositoryMock = new Mock<IAlertaEstoqueRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 
-		var command = new AdicionarProdutoEstoqueCommand(produtoId, 10, Guid.NewGuid());
+		var command = new AdicionarProdutoEstoqueCommand(produtoId, 10);
 		var handler = new AdicionarProdutoEstoqueCommandHandler(
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
 			alertaRepositoryMock.Object,
-			unitOfWorkMock.Object);
+			unitOfWorkMock.Object,
+			CreateUser(Guid.NewGuid()));
 
 		var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal($"O ID: {produtoId} de produto nao foi encontrado", exception.Message);
@@ -89,16 +100,31 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 		var alertaRepositoryMock = new Mock<IAlertaEstoqueRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 
-		var command = new AdicionarProdutoEstoqueCommand(produtoId, -5, Guid.NewGuid());
+		var command = new AdicionarProdutoEstoqueCommand(produtoId, -5);
 		var handler = new AdicionarProdutoEstoqueCommandHandler(
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
 			alertaRepositoryMock.Object,
-			unitOfWorkMock.Object);
+			unitOfWorkMock.Object,
+			CreateUser(Guid.NewGuid()));
 
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("O valor não pode ser menor ou igual a 0", exception.Message);
 		movimentacaoRepositoryMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()), Times.Never);
 		produtoRepositoryMock.Verify(r => r.Update(It.IsAny<Produto>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task Handle_UsuarioNaoAutenticado_ThrowsUnauthorizedAccessException()
+	{
+		var handler = new AdicionarProdutoEstoqueCommandHandler(
+			new Mock<IRepository<Produto, int>>().Object,
+			new Mock<IRepository<MovimentacaoEstoque, int>>().Object,
+			new Mock<IAlertaEstoqueRepository>().Object,
+			new Mock<IUnitOfWork>().Object,
+			CreateUser(null));
+
+		await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+			handler.Handle(new AdicionarProdutoEstoqueCommand(1, 5), CancellationToken.None));
 	}
 }

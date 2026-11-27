@@ -1,6 +1,7 @@
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Repositories;
+using GerenciadorDePedidos.Core.Services;
 using MediatR;
 
 namespace GerenciadorDePedidos.Application.Commands.AdicionarProdutoEstoque;
@@ -9,10 +10,14 @@ public sealed class AdicionarProdutoEstoqueCommandHandler(
 	IRepository<Produto, int> produtoRepository,
 	IRepository<MovimentacaoEstoque, int> movimentacaoEstoqueRepository,
 	IAlertaEstoqueRepository alertaEstoqueRepository,
-	IUnitOfWork unitOfWork) : IRequestHandler<AdicionarProdutoEstoqueCommand, int>
+	IUnitOfWork unitOfWork,
+	ICurrentUserService currentUserService) : IRequestHandler<AdicionarProdutoEstoqueCommand, int>
 {
 	public async Task<int> Handle(AdicionarProdutoEstoqueCommand request, CancellationToken cancellationToken)
 	{
+		var responsavelId = currentUserService.ClienteId
+			?? throw new UnauthorizedAccessException("Usuário não autenticado.");
+
 		var produto = await produtoRepository.GetByIdAsync(request.ProdutoId, cancellationToken)
 			?? throw new KeyNotFoundException($"O ID: {request.ProdutoId} de produto nao foi encontrado");
 
@@ -22,7 +27,7 @@ public sealed class AdicionarProdutoEstoqueCommandHandler(
 			request.Quantidade,
 			Tipo.Adicao,
 			produto.Id,
-			request.ClienteId,
+			responsavelId,
 			produto.Preco,
 			MotivoMovimentacao.AjusteManual);
 

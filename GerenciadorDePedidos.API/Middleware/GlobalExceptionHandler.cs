@@ -18,7 +18,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
 				StatusCodes.Status400BadRequest,
 				(object)new { errors = validationEx.Errors.Select(e => e.ErrorMessage).Distinct().ToList() }),
 
-			ArgumentException argEx => (
+			ArgumentException argEx when IsApplicationOrDomainException(argEx) => (
 				StatusCodes.Status400BadRequest,
 				new { error = argEx.Message }),
 
@@ -30,7 +30,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
 				StatusCodes.Status409Conflict,
 				new { error = conflictEx.Message }),
 
-			InvalidOperationException invalidOpEx => (
+			InvalidOperationException invalidOpEx when IsApplicationOrDomainException(invalidOpEx) => (
 				StatusCodes.Status409Conflict,
 				new { error = invalidOpEx.Message }),
 
@@ -60,6 +60,9 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
 		await httpContext.Response.WriteAsJsonAsync(payload, cancellationToken);
 		return true;
 	}
+
+	private static bool IsApplicationOrDomainException(Exception exception)
+		=> exception.Source is "GerenciadorDePedidos.Core" or "GerenciadorDePedidos.Application";
 
 	private static bool IsForeignKeyViolation(DbUpdateException exception)
 	{
