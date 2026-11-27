@@ -43,6 +43,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 				["Jwt:Issuer"] = "GerenciadorDePedidos",
 				["Jwt:Audience"] = "ClientesProdutos",
 				["RabbitMQ:UseInMemory"] = "true",
+				["Redis:Enabled"] = "false",
 				["AdminSeed:NomeCompleto"] = "Administrador",
 				["AdminSeed:Telefone"] = "11999999999",
 				["AdminSeed:Email"] = "admin@teste.com",

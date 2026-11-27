@@ -24,7 +24,7 @@ builder.Services
 	.AddJwtAuthentication(builder.Configuration)
 	.AddCorsService()
 	.AddSwaggerService()
-	.AddCacheService()
+	.AddCacheService(builder.Configuration)
 	.AddReportServices()
 	.AddPolicyController()
 	.AddRateLimitingService(builder.Configuration)

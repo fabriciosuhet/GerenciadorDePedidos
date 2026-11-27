@@ -268,6 +268,11 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
                     b.Property<int>("Estoque")
                         .HasColumnType("int");
 
+                    b.Property<int>("EstoqueMinimo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(5);
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -275,9 +280,65 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
                     b.Property<decimal>("Preco")
                         .HasColumnType("decimal(15,2)");
 
+                    b.Property<int>("Versao")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.HasKey("Id");
 
                     b.ToTable("Produtos");
+                });
+
+            modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.AlertaEstoque", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DesativadoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EstoqueAtual")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EstoqueMinimo")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PedidoId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProdutoId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProdutoNome")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<bool>("Resolvido")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("ResolvidoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProdutoId", "Resolvido");
+
+                    b.ToTable("AlertasEstoque", (string)null);
                 });
 
             modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.RefreshToken", b =>
@@ -420,6 +481,17 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Login");
+                });
+
+            modelBuilder.Entity("GerenciadorDePedidos.Core.Entities.AlertaEstoque", b =>
+                {
+                    b.HasOne("GerenciadorDePedidos.Core.Entities.Produto", "Produto")
+                        .WithMany()
+                        .HasForeignKey("ProdutoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Produto");
                 });
 #pragma warning restore 612, 618
         }

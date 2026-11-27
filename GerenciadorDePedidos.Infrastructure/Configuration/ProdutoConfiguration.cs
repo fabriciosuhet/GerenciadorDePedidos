@@ -15,6 +15,15 @@ public class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
 			.Property(p => p.Preco)
 			.HasColumnType("decimal(15,2)");
 
+		builder
+			.Property(p => p.EstoqueMinimo)
+			.HasDefaultValue(Produto.EstoqueMinimoPadrao);
+
+		builder
+			.Property(p => p.Versao)
+			.IsConcurrencyToken()
+			.HasDefaultValue(1);
+
 		builder.HasQueryFilter(p => p.Ativo);
 	}
 }

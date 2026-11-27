@@ -1,5 +1,6 @@
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
+using GerenciadorDePedidos.Core.Events;
 using GerenciadorDePedidos.Core.Helpers;
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
@@ -12,6 +13,7 @@ public sealed class ProcessarPedidoCommandHandler(
 	IProdutoRepository produtoRepository,
 	IMovimentacaoEstoqueRepository movimentacaoEstoqueRepository,
 	IUnitOfWork unitOfWork,
+	IEventBus eventBus,
 	ICacheService cacheService) : IRequestHandler<ProcessarPedidoCommand, bool>
 {
 	public async Task<bool> Handle(ProcessarPedidoCommand request, CancellationToken cancellationToken)
@@ -41,6 +43,7 @@ public sealed class ProcessarPedidoCommandHandler(
 		}
 
 		pedido.MarcarComoProcessado();
+		var eventosEstoqueBaixo = new List<EstoqueBaixoEvent>();
 
 		foreach (var (produtoId, itemInfo) in itensPorProduto)
 		{
@@ -57,10 +60,26 @@ public sealed class ProcessarPedidoCommandHandler(
 				pedido.Id);
 			await movimentacaoEstoqueRepository.AddAsync(movimentacao, cancellationToken);
 
+			if (produto.EstaComEstoqueBaixo())
+			{
+				eventosEstoqueBaixo.Add(new EstoqueBaixoEvent(
+					produto.Id,
+					produto.Nome,
+					produto.Estoque,
+					produto.EstoqueMinimo,
+					DateTime.UtcNow,
+					pedido.Id));
+			}
+
 			cacheService.Remove(CacheKeyHelper.GetProdutoByIdKey(produto.Id));
 		}
 
 		pedido.Concluir();
+
+		// Publica eventos antes do SaveChanges para persistir no Outbox na mesma transação
+		foreach (var evento in eventosEstoqueBaixo)
+			await eventBus.PublishAsync(evento, cancellationToken);
+
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 
 		InvalidarCachePedido(pedido.Id, pedido.ClienteId);

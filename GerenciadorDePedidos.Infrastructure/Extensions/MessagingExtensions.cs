@@ -1,7 +1,9 @@
 using System.Reflection;
 using GerenciadorDePedidos.Core.Services;
 using GerenciadorDePedidos.Infrastructure.Messaging;
+using GerenciadorDePedidos.Infrastructure.Persistence;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,12 +29,27 @@ public static class MessagingExtensions
 			{
 				x.UsingInMemory((context, cfg) =>
 				{
-					cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromMilliseconds(200)));
+					cfg.UseMessageRetry(r =>
+					{
+						r.Handle<DbUpdateConcurrencyException>();
+						r.Interval(3, TimeSpan.FromMilliseconds(200));
+					});
 					cfg.ConfigureEndpoints(context);
 				});
 			}
 			else
 			{
+				x.AddEntityFrameworkOutbox<GerenciadorDePedidosDbContext>(o =>
+				{
+					o.UseMySql();
+					o.UseBusOutbox();
+				});
+
+				x.AddConfigureEndpointsCallback((context, _, endpointConfigurator) =>
+				{
+					endpointConfigurator.UseEntityFrameworkOutbox<GerenciadorDePedidosDbContext>(context);
+				});
+
 				var host = configuration["RabbitMQ:Host"] ?? "localhost";
 				var virtualHost = configuration["RabbitMQ:VirtualHost"] ?? "/";
 				var username = configuration["RabbitMQ:Username"] ?? "guest";
@@ -46,7 +63,7 @@ public static class MessagingExtensions
 						h.Password(password);
 					});
 
-					cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(2)));
+					cfg.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(1)));
 					cfg.ConfigureEndpoints(context);
 				});
 			}

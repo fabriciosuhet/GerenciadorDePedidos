@@ -11,8 +11,16 @@ namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 
 public class CreatePedidoCommandHandlerTests
 {
+	private static Mock<IUnitOfWork> CreateUnitOfWorkMock()
+	{
+		var mock = new Mock<IUnitOfWork>();
+		mock.Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
+			.Returns<Func<CancellationToken, Task>, CancellationToken>((action, ct) => action(ct));
+		return mock;
+	}
+
 	[Fact]
-	public async Task Handle_ValidCommand_ShouldCreatePedidoAndPublishEvent()
+	public async Task Handle_ValidCommand_ShouldCreatePedidoAndPublishEventInsideTransaction()
 	{
 		const int produtoId1 = 1;
 		const int produtoId2 = 2;
@@ -34,6 +42,7 @@ public class CreatePedidoCommandHandlerTests
 			.ReturnsAsync([produto1, produto2]);
 
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
+		var unitOfWorkMock = CreateUnitOfWorkMock();
 		var eventBusMock = new Mock<IEventBus>();
 		var currentUserMock = new Mock<ICurrentUserService>();
 		currentUserMock.Setup(u => u.IsAdmin).Returns(false);
@@ -42,6 +51,7 @@ public class CreatePedidoCommandHandlerTests
 		var handler = new CreatePedidoCommandHandler(
 			pedidoRepositoryMock.Object,
 			produtoRepositoryMock.Object,
+			unitOfWorkMock.Object,
 			eventBusMock.Object,
 			currentUserMock.Object);
 
@@ -56,7 +66,10 @@ public class CreatePedidoCommandHandlerTests
 			p.Status == Status.Pendente &&
 			p.ItensPedidos.Count == 2 &&
 			p.Total == 80m), It.IsAny<CancellationToken>()), Times.Once);
-		pedidoRepositoryMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+		unitOfWorkMock.Verify(
+			u => u.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()),
+			Times.Once);
+		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
 		eventBusMock.Verify(e => e.PublishAsync(
 			It.Is<PedidoCriadoEvent>(ev => ev.PedidoId == result),
 			It.IsAny<CancellationToken>()), Times.Once);
@@ -77,6 +90,7 @@ public class CreatePedidoCommandHandlerTests
 		var handler = new CreatePedidoCommandHandler(
 			new Mock<IRepository<Pedido, int>>().Object,
 			new Mock<IProdutoRepository>().Object,
+			CreateUnitOfWorkMock().Object,
 			new Mock<IEventBus>().Object,
 			currentUserMock.Object);
 
@@ -90,6 +104,7 @@ public class CreatePedidoCommandHandlerTests
 
 		var produtoRepositoryMock = new Mock<IProdutoRepository>();
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
+		var unitOfWorkMock = CreateUnitOfWorkMock();
 		var eventBusMock = new Mock<IEventBus>();
 		var currentUserMock = new Mock<ICurrentUserService>();
 		currentUserMock.Setup(u => u.IsAdmin).Returns(true);
@@ -97,6 +112,7 @@ public class CreatePedidoCommandHandlerTests
 		var handler = new CreatePedidoCommandHandler(
 			pedidoRepositoryMock.Object,
 			produtoRepositoryMock.Object,
+			unitOfWorkMock.Object,
 			eventBusMock.Object,
 			currentUserMock.Object);
 
@@ -122,6 +138,7 @@ public class CreatePedidoCommandHandlerTests
 			.ReturnsAsync([]);
 
 		var pedidoRepositoryMock = new Mock<IRepository<Pedido, int>>();
+		var unitOfWorkMock = CreateUnitOfWorkMock();
 		var eventBusMock = new Mock<IEventBus>();
 		var currentUserMock = new Mock<ICurrentUserService>();
 		currentUserMock.Setup(u => u.IsAdmin).Returns(true);
@@ -129,6 +146,7 @@ public class CreatePedidoCommandHandlerTests
 		var handler = new CreatePedidoCommandHandler(
 			pedidoRepositoryMock.Object,
 			produtoRepositoryMock.Object,
+			unitOfWorkMock.Object,
 			eventBusMock.Object,
 			currentUserMock.Object);
 

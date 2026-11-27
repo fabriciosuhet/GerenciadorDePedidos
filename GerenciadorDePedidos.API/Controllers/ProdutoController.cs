@@ -3,9 +3,11 @@ using GerenciadorDePedidos.Application.Commands.AdicionarProdutoEstoque;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
 using GerenciadorDePedidos.Application.Commands.DeleteProduto;
 using GerenciadorDePedidos.Application.Commands.RemoverProdutoEstoque;
+using GerenciadorDePedidos.Application.Commands.ResolverAlertaEstoque;
 using GerenciadorDePedidos.Application.Commands.UpdateProduto;
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Application.Queries.ExportarRelatorioMovimentacaoEstoque;
+using GerenciadorDePedidos.Application.Queries.GetAlertasEstoque;
 using GerenciadorDePedidos.Application.Queries.GetAllMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetAllProdutos;
 using GerenciadorDePedidos.Application.Queries.GetMovimentacaoEstoque;
@@ -82,6 +84,21 @@ public class ProdutoController(IMediator mediator, ICacheService cacheService)
 			cancellationToken);
 
 		return File(arquivo.Conteudo, arquivo.ContentType, arquivo.NomeArquivo);
+	}
+
+	[HttpGet("alertas-estoque")]
+	[AcessoRestrito]
+	public async Task<IActionResult> GetAlertasEstoque(
+		[FromQuery] bool? apenasPendentes = true,
+		CancellationToken cancellationToken = default)
+		=> Ok(await SendAsync(new GetAlertasEstoqueQuery(apenasPendentes), cancellationToken));
+
+	[HttpPatch("alertas-estoque/{id:int}/resolver")]
+	[AcessoRestrito]
+	public async Task<IActionResult> ResolverAlertaEstoque(int id, CancellationToken cancellationToken)
+	{
+		await SendAsync(new ResolverAlertaEstoqueCommand(id), cancellationToken);
+		return NoContent();
 	}
 
 	[HttpPost]

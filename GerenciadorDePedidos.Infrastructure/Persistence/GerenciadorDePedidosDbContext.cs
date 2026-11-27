@@ -1,5 +1,6 @@
 using System.Reflection;
 using GerenciadorDePedidos.Core.Entities;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace GerenciadorDePedidos.Infrastructure.Persistence;
@@ -20,10 +21,16 @@ public class GerenciadorDePedidosDbContext : DbContext
 	public DbSet<Produto> Produtos { get; set; }
 	public DbSet<MovimentacaoEstoque> MovimentacaoEstoques { get; set; }
 	public DbSet<RefreshToken> RefreshTokens { get; set; }
+	public DbSet<AlertaEstoque> AlertasEstoque { get; set; }
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+		// Tabelas do Transactional Outbox / Inbox do MassTransit
+		modelBuilder.AddInboxStateEntity();
+		modelBuilder.AddOutboxMessageEntity();
+		modelBuilder.AddOutboxStateEntity();
 	}
 
 	public override int SaveChanges()

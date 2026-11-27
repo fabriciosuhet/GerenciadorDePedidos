@@ -44,7 +44,9 @@ public class ProdutoRepository(GerenciadorDePedidosDbContext context)
 			.ToListAsync(cancellationToken);
 
 	public Task<int> GetLowStockCountAsync(int threshold = 5, CancellationToken cancellationToken = default)
-		=> _dbSet.AsNoTracking().CountAsync(p => p.Estoque <= threshold, cancellationToken);
+		=> threshold == Produto.EstoqueMinimoPadrao
+			? _dbSet.AsNoTracking().CountAsync(p => p.Estoque <= p.EstoqueMinimo, cancellationToken)
+			: _dbSet.AsNoTracking().CountAsync(p => p.Estoque <= threshold, cancellationToken);
 
 	public Task<bool> HasPedidoVinculadoAsync(int produtoId, CancellationToken cancellationToken = default)
 		=> _context.Set<ItemPedido>()
