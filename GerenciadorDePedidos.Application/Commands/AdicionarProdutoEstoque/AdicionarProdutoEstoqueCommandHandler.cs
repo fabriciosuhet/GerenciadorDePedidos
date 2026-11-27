@@ -8,6 +8,7 @@ namespace GerenciadorDePedidos.Application.Commands.AdicionarProdutoEstoque;
 public sealed class AdicionarProdutoEstoqueCommandHandler(
 	IRepository<Produto, int> produtoRepository,
 	IRepository<MovimentacaoEstoque, int> movimentacaoEstoqueRepository,
+	IAlertaEstoqueRepository alertaEstoqueRepository,
 	IUnitOfWork unitOfWork) : IRequestHandler<AdicionarProdutoEstoqueCommand, int>
 {
 	public async Task<int> Handle(AdicionarProdutoEstoqueCommand request, CancellationToken cancellationToken)
@@ -27,6 +28,17 @@ public sealed class AdicionarProdutoEstoqueCommandHandler(
 
 		await movimentacaoEstoqueRepository.AddAsync(movimentacao, cancellationToken);
 		produtoRepository.Update(produto);
+
+		if (!produto.EstaComEstoqueBaixo())
+		{
+			var alertaPendente = await alertaEstoqueRepository.GetPendenteByProdutoIdAsync(produto.Id, cancellationToken);
+			if (alertaPendente is not null)
+			{
+				alertaPendente.Resolver();
+				alertaEstoqueRepository.Update(alertaPendente);
+			}
+		}
+
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 
 		return produto.Id;

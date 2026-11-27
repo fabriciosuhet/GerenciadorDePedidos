@@ -10,6 +10,7 @@ namespace GerenciadorDePedidos.Application.Commands.CreatePedido;
 public sealed class CreatePedidoCommandHandler(
 	IRepository<Pedido, int> pedidoRepository,
 	IProdutoRepository produtoRepository,
+	IUnitOfWork unitOfWork,
 	IEventBus eventBus,
 	ICurrentUserService currentUserService) : IRequestHandler<CreatePedidoCommand, int>
 {
@@ -41,10 +42,15 @@ public sealed class CreatePedidoCommandHandler(
 			pedido.AdicionarItem(produto, itemDto.Quantidade);
 		}
 
-		await pedidoRepository.AddAsync(pedido, cancellationToken);
-		await pedidoRepository.SaveChangesAsync(cancellationToken);
+		// Garante consistência atômica entre a criação do pedido e o registro na tabela Outbox do MassTransit
+		await unitOfWork.ExecuteInTransactionAsync(async ct =>
+		{
+			await pedidoRepository.AddAsync(pedido, ct);
+			await unitOfWork.SaveChangesAsync(ct);
 
-		await eventBus.PublishAsync(new PedidoCriadoEvent(pedido.Id), cancellationToken);
+			await eventBus.PublishAsync(new PedidoCriadoEvent(pedido.Id), ct);
+			await unitOfWork.SaveChangesAsync(ct);
+		}, cancellationToken);
 
 		return pedido.Id;
 	}

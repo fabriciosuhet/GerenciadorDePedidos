@@ -7,7 +7,9 @@ using GerenciadorDePedidos.Infrastructure.Reports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 
 namespace GerenciadorDePedidos.Infrastructure.Extensions;
 
@@ -21,6 +23,7 @@ public static class ServicesCollectionExtensions
 		services.AddScoped<IMovimentacaoEstoqueRepository, MovimentacaoEstoqueRepository>();
 		services.AddScoped<ILoginRepository, LoginRepository>();
 		services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+		services.AddScoped<IAlertaEstoqueRepository, AlertaEstoqueRepository>();
 		services.AddScoped<IUnitOfWork, UnitOfWork>();
 		services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
 		return services;
@@ -34,10 +37,29 @@ public static class ServicesCollectionExtensions
 		return services;
 	}
 
-	public static IServiceCollection AddCacheService(this IServiceCollection services)
+	public static IServiceCollection AddCacheService(this IServiceCollection services, IConfiguration configuration)
 	{
-		services.AddMemoryCache();
-		services.AddScoped<ICacheService, CacheService>();
+		var redisConnection = configuration.GetConnectionString("Redis");
+		var redisEnabled = configuration.GetValue("Redis:Enabled", !string.IsNullOrWhiteSpace(redisConnection));
+
+		if (redisEnabled && !string.IsNullOrWhiteSpace(redisConnection))
+		{
+			var instancePrefix = configuration["Redis:InstancePrefix"] ?? "GerenciadorDePedidos:";
+			var options = ConfigurationOptions.Parse(redisConnection);
+			options.AbortOnConnectFail = false;
+
+			services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(options));
+			services.AddScoped<ICacheService>(sp => new RedisCacheService(
+				sp.GetRequiredService<IConnectionMultiplexer>(),
+				sp.GetRequiredService<ILogger<RedisCacheService>>(),
+				instancePrefix));
+		}
+		else
+		{
+			services.AddMemoryCache();
+			services.AddScoped<ICacheService, CacheService>();
+		}
+
 		return services;
 	}
 

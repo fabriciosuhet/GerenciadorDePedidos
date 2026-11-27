@@ -9,7 +9,7 @@ public sealed class CreateProdutoCommandHandler(IRepository<Produto, int> produt
 {
 	public async Task<int> Handle(CreateProdutoCommand request, CancellationToken cancellationToken)
 	{
-		var produto = new Produto(request.Nome, request.Preco, request.Estoque);
+		var produto = new Produto(request.Nome, request.Preco, request.Estoque, request.EstoqueMinimo);
 		await produtoRepository.AddAsync(produto, cancellationToken);
 		await produtoRepository.SaveChangesAsync(cancellationToken);
 		return produto.Id;

@@ -9,6 +9,9 @@ using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.E2ETests.Infrastructure;
+using GerenciadorDePedidos.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GerenciadorDePedidos.E2ETests;
 
@@ -211,5 +214,94 @@ public class ProdutoEstoqueE2ETests
 		Assert.Equal(HttpStatusCode.OK, pdfVazioResp.StatusCode);
 		var pdfVazioBytes = await pdfVazioResp.Content.ReadAsByteArrayAsync();
 		Assert.Equal("%PDF-", System.Text.Encoding.ASCII.GetString(pdfVazioBytes, 0, 5));
+	}
+
+	[Fact]
+	public async Task AlertaEstoqueBaixo_PorEvento_EResolucaoAutomatica_EConcorrenciaOtimista()
+	{
+		using var factory = new CustomWebApplicationFactory();
+		var (adminId, adminToken) = await factory.BootstrapAdminAsync();
+		using var adminClient = factory.CreateAuthenticatedClient(adminToken);
+
+		// Cria usuário comum para validar RBAC da rota de alertas
+		await adminClient.PostAsJsonAsync(
+			"/api/cliente",
+			new CreateClienteCommand("Comprador Alerta", Role.Usuario, "User@1234", "alerta@teste.com", "11933334444"));
+		using var anonClient = factory.CreateClient();
+		var userToken = await factory.LoginAsync(anonClient, "alerta@teste.com", "User@1234");
+		using var userClient = factory.CreateAuthenticatedClient(userToken);
+
+		var alertasForbidden = await userClient.GetAsync("/api/produto/alertas-estoque");
+		Assert.Equal(HttpStatusCode.Forbidden, alertasForbidden.StatusCode);
+
+		// 1. Cria produto com estoque inicial 6 e estoque mínimo 5
+		var prodResp = await adminClient.PostAsJsonAsync("/api/produto", new CreateProdutoCommand("Webcam HD", 300m, 6, 5));
+		Assert.Equal(HttpStatusCode.Created, prodResp.StatusCode);
+		var prod = await prodResp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+
+		// 2. Remove 2 unidades (estoque = 4 <= 5) -> dispara EstoqueBaixoEvent -> EstoqueBaixoConsumer persiste alerta
+		var remResp = await adminClient.PutAsJsonAsync(
+			"/api/produto/remover-estoque",
+			new RemoverProdutoEstoqueCommand(prod!.Id, 2, adminId));
+		Assert.Equal(HttpStatusCode.OK, remResp.StatusCode);
+
+		var alertasPendentes = await AguardarAlertasPendentesAsync(adminClient, prod.Id);
+		Assert.Single(alertasPendentes);
+		Assert.Equal("Webcam HD", alertasPendentes[0].ProdutoNome);
+		Assert.Equal(4, alertasPendentes[0].EstoqueAtual);
+		Assert.Equal(5, alertasPendentes[0].EstoqueMinimo);
+		Assert.False(alertasPendentes[0].Resolvido);
+
+		// 3. Repõe estoque acima do mínimo (+10 -> estoque = 14 > 5) -> alerta é resolvido automaticamente
+		var addResp = await adminClient.PutAsJsonAsync(
+			"/api/produto/adicionar-estoque",
+			new AdicionarProdutoEstoqueCommand(prod.Id, 10, adminId));
+		Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
+
+		var pendentesAposReposicao = await adminClient.GetFromJsonAsync<List<AlertaEstoqueViewModel>>(
+			"/api/produto/alertas-estoque?apenasPendentes=true");
+		Assert.NotNull(pendentesAposReposicao);
+		Assert.Empty(pendentesAposReposicao);
+
+		var resolvidos = await adminClient.GetFromJsonAsync<List<AlertaEstoqueViewModel>>(
+			"/api/produto/alertas-estoque?apenasPendentes=false");
+		Assert.NotNull(resolvidos);
+		Assert.Contains(resolvidos, a => a.ProdutoId == prod.Id && a.Resolvido && a.ResolvidoEm != null);
+
+		// 4. Concorrência otimista: duas operações simultâneas no mesmo produto devem detectar conflito via Versao
+		using var scope1 = factory.Services.CreateScope();
+		using var scope2 = factory.Services.CreateScope();
+		var db1 = scope1.ServiceProvider.GetRequiredService<GerenciadorDePedidosDbContext>();
+		var db2 = scope2.ServiceProvider.GetRequiredService<GerenciadorDePedidosDbContext>();
+
+		var prodCtx1 = await db1.Produtos.SingleAsync(p => p.Id == prod.Id);
+		var prodCtx2 = await db2.Produtos.SingleAsync(p => p.Id == prod.Id);
+
+		prodCtx1.RemoverEstoque(1);
+		await db1.SaveChangesAsync();
+
+		prodCtx2.RemoverEstoque(1);
+		await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => db2.SaveChangesAsync());
+	}
+
+	private static async Task<List<AlertaEstoqueViewModel>> AguardarAlertasPendentesAsync(
+		HttpClient adminClient,
+		int produtoId)
+	{
+		var deadline = DateTime.UtcNow.AddSeconds(10);
+		List<AlertaEstoqueViewModel> alertas = [];
+
+		while (DateTime.UtcNow < deadline)
+		{
+			alertas = await adminClient.GetFromJsonAsync<List<AlertaEstoqueViewModel>>(
+				"/api/produto/alertas-estoque?apenasPendentes=true") ?? [];
+
+			if (alertas.Any(a => a.ProdutoId == produtoId))
+				return alertas;
+
+			await Task.Delay(100);
+		}
+
+		return alertas;
 	}
 }

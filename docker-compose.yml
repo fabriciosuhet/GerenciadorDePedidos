@@ -8,6 +8,8 @@ services:
       - "8080:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Server=db;Database=${MYSQL_DATABASE};User=root;Password=${MYSQL_ROOT_PASSWORD};
+      - ConnectionStrings__Redis=redis:6379
+      - Redis__Enabled=true
       - ASPNETCORE_ENVIRONMENT=Development
       - Jwt__Key=${JWT_KEY}
       - AdminSeed__NomeCompleto=${ADMIN_SEED_NOME}
@@ -21,6 +23,8 @@ services:
       db:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - app-network
@@ -63,6 +67,21 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 networks:
   app-network:
     driver: bridge
@@ -70,3 +89,4 @@ networks:
 volumes:
   mysql-data:
   rabbitmq-data:
+  redis-data:

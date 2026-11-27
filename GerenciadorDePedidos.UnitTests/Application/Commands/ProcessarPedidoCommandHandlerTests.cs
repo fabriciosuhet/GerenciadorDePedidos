@@ -1,6 +1,7 @@
 using GerenciadorDePedidos.Application.Commands.ProcessarPedido;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
+using GerenciadorDePedidos.Core.Events;
 using GerenciadorDePedidos.Core.Helpers;
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
@@ -11,11 +12,11 @@ namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 public class ProcessarPedidoCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_PedidoPendenteComEstoqueSuficiente_DeveConcluirEBaixarEstoque()
+	public async Task Handle_PedidoPendenteComEstoqueSuficiente_DeveConcluirBaixarEstoqueEPublicarAlertaQuandoEstoqueBaixo()
 	{
 		var clienteId = Guid.NewGuid();
-		var produto1 = new Produto("Monitor", 1000m, 10) { Id = 1 };
-		var produto2 = new Produto("Mouse", 100m, 5) { Id = 2 };
+		var produto1 = new Produto("Monitor", 1000m, 10, estoqueMinimo: 5) { Id = 1 }; // 10 - 2 = 8 (> 5, sem alerta)
+		var produto2 = new Produto("Mouse", 100m, 5, estoqueMinimo: 5) { Id = 2 };     // 5 - 3 = 2 (<= 5, dispara alerta)
 
 		var pedido = new Pedido(clienteId, Status.Pendente) { Id = 42 };
 		pedido.AdicionarItem(produto1, 2);
@@ -31,6 +32,7 @@ public class ProcessarPedidoCommandHandlerTests
 
 		var movimentacaoRepoMock = new Mock<IMovimentacaoEstoqueRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
+		var eventBusMock = new Mock<IEventBus>();
 		var cacheMock = new Mock<ICacheService>();
 
 		var handler = new ProcessarPedidoCommandHandler(
@@ -38,6 +40,7 @@ public class ProcessarPedidoCommandHandlerTests
 			produtoRepoMock.Object,
 			movimentacaoRepoMock.Object,
 			unitOfWorkMock.Object,
+			eventBusMock.Object,
 			cacheMock.Object);
 
 		var result = await handler.Handle(new ProcessarPedidoCommand(42), CancellationToken.None);
@@ -66,6 +69,16 @@ public class ProcessarPedidoCommandHandlerTests
 				m.Motivo == MotivoMovimentacao.VendaPedido &&
 				m.PedidoId == 42),
 			It.IsAny<CancellationToken>()), Times.Once);
+		eventBusMock.Verify(e => e.PublishAsync(
+			It.Is<EstoqueBaixoEvent>(ev =>
+				ev.ProdutoId == 2 &&
+				ev.EstoqueAtual == 2 &&
+				ev.EstoqueMinimo == 5 &&
+				ev.PedidoId == 42),
+			It.IsAny<CancellationToken>()), Times.Once);
+		eventBusMock.Verify(e => e.PublishAsync(
+			It.Is<EstoqueBaixoEvent>(ev => ev.ProdutoId == 1),
+			It.IsAny<CancellationToken>()), Times.Never);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetClienteByIdKey(clienteId)), Times.Once);
 	}
@@ -78,7 +91,7 @@ public class ProcessarPedidoCommandHandlerTests
 
 		var pedido = new Pedido(clienteId, Status.Pendente) { Id = 43 };
 		pedido.AdicionarItem(produto, 2);
-		pedido.AdicionarItem(produto, 2); // Total pedido = 4 > estoque 3
+		pedido.AdicionarItem(produto, 2);
 
 		var pedidoRepoMock = new Mock<IPedidoRepository>();
 		pedidoRepoMock.Setup(r => r.GetByIdWithItensAsync(43, It.IsAny<CancellationToken>())).ReturnsAsync(pedido);
@@ -90,6 +103,7 @@ public class ProcessarPedidoCommandHandlerTests
 
 		var movimentacaoRepoMock = new Mock<IMovimentacaoEstoqueRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
+		var eventBusMock = new Mock<IEventBus>();
 		var cacheMock = new Mock<ICacheService>();
 
 		var handler = new ProcessarPedidoCommandHandler(
@@ -97,6 +111,7 @@ public class ProcessarPedidoCommandHandlerTests
 			produtoRepoMock.Object,
 			movimentacaoRepoMock.Object,
 			unitOfWorkMock.Object,
+			eventBusMock.Object,
 			cacheMock.Object);
 
 		var result = await handler.Handle(new ProcessarPedidoCommand(43), CancellationToken.None);
@@ -105,6 +120,7 @@ public class ProcessarPedidoCommandHandlerTests
 		Assert.Equal(Status.Cancelado, pedido.Status);
 		Assert.Equal(3, produto.Estoque);
 		movimentacaoRepoMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()), Times.Never);
+		eventBusMock.Verify(e => e.PublishAsync(It.IsAny<EstoqueBaixoEvent>(), It.IsAny<CancellationToken>()), Times.Never);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetClienteByIdKey(clienteId)), Times.Once);
 	}
@@ -120,6 +136,7 @@ public class ProcessarPedidoCommandHandlerTests
 		var produtoRepoMock = new Mock<IProdutoRepository>();
 		var movimentacaoRepoMock = new Mock<IMovimentacaoEstoqueRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
+		var eventBusMock = new Mock<IEventBus>();
 		var cacheMock = new Mock<ICacheService>();
 
 		var handler = new ProcessarPedidoCommandHandler(
@@ -127,6 +144,7 @@ public class ProcessarPedidoCommandHandlerTests
 			produtoRepoMock.Object,
 			movimentacaoRepoMock.Object,
 			unitOfWorkMock.Object,
+			eventBusMock.Object,
 			cacheMock.Object);
 
 		var result = await handler.Handle(new ProcessarPedidoCommand(44), CancellationToken.None);

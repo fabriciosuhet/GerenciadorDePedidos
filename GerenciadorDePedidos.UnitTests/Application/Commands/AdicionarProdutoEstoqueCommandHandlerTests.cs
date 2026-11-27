@@ -9,29 +9,37 @@ namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 public class AdicionarProdutoEstoqueCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_CommandValid_AddsMovimentacaoEstoqueAndUpdatesProduto()
+	public async Task Handle_CommandValid_AddsMovimentacaoEstoqueUpdatesProdutoAndResolvesAlert()
 	{
 		const int produtoId = 1;
 		var clienteId = Guid.NewGuid();
-		var produto = new Produto("Produto Teste", 11.99m, 10) { Id = produtoId };
+		var produto = new Produto("Produto Teste", 11.99m, 2, estoqueMinimo: 5) { Id = produtoId };
+		var alertaPendente = new AlertaEstoque(produtoId, "Produto Teste", 2, 5);
 
 		var produtoRepositoryMock = new Mock<IRepository<Produto, int>>();
 		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync(produto);
 
 		var movimentacaoRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
+		var alertaRepositoryMock = new Mock<IAlertaEstoqueRepository>();
+		alertaRepositoryMock.Setup(r => r.GetPendenteByProdutoIdAsync(produtoId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(alertaPendente);
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 
 		var command = new AdicionarProdutoEstoqueCommand(produtoId, 10, clienteId);
 		var handler = new AdicionarProdutoEstoqueCommandHandler(
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
+			alertaRepositoryMock.Object,
 			unitOfWorkMock.Object);
 
 		var result = await handler.Handle(command, CancellationToken.None);
 
 		Assert.Equal(produtoId, result);
-		Assert.Equal(20, produto.Estoque);
+		Assert.Equal(12, produto.Estoque);
+		Assert.True(alertaPendente.Resolvido);
+		Assert.NotNull(alertaPendente.ResolvidoEm);
 		produtoRepositoryMock.Verify(r => r.Update(produto), Times.Once);
+		alertaRepositoryMock.Verify(r => r.Update(alertaPendente), Times.Once);
 		movimentacaoRepositoryMock.Verify(r => r.AddAsync(
 			It.Is<MovimentacaoEstoque>(m =>
 				m.Quantidade == 10 &&
@@ -53,12 +61,14 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync((Produto?)null);
 
 		var movimentacaoRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
+		var alertaRepositoryMock = new Mock<IAlertaEstoqueRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 
 		var command = new AdicionarProdutoEstoqueCommand(produtoId, 10, Guid.NewGuid());
 		var handler = new AdicionarProdutoEstoqueCommandHandler(
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
+			alertaRepositoryMock.Object,
 			unitOfWorkMock.Object);
 
 		var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(command, CancellationToken.None));
@@ -76,12 +86,14 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 		produtoRepositoryMock.Setup(r => r.GetByIdAsync(produtoId, It.IsAny<CancellationToken>())).ReturnsAsync(produto);
 
 		var movimentacaoRepositoryMock = new Mock<IRepository<MovimentacaoEstoque, int>>();
+		var alertaRepositoryMock = new Mock<IAlertaEstoqueRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 
 		var command = new AdicionarProdutoEstoqueCommand(produtoId, -5, Guid.NewGuid());
 		var handler = new AdicionarProdutoEstoqueCommandHandler(
 			produtoRepositoryMock.Object,
 			movimentacaoRepositoryMock.Object,
+			alertaRepositoryMock.Object,
 			unitOfWorkMock.Object);
 
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
