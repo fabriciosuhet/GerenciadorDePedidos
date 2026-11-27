@@ -3,6 +3,7 @@ using GerenciadorDePedidos.Core.Services;
 using GerenciadorDePedidos.Infrastructure.Cache;
 using GerenciadorDePedidos.Infrastructure.Persistence;
 using GerenciadorDePedidos.Infrastructure.Persistence.Repositories;
+using GerenciadorDePedidos.Infrastructure.Reports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +38,12 @@ public static class ServicesCollectionExtensions
 	{
 		services.AddMemoryCache();
 		services.AddScoped<ICacheService, CacheService>();
+		return services;
+	}
+
+	public static IServiceCollection AddReportServices(this IServiceCollection services)
+	{
+		services.AddSingleton<IRelatorioMovimentacaoEstoqueGenerator, RelatorioMovimentacaoEstoqueGenerator>();
 		return services;
 	}
 

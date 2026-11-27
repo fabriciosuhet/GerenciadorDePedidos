@@ -7,4 +7,5 @@ public interface IMovimentacaoEstoqueRepository : IRepository<MovimentacaoEstoqu
 	Task<int> GetCountAsync(string? query, CancellationToken cancellationToken = default);
 	Task<List<MovimentacaoEstoque>> GetPagedAsync(string? query, int skip, int take, CancellationToken cancellationToken = default);
 	Task<MovimentacaoEstoque?> GetByIdMovimentacaoAsync(int id, CancellationToken cancellationToken = default);
+	Task<List<MovimentacaoEstoque>> GetByPeriodoAsync(DateTime dataInicio, DateTime dataFimExclusiva, CancellationToken cancellationToken = default);
 }

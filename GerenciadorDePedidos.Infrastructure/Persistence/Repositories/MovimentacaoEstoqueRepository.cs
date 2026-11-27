@@ -26,6 +26,18 @@ public class MovimentacaoEstoqueRepository(GerenciadorDePedidosDbContext context
 			.Include(me => me.Cliente)
 			.SingleOrDefaultAsync(me => me.Id == id, cancellationToken);
 
+	public Task<List<MovimentacaoEstoque>> GetByPeriodoAsync(
+		DateTime dataInicio,
+		DateTime dataFimExclusiva,
+		CancellationToken cancellationToken = default)
+		=> _dbSet
+			.AsNoTracking()
+			.Include(me => me.Produto)
+			.Include(me => me.Cliente)
+			.Where(me => me.DataMovimentacao >= dataInicio && me.DataMovimentacao < dataFimExclusiva)
+			.OrderByDescending(me => me.DataMovimentacao)
+			.ToListAsync(cancellationToken);
+
 	private IQueryable<MovimentacaoEstoque> BuildFilteredQuery(string? query)
 	{
 		var q = _dbSet.AsNoTracking().Include(me => me.Produto).AsQueryable();
