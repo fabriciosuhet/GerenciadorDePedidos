@@ -10,9 +10,11 @@ public class ProdutoConfiguration : IEntityTypeConfiguration<Produto>
 	{
 		builder
 			.HasKey(p => p.Id);
-		
+
 		builder
 			.Property(p => p.Preco)
 			.HasColumnType("decimal(15,2)");
+
+		builder.HasQueryFilter(p => p.Ativo);
 	}
 }

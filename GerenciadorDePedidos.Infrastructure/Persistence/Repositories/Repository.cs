@@ -1,4 +1,5 @@
-﻿using GerenciadorDePedidos.Core.Entities;
+﻿using System.Linq.Expressions;
+using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +22,14 @@ public class Repository<TEntity, TKey>(GerenciadorDePedidosDbContext context)
 	}
 
 	public async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
-		=> await _dbSet.FindAsync([id], cancellationToken);
+	{
+		var parameter = Expression.Parameter(typeof(TEntity), "e");
+		var property = Expression.Property(parameter, nameof(BaseEntity<TKey>.Id));
+		var equals = Expression.Equal(property, Expression.Constant(id, typeof(TKey)));
+		var predicate = Expression.Lambda<Func<TEntity, bool>>(equals, parameter);
+
+		return await _dbSet.SingleOrDefaultAsync(predicate, cancellationToken);
+	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken = default)
 		=> await _dbSet.AsNoTracking().CountAsync(cancellationToken);

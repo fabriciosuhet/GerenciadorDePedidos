@@ -52,6 +52,24 @@ public class Pedido : BaseEntity<int>
 		if (Status == Status.Concluido)
 			throw new InvalidOperationException("Não é possível cancelar um pedido já concluído.");
 
+		if (Status == Status.Cancelado)
+			throw new InvalidOperationException("Este pedido já está cancelado.");
+
 		Status = Status.Cancelado;
+		MarcarComoAtualizado();
+	}
+
+	/// <summary>
+	/// Cancela o pedido e indica se o estoque dos itens precisa ser estornado.
+	/// </summary>
+	public bool CancelarComEstorno()
+	{
+		if (Status == Status.Cancelado)
+			throw new InvalidOperationException("Este pedido já está cancelado.");
+
+		var requerEstorno = Status is Status.Processado or Status.Concluido;
+		Status = Status.Cancelado;
+		MarcarComoAtualizado();
+		return requerEstorno;
 	}
 }

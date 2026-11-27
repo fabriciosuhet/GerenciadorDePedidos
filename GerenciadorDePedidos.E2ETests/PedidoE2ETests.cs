@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
 using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
+using GerenciadorDePedidos.Application.Commands.LoginCliente;
+using GerenciadorDePedidos.Application.Commands.UpdateProduto;
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Enums;
@@ -142,23 +144,122 @@ public class PedidoE2ETests
 			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prodA.Id, Quantidade = 1 }], user.Id, Status.Pendente));
 		Assert.Equal(HttpStatusCode.Forbidden, joaoCreateForMaria.StatusCode);
 
-		// 4. Produto e cliente vinculados a pedidos não podem ser removidos (409 Conflict em vez de 500)
+		// 4. Soft Delete permite desativar produto e cliente mesmo com pedidos vinculados, preservando histórico e bloqueando login
 		var deleteProdutoComPedido = await adminClient.DeleteAsync($"/api/produto/remover-produto?id={prodA.Id}");
-		Assert.Equal(HttpStatusCode.Conflict, deleteProdutoComPedido.StatusCode);
+		Assert.Equal(HttpStatusCode.OK, deleteProdutoComPedido.StatusCode);
+
+		var getProdutoDesativado = await adminClient.GetAsync($"/api/produto/{prodA.Id}");
+		Assert.Equal(HttpStatusCode.NotFound, getProdutoDesativado.StatusCode);
 
 		var deleteClienteComPedido = await adminClient.DeleteAsync($"/api/cliente/deletar-cliente?id={user.Id}");
-		Assert.Equal(HttpStatusCode.Conflict, deleteClienteComPedido.StatusCode);
+		Assert.Equal(HttpStatusCode.OK, deleteClienteComPedido.StatusCode);
+
+		var getClienteDesativado = await adminClient.GetAsync($"/api/cliente/{user.Id}");
+		Assert.Equal(HttpStatusCode.NotFound, getClienteDesativado.StatusCode);
+
+		// Login de cliente desativado deve ser bloqueado (404 NotFound)
+		var loginDesativadoResp = await anonClient.PostAsJsonAsync(
+			"/api/login",
+			new LoginClienteCommand("maria@teste.com", "Maria@123"));
+		Assert.Equal(HttpStatusCode.NotFound, loginDesativadoResp.StatusCode);
+
+		// Histórico do pedido continua acessível para o Admin com nome do cliente e produtos preservados
+		var pedidoHistorico = await adminClient.GetFromJsonAsync<PedidoResponseDTO>($"/api/pedido/{pedidoCreated.Id}");
+		Assert.NotNull(pedidoHistorico);
+		Assert.Equal("Maria Silva", pedidoHistorico.ClienteNome);
+		Assert.Equal(2, pedidoHistorico.ItensPedidos.Count);
 
 		// 5. Usuario comum não pode deletar pedido (403 Forbidden)
 		var deleteAsUser = await userClient.DeleteAsync($"/api/pedido/deletar-pedido?id={pedidoCreated.Id}");
 		Assert.Equal(HttpStatusCode.Forbidden, deleteAsUser.StatusCode);
 
-		// 5. Admin deleta pedido e consulta posterior retorna 404 (cache invalidado)
+		// 6. Admin deleta pedido e consulta posterior retorna 404 (cache invalidado)
 		var deleteAsAdmin = await adminClient.DeleteAsync($"/api/pedido/deletar-pedido?id={pedidoCreated.Id}");
 		Assert.Equal(HttpStatusCode.OK, deleteAsAdmin.StatusCode);
 
 		var getAfterDelete = await adminClient.GetAsync($"/api/pedido/{pedidoCreated.Id}");
 		Assert.Equal(HttpStatusCode.NotFound, getAfterDelete.StatusCode);
+	}
+
+	[Fact]
+	public async Task CancelarPedidoConcluido_DeveEstornarEstoqueEPreservarSnapshotDePrecoNoRelatorio()
+	{
+		using var factory = new CustomWebApplicationFactory();
+		var (_, adminToken) = await factory.BootstrapAdminAsync();
+		using var adminClient = factory.CreateAuthenticatedClient(adminToken);
+
+		// Cria dois clientes e um produto com preço inicial de R$ 1.000,00
+		var mariaResp = await adminClient.PostAsJsonAsync(
+			"/api/cliente",
+			new CreateClienteCommand("Maria Estorno", Role.Usuario, "Maria@123", "maria.estorno@teste.com", "11944440000"));
+		var maria = await mariaResp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIdResponse>();
+
+		await adminClient.PostAsJsonAsync(
+			"/api/cliente",
+			new CreateClienteCommand("Outro Usuario", Role.Usuario, "Outro@123", "outro.estorno@teste.com", "11944440001"));
+
+		var prodResp = await adminClient.PostAsJsonAsync("/api/produto", new CreateProdutoCommand("Monitor Ultra", 1000m, 10));
+		var prod = await prodResp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+
+		using var anonClient = factory.CreateClient();
+		var mariaToken = await factory.LoginAsync(anonClient, "maria.estorno@teste.com", "Maria@123");
+		var outroToken = await factory.LoginAsync(anonClient, "outro.estorno@teste.com", "Outro@123");
+		using var mariaClient = factory.CreateAuthenticatedClient(mariaToken);
+		using var outroClient = factory.CreateAuthenticatedClient(outroToken);
+
+		// 1. Maria cria pedido de 2 unidades -> aguarda conclusão (estoque vai de 10 para 8)
+		var pedidoResp = await mariaClient.PostAsJsonAsync(
+			"/api/pedido",
+			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prod!.Id, Quantidade = 2 }], maria!.Id, Status.Pendente));
+		Assert.Equal(HttpStatusCode.Created, pedidoResp.StatusCode);
+		var pedidoCreated = await pedidoResp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+
+		var pedidoConcluido = await AguardarStatusPedidoAsync(mariaClient, pedidoCreated!.Id, Status.Concluido);
+		Assert.Equal(Status.Concluido, pedidoConcluido.Status);
+
+		var prodAposVenda = await mariaClient.GetFromJsonAsync<ProdutoDetailsViewModel>($"/api/produto/{prod.Id}");
+		Assert.Equal(8, prodAposVenda!.Estoque);
+
+		// 2. Admin altera o preço do produto para R$ 1.500,00 após a venda
+		var updateProdResp = await adminClient.PutAsJsonAsync(
+			"/api/produto/atualizar-produto",
+			new UpdateProdutoCommand(prod.Id, "Monitor Ultra", 1500m, 8));
+		Assert.Equal(HttpStatusCode.NoContent, updateProdResp.StatusCode);
+
+		// 3. Outro usuário não pode cancelar pedido de Maria (403 Forbidden)
+		var cancelOutroResp = await outroClient.PatchAsync($"/api/pedido/{pedidoCreated.Id}/cancelar", null);
+		Assert.Equal(HttpStatusCode.Forbidden, cancelOutroResp.StatusCode);
+
+		// 4. Maria cancela seu pedido -> estoque estornado de 8 para 10
+		var cancelMariaResp = await mariaClient.PatchAsync($"/api/pedido/{pedidoCreated.Id}/cancelar", null);
+		Assert.Equal(HttpStatusCode.OK, cancelMariaResp.StatusCode);
+		var cancelResult = await cancelMariaResp.Content.ReadFromJsonAsync<CancelarPedidoViewModel>();
+		Assert.NotNull(cancelResult);
+		Assert.Equal(Status.Cancelado, cancelResult.Status);
+		Assert.True(cancelResult.EstoqueEstornado);
+		Assert.Equal(2, cancelResult.UnidadesEstornadas);
+
+		var prodAposEstorno = await mariaClient.GetFromJsonAsync<ProdutoDetailsViewModel>($"/api/produto/{prod.Id}");
+		Assert.Equal(10, prodAposEstorno!.Estoque);
+
+		// 5. Segunda tentativa de cancelamento deve retornar 409 Conflict
+		var cancelDuplicadoResp = await mariaClient.PatchAsync($"/api/pedido/{pedidoCreated.Id}/cancelar", null);
+		Assert.Equal(HttpStatusCode.Conflict, cancelDuplicadoResp.StatusCode);
+
+		// 6. Detalhes da movimentação e relatório CSV preservam o snapshot de R$ 1.000,00 + motivos Venda e Estorno
+		var movimentacoes = await adminClient.GetFromJsonAsync<PagedResultModel<MovimentacaoEstoqueResponseDTO>>(
+			"/api/produto/movimentacao-estoque");
+		Assert.NotNull(movimentacoes);
+		Assert.Equal(2, movimentacoes.TotalCount);
+
+		var csvResp = await adminClient.GetAsync("/api/produto/movimentacao-estoque/relatorio?periodo=Mes&formato=Csv");
+		Assert.Equal(HttpStatusCode.OK, csvResp.StatusCode);
+		var csvText = await csvResp.Content.ReadAsStringAsync();
+		Assert.Contains("Venda (Pedido)", csvText);
+		Assert.Contains("Estorno", csvText);
+		Assert.Contains("1000,00", csvText);
+		Assert.Contains("2000,00", csvText);
+		Assert.DoesNotContain("3000,00", csvText); // Não usou o novo preço de R$ 1.500,00 retroativamente
 	}
 
 	private static async Task<PedidoResponseDTO> AguardarStatusPedidoAsync(

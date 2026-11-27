@@ -37,7 +37,10 @@ public class AdicionarProdutoEstoqueCommandHandlerTests
 				m.Quantidade == 10 &&
 				m.TipoMovimentacao == Tipo.Adicao &&
 				m.ProdutoId == produtoId &&
-				m.ClienteId == clienteId),
+				m.ClienteId == clienteId &&
+				m.PrecoUnitario == 11.99m &&
+				m.Motivo == MotivoMovimentacao.AjusteManual &&
+				m.PedidoId == null),
 			It.IsAny<CancellationToken>()), Times.Once);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}

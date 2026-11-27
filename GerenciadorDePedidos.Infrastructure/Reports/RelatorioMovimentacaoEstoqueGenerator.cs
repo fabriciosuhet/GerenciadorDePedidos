@@ -67,13 +67,15 @@ public sealed class RelatorioMovimentacaoEstoqueGenerator : IRelatorioMovimentac
 
 		sb.AppendLine();
 		sb.AppendLine("MOVIMENTACOES DETALHADAS");
-		sb.AppendLine("Id;DataMovimentacaoUtc;Tipo;ProdutoId;Produto;Responsavel;Quantidade;PrecoUnitario;ValorTotal;EstoqueAtualProduto");
+		sb.AppendLine("Id;DataMovimentacaoUtc;Tipo;Motivo;PedidoId;ProdutoId;Produto;Responsavel;Quantidade;PrecoUnitario;ValorTotal;EstoqueAtualProduto");
 		foreach (var item in relatorio.Movimentacoes)
 		{
 			sb.AppendLine(string.Join(';',
 				item.Id.ToString(PtBr),
 				item.DataMovimentacao.ToString("dd/MM/yyyy HH:mm:ss", PtBr),
 				FormatarTipo(item.TipoMovimentacao),
+				EscaparCsv(FormatarMotivo(item.Motivo)),
+				item.PedidoId?.ToString(PtBr) ?? string.Empty,
 				item.ProdutoId.ToString(PtBr),
 				EscaparCsv(item.ProdutoNome),
 				EscaparCsv(item.ClienteNome),
@@ -277,15 +279,17 @@ public sealed class RelatorioMovimentacaoEstoqueGenerator : IRelatorioMovimentac
 			{
 				table.ColumnsDefinition(columns =>
 				{
-					columns.ConstantColumn(38);
-					columns.ConstantColumn(95);
-					columns.ConstantColumn(60);
-					columns.RelativeColumn(2.4f);
-					columns.RelativeColumn(2f);
-					columns.ConstantColumn(45);
+					columns.ConstantColumn(34);
+					columns.ConstantColumn(86);
+					columns.ConstantColumn(52);
+					columns.ConstantColumn(78);
+					columns.ConstantColumn(44);
+					columns.RelativeColumn(2.1f);
+					columns.RelativeColumn(1.7f);
+					columns.ConstantColumn(40);
+					columns.RelativeColumn(1.1f);
 					columns.RelativeColumn(1.2f);
-					columns.RelativeColumn(1.3f);
-					columns.ConstantColumn(55);
+					columns.ConstantColumn(48);
 				});
 
 				table.Header(header =>
@@ -293,6 +297,8 @@ public sealed class RelatorioMovimentacaoEstoqueGenerator : IRelatorioMovimentac
 					CelulaCabecalho(header.Cell(), "ID");
 					CelulaCabecalho(header.Cell(), "Data/Hora (UTC)");
 					CelulaCabecalho(header.Cell(), "Tipo");
+					CelulaCabecalho(header.Cell(), "Motivo");
+					CelulaCabecalho(header.Cell(), "Pedido");
 					CelulaCabecalho(header.Cell(), "Produto");
 					CelulaCabecalho(header.Cell(), "Responsável");
 					CelulaCabecalho(header.Cell(), "Qtd.", alignRight: true);
@@ -315,6 +321,8 @@ public sealed class RelatorioMovimentacaoEstoqueGenerator : IRelatorioMovimentac
 						.PaddingVertical(4).PaddingHorizontal(4)
 						.Text(FormatarTipo(item.TipoMovimentacao))
 						.Bold().FontColor(corTipo);
+					CelulaDado(table.Cell(), FormatarMotivo(item.Motivo), fundo);
+					CelulaDado(table.Cell(), item.PedidoId.HasValue ? $"#{item.PedidoId}" : "-", fundo);
 					CelulaDado(table.Cell(), item.ProdutoNome, fundo);
 					CelulaDado(table.Cell(), item.ClienteNome, fundo);
 					CelulaDado(table.Cell(), item.Quantidade.ToString(PtBr), fundo, alignRight: true);
@@ -394,6 +402,15 @@ public sealed class RelatorioMovimentacaoEstoqueGenerator : IRelatorioMovimentac
 
 	private static string FormatarTipo(Tipo tipo)
 		=> tipo == Tipo.Adicao ? "Entrada" : "Saída";
+
+	private static string FormatarMotivo(MotivoMovimentacao motivo)
+		=> motivo switch
+		{
+			MotivoMovimentacao.AjusteManual => "Ajuste Manual",
+			MotivoMovimentacao.VendaPedido => "Venda (Pedido)",
+			MotivoMovimentacao.EstornoCancelamento => "Estorno",
+			_ => motivo.ToString()
+		};
 
 	private static string FormatarMoeda(decimal valor)
 		=> valor.ToString("C2", PtBr);

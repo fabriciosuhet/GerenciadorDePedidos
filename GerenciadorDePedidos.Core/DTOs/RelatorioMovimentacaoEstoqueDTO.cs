@@ -6,6 +6,8 @@ public sealed record MovimentacaoEstoqueRelatorioItemDTO(
 	int Id,
 	DateTime DataMovimentacao,
 	Tipo TipoMovimentacao,
+	MotivoMovimentacao Motivo,
+	int? PedidoId,
 	int ProdutoId,
 	string ProdutoNome,
 	int Quantidade,

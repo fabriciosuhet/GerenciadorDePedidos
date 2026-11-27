@@ -24,6 +24,15 @@ public class ProdutoRepository(GerenciadorDePedidosDbContext context)
 			.ToListAsync(cancellationToken);
 	}
 
+	public Task<List<Produto>> GetByIdsIncludingInactiveForUpdateAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default)
+	{
+		var distinctIds = ids.Distinct().ToList();
+		return _dbSet
+			.IgnoreQueryFilters()
+			.Where(p => distinctIds.Contains(p.Id))
+			.ToListAsync(cancellationToken);
+	}
+
 	public Task<int> GetCountAsync(string? query, CancellationToken cancellationToken = default)
 		=> BuildFilteredQuery(query).CountAsync(cancellationToken);
 

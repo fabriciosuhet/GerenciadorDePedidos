@@ -27,13 +27,17 @@ public sealed class ExportarRelatorioMovimentacaoEstoqueQueryHandler(
 		var itens = movimentacoes
 			.Select(me =>
 			{
-				var precoUnitario = me.Produto?.Preco ?? 0m;
+				var precoUnitario = me.PrecoUnitario > 0m
+					? me.PrecoUnitario
+					: me.Produto?.Preco ?? 0m;
 				var valorTotal = me.Quantidade * precoUnitario;
 
 				return new MovimentacaoEstoqueRelatorioItemDTO(
 					me.Id,
 					me.DataMovimentacao,
 					me.TipoMovimentacao,
+					me.Motivo,
+					me.PedidoId,
 					me.ProdutoId,
 					me.Produto?.Nome ?? "Produto Desconhecido",
 					me.Quantidade,

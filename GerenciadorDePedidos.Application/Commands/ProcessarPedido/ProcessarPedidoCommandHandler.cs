@@ -20,15 +20,17 @@ public sealed class ProcessarPedidoCommandHandler(
 		if (pedido is null || pedido.Status != Status.Pendente)
 			return false;
 
-		var quantidadePorProduto = pedido.ItensPedidos
+		var itensPorProduto = pedido.ItensPedidos
 			.GroupBy(i => i.ProdutoId)
-			.ToDictionary(g => g.Key, g => g.Sum(i => i.Quantidade));
+			.ToDictionary(
+				g => g.Key,
+				g => (Quantidade: g.Sum(i => i.Quantidade), PrecoUnitario: g.First().PrecoUnitario));
 
-		var produtos = await produtoRepository.GetByIdsForUpdateAsync(quantidadePorProduto.Keys, cancellationToken);
+		var produtos = await produtoRepository.GetByIdsForUpdateAsync(itensPorProduto.Keys, cancellationToken);
 		var produtosPorId = produtos.ToDictionary(p => p.Id);
 
-		var estoqueDisponivel = quantidadePorProduto.All(kvp =>
-			produtosPorId.TryGetValue(kvp.Key, out var produto) && produto.Estoque >= kvp.Value);
+		var estoqueDisponivel = itensPorProduto.All(kvp =>
+			produtosPorId.TryGetValue(kvp.Key, out var produto) && produto.Estoque >= kvp.Value.Quantidade);
 
 		if (!estoqueDisponivel)
 		{
@@ -40,12 +42,19 @@ public sealed class ProcessarPedidoCommandHandler(
 
 		pedido.MarcarComoProcessado();
 
-		foreach (var (produtoId, quantidade) in quantidadePorProduto)
+		foreach (var (produtoId, itemInfo) in itensPorProduto)
 		{
 			var produto = produtosPorId[produtoId];
-			produto.RemoverEstoque(quantidade);
+			produto.RemoverEstoque(itemInfo.Quantidade);
 
-			var movimentacao = new MovimentacaoEstoque(quantidade, Tipo.Remocao, produto.Id, pedido.ClienteId);
+			var movimentacao = new MovimentacaoEstoque(
+				itemInfo.Quantidade,
+				Tipo.Remocao,
+				produto.Id,
+				pedido.ClienteId,
+				itemInfo.PrecoUnitario,
+				MotivoMovimentacao.VendaPedido,
+				pedido.Id);
 			await movimentacaoEstoqueRepository.AddAsync(movimentacao, cancellationToken);
 
 			cacheService.Remove(CacheKeyHelper.GetProdutoByIdKey(produto.Id));

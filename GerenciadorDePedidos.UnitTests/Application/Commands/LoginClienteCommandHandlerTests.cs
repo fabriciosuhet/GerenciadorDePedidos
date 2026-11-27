@@ -106,4 +106,35 @@ public class LoginClienteCommandHandlerTests
 		Assert.Null(result);
 		refreshTokenRepositoryMock.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
+
+	[Fact]
+	public async Task Handle_ClienteDesativado_DeveRetornarNull()
+	{
+		const string email = "inativo@teste.com";
+		const string senhaHash = "hashSenha123";
+		var cliente = new Cliente("Inativo", "11999999999", Role.Usuario);
+		cliente.Desativar();
+		var login = new Login(cliente.Id, email, senhaHash, Role.Usuario);
+		typeof(Login).GetProperty(nameof(Login.Cliente))!.SetValue(login, cliente);
+
+		var authServiceMock = new Mock<IAuthService>();
+		authServiceMock.Setup(a => a.VerifyPassword("Teste@123", senhaHash)).Returns(true);
+
+		var loginRepositoryMock = new Mock<ILoginRepository>();
+		loginRepositoryMock.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(login);
+
+		var refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
+		var unitOfWorkMock = new Mock<IUnitOfWork>();
+
+		var handler = new LoginClienteCommandHandler(
+			authServiceMock.Object,
+			loginRepositoryMock.Object,
+			refreshTokenRepositoryMock.Object,
+			unitOfWorkMock.Object);
+
+		var result = await handler.Handle(new LoginClienteCommand(email, "Teste@123"), CancellationToken.None);
+
+		Assert.Null(result);
+		refreshTokenRepositoryMock.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
 }

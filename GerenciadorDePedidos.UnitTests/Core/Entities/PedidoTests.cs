@@ -46,4 +46,36 @@ public class PedidoTests
 
 		Assert.Throws<InvalidOperationException>(() => pedido.Cancelar());
 	}
+
+	[Fact]
+	public void CancelarComEstorno_DeveRetornarTrueParaConcluidoEFalseParaPendente()
+	{
+		var pedidoPendente = new Pedido(Guid.NewGuid(), Status.Pendente);
+		Assert.False(pedidoPendente.CancelarComEstorno());
+		Assert.Equal(Status.Cancelado, pedidoPendente.Status);
+		Assert.Throws<InvalidOperationException>(() => pedidoPendente.CancelarComEstorno());
+
+		var pedidoConcluido = new Pedido(Guid.NewGuid(), Status.Pendente);
+		pedidoConcluido.MarcarComoProcessado();
+		pedidoConcluido.Concluir();
+		Assert.True(pedidoConcluido.CancelarComEstorno());
+		Assert.Equal(Status.Cancelado, pedidoConcluido.Status);
+	}
+
+	[Fact]
+	public void BaseEntity_DesativarEReativar_DeveAtualizarAuditoria()
+	{
+		var produto = new Produto("Monitor", 1000m, 5);
+		Assert.True(produto.Ativo);
+		Assert.Null(produto.DesativadoEm);
+
+		produto.Desativar();
+		Assert.False(produto.Ativo);
+		Assert.NotNull(produto.DesativadoEm);
+		Assert.NotNull(produto.AtualizadoEm);
+
+		produto.Reativar();
+		Assert.True(produto.Ativo);
+		Assert.Null(produto.DesativadoEm);
+	}
 }
