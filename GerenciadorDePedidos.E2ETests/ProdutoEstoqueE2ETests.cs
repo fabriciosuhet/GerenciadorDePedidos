@@ -129,4 +129,87 @@ public class ProdutoEstoqueE2ETests
 		Assert.Equal(3, pagina2Atualizada.Items.Count);
 		Assert.Contains(pagina2Atualizada.Items, p => p.Nome == "Item Pag 12");
 	}
+
+	[Fact]
+	public async Task DownloadRelatorioMovimentacaoEstoque_CsvEPdf_PorSemanaMesAno_EControleAcesso()
+	{
+		using var factory = new CustomWebApplicationFactory();
+		var (adminId, adminToken) = await factory.BootstrapAdminAsync();
+		using var adminClient = factory.CreateAuthenticatedClient(adminToken);
+
+		// Cria usuário comum para validar restrição de acesso (apenas Admin)
+		await adminClient.PostAsJsonAsync(
+			"/api/cliente",
+			new CreateClienteCommand("Comprador Relatorio", Role.Usuario, "User@1234", "relatorio@teste.com", "11944443333"));
+		using var anonClient = factory.CreateClient();
+		var userToken = await factory.LoginAsync(anonClient, "relatorio@teste.com", "User@1234");
+		using var userClient = factory.CreateAuthenticatedClient(userToken);
+
+		var forbiddenResp = await userClient.GetAsync("/api/produto/movimentacao-estoque/relatorio?periodo=Mes&formato=Csv");
+		Assert.Equal(HttpStatusCode.Forbidden, forbiddenResp.StatusCode);
+
+		// Cria produtos e registra movimentações de entrada e saída
+		var prod1Resp = await adminClient.PostAsJsonAsync("/api/produto", new CreateProdutoCommand("Monitor 4K", 2500m, 10));
+		Assert.Equal(HttpStatusCode.Created, prod1Resp.StatusCode);
+		var prod1 = await prod1Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+
+		var prod2Resp = await adminClient.PostAsJsonAsync("/api/produto", new CreateProdutoCommand("Headset Pro", 400m, 15));
+		Assert.Equal(HttpStatusCode.Created, prod2Resp.StatusCode);
+		var prod2 = await prod2Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+
+		var addResp = await adminClient.PutAsJsonAsync(
+			"/api/produto/adicionar-estoque",
+			new AdicionarProdutoEstoqueCommand(prod1!.Id, 4, adminId));
+		Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
+
+		var remResp = await adminClient.PutAsJsonAsync(
+			"/api/produto/remover-estoque",
+			new RemoverProdutoEstoqueCommand(prod2!.Id, 3, adminId));
+		Assert.Equal(HttpStatusCode.OK, remResp.StatusCode);
+
+		// 1. Download CSV (Mensal)
+		var csvResp = await adminClient.GetAsync("/api/produto/movimentacao-estoque/relatorio?periodo=Mes&formato=Csv");
+		Assert.Equal(HttpStatusCode.OK, csvResp.StatusCode);
+		Assert.Equal("text/csv", csvResp.Content.Headers.ContentType?.MediaType);
+		Assert.Contains(".csv", csvResp.Content.Headers.ContentDisposition?.FileNameStar
+			?? csvResp.Content.Headers.ContentDisposition?.FileName ?? string.Empty);
+
+		var csvBytes = await csvResp.Content.ReadAsByteArrayAsync();
+		// Verifica BOM UTF-8
+		Assert.True(csvBytes.Length > 3);
+		Assert.Equal(0xEF, csvBytes[0]);
+		Assert.Equal(0xBB, csvBytes[1]);
+		Assert.Equal(0xBF, csvBytes[2]);
+
+		var csvText = System.Text.Encoding.UTF8.GetString(csvBytes, 3, csvBytes.Length - 3);
+		Assert.Contains("RESUMO DO PERIODO", csvText);
+		Assert.Contains("RESUMO POR PRODUTO", csvText);
+		Assert.Contains("MOVIMENTACOES DETALHADAS", csvText);
+		Assert.Contains("Monitor 4K", csvText);
+		Assert.Contains("Headset Pro", csvText);
+		Assert.Contains("10000,00", csvText); // 4 * 2500
+		Assert.Contains("1200,00", csvText);  // 3 * 400
+
+		// 2. Download PDF (Semanal e Anual)
+		foreach (var periodo in new[] { "Semana", "Ano" })
+		{
+			var pdfResp = await adminClient.GetAsync($"/api/produto/movimentacao-estoque/relatorio?periodo={periodo}&formato=Pdf");
+			Assert.Equal(HttpStatusCode.OK, pdfResp.StatusCode);
+			Assert.Equal("application/pdf", pdfResp.Content.Headers.ContentType?.MediaType);
+			Assert.Contains(".pdf", pdfResp.Content.Headers.ContentDisposition?.FileNameStar
+				?? pdfResp.Content.Headers.ContentDisposition?.FileName ?? string.Empty);
+
+			var pdfBytes = await pdfResp.Content.ReadAsByteArrayAsync();
+			Assert.True(pdfBytes.Length > 500);
+			var pdfHeader = System.Text.Encoding.ASCII.GetString(pdfBytes, 0, 5);
+			Assert.Equal("%PDF-", pdfHeader);
+		}
+
+		// 3. Período passado sem movimentações ainda gera PDF válido sem erro
+		var pdfVazioResp = await adminClient.GetAsync(
+			"/api/produto/movimentacao-estoque/relatorio?periodo=Ano&formato=Pdf&dataReferencia=2020-01-15");
+		Assert.Equal(HttpStatusCode.OK, pdfVazioResp.StatusCode);
+		var pdfVazioBytes = await pdfVazioResp.Content.ReadAsByteArrayAsync();
+		Assert.Equal("%PDF-", System.Text.Encoding.ASCII.GetString(pdfVazioBytes, 0, 5));
+	}
 }

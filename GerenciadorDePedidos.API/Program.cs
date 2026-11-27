@@ -25,6 +25,7 @@ builder.Services
 	.AddCorsService()
 	.AddSwaggerService()
 	.AddCacheService()
+	.AddReportServices()
 	.AddPolicyController()
 	.AddRateLimitingService(builder.Configuration)
 	.AddMessaging(builder.Configuration, typeof(PedidoCriadoConsumer).Assembly);

@@ -5,10 +5,12 @@ using GerenciadorDePedidos.Application.Commands.DeleteProduto;
 using GerenciadorDePedidos.Application.Commands.RemoverProdutoEstoque;
 using GerenciadorDePedidos.Application.Commands.UpdateProduto;
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Application.Queries.ExportarRelatorioMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetAllMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetAllProdutos;
 using GerenciadorDePedidos.Application.Queries.GetMovimentacaoEstoque;
 using GerenciadorDePedidos.Application.Queries.GetProduto;
+using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Helpers;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
@@ -66,6 +68,21 @@ public class ProdutoController(IMediator mediator, ICacheService cacheService)
 			new GetMovimentacaoEstoqueQuery(id),
 			"Movimentacao nao encontrada",
 			cancellationToken);
+
+	[HttpGet("movimentacao-estoque/relatorio")]
+	[AcessoRestrito]
+	public async Task<IActionResult> DownloadRelatorioMovimentacaoEstoque(
+		[FromQuery] PeriodoRelatorio periodo = PeriodoRelatorio.Mes,
+		[FromQuery] FormatoRelatorio formato = FormatoRelatorio.Pdf,
+		[FromQuery] DateTime? dataReferencia = null,
+		CancellationToken cancellationToken = default)
+	{
+		var arquivo = await SendAsync(
+			new ExportarRelatorioMovimentacaoEstoqueQuery(periodo, formato, dataReferencia),
+			cancellationToken);
+
+		return File(arquivo.Conteudo, arquivo.ContentType, arquivo.NomeArquivo);
+	}
 
 	[HttpPost]
 	[AcessoRestrito]
