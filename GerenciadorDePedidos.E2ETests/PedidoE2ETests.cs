@@ -262,6 +262,111 @@ public class PedidoE2ETests
 		Assert.DoesNotContain("3000,00", csvText); // Não usou o novo preço de R$ 1.500,00 retroativamente
 	}
 
+	[Fact]
+	public async Task DashboardAnalyticsPorPeriodo_ERelatorioVendasCsvEPdf_DeveRetornarMetricasERankings()
+	{
+		using var factory = new CustomWebApplicationFactory();
+		var (_, adminToken) = await factory.BootstrapAdminAsync();
+		using var adminClient = factory.CreateAuthenticatedClient(adminToken);
+
+		// Cria cliente comum e dois produtos
+		var clienteResp = await adminClient.PostAsJsonAsync(
+			"/api/cliente",
+			new CreateClienteCommand("Carlos Analytics", Role.Usuario, "Carlos@123", "carlos@teste.com", "11988887777"));
+		var cliente = await clienteResp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIdResponse>();
+
+		var prod1Resp = await adminClient.PostAsJsonAsync("/api/produto", new CreateProdutoCommand("Notebook Gamer", 5000m, 10));
+		var prod1 = await prod1Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+
+		var prod2Resp = await adminClient.PostAsJsonAsync("/api/produto", new CreateProdutoCommand("Teclado RGB", 500m, 20));
+		var prod2 = await prod2Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+
+		using var anonClient = factory.CreateClient();
+		var userToken = await factory.LoginAsync(anonClient, "carlos@teste.com", "Carlos@123");
+		using var userClient = factory.CreateAuthenticatedClient(userToken);
+
+		// Usuário comum não pode baixar relatório de vendas (403 Forbidden)
+		var forbiddenResp = await userClient.GetAsync("/api/pedido/relatorio?periodo=Mes&formato=Csv");
+		Assert.Equal(HttpStatusCode.Forbidden, forbiddenResp.StatusCode);
+
+		// Cria 2 pedidos concluídos (5000 + 1000 = 6000) e 1 pedido cancelado por falta de estoque
+		var p1Resp = await userClient.PostAsJsonAsync(
+			"/api/pedido",
+			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prod1!.Id, Quantidade = 1 }], cliente!.Id, Status.Pendente));
+		var p1 = await p1Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+		await AguardarStatusPedidoAsync(userClient, p1!.Id, Status.Concluido);
+
+		var p2Resp = await userClient.PostAsJsonAsync(
+			"/api/pedido",
+			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prod2!.Id, Quantidade = 2 }], cliente.Id, Status.Pendente));
+		var p2 = await p2Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+		await AguardarStatusPedidoAsync(userClient, p2!.Id, Status.Concluido);
+
+		var p3Resp = await userClient.PostAsJsonAsync(
+			"/api/pedido",
+			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prod1.Id, Quantidade = 50 }], cliente.Id, Status.Pendente));
+		var p3 = await p3Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+		await AguardarStatusPedidoAsync(userClient, p3!.Id, Status.Cancelado);
+
+		// 1. Dashboard filtrado por Mês com Top Produtos, Ticket Médio e Taxa de Cancelamento
+		var dashboardMes = await adminClient.GetFromJsonAsync<DashboardViewModel>("/api/dashboard?periodo=Mes&topProdutos=2");
+		Assert.NotNull(dashboardMes);
+		Assert.Equal(PeriodoRelatorio.Mes, dashboardMes.Periodo);
+		Assert.Equal(3, dashboardMes.TotalPedidos);
+		Assert.Equal(2, dashboardMes.PedidosConcluidos);
+		Assert.Equal(1, dashboardMes.PedidosCancelados);
+		Assert.Equal(6000m, dashboardMes.FaturamentoTotalConcluido);
+		Assert.Equal(3000m, dashboardMes.TicketMedio);
+		Assert.Equal(33.33m, dashboardMes.TaxaCancelamentoPercentual);
+		Assert.NotNull(dashboardMes.TopProdutos);
+		Assert.Equal(2, dashboardMes.TopProdutos!.Count);
+		Assert.Equal("Notebook Gamer", dashboardMes.TopProdutos[0].ProdutoNome);
+		Assert.Equal(5000m, dashboardMes.TopProdutos[0].FaturamentoTotal);
+
+		// Dashboard de período passado sem pedidos deve retornar zeros
+		var dashboardVazio = await adminClient.GetFromJsonAsync<DashboardViewModel>(
+			"/api/dashboard?periodo=Ano&dataReferencia=2020-05-01");
+		Assert.NotNull(dashboardVazio);
+		Assert.Equal(0, dashboardVazio.TotalPedidos);
+		Assert.Equal(0m, dashboardVazio.FaturamentoTotalConcluido);
+		Assert.Empty(dashboardVazio.TopProdutos!);
+
+		// 2. Relatório de Vendas em CSV (Mensal)
+		var csvResp = await adminClient.GetAsync("/api/pedido/relatorio?periodo=Mes&formato=Csv");
+		Assert.Equal(HttpStatusCode.OK, csvResp.StatusCode);
+		Assert.Equal("text/csv", csvResp.Content.Headers.ContentType?.MediaType);
+
+		var csvBytes = await csvResp.Content.ReadAsByteArrayAsync();
+		Assert.Equal(0xEF, csvBytes[0]);
+		Assert.Equal(0xBB, csvBytes[1]);
+		Assert.Equal(0xBF, csvBytes[2]);
+
+		var csvText = System.Text.Encoding.UTF8.GetString(csvBytes, 3, csvBytes.Length - 3);
+		Assert.Contains("RESUMO EXECUTIVO", csvText);
+		Assert.Contains("TOP PRODUTOS", csvText);
+		Assert.Contains("CLIENTES MAIS ATIVOS", csvText);
+		Assert.Contains("PEDIDOS DETALHADOS", csvText);
+		Assert.Contains("Notebook Gamer", csvText);
+		Assert.Contains("Teclado RGB", csvText);
+		Assert.Contains("Carlos Analytics", csvText);
+		Assert.Contains("6000,00", csvText);
+		Assert.Contains("3000,00", csvText);
+
+		// 3. Relatório de Vendas em PDF (Semanal e Anual vazio)
+		var pdfResp = await adminClient.GetAsync("/api/pedido/relatorio?periodo=Semana&formato=Pdf");
+		Assert.Equal(HttpStatusCode.OK, pdfResp.StatusCode);
+		Assert.Equal("application/pdf", pdfResp.Content.Headers.ContentType?.MediaType);
+		var pdfBytes = await pdfResp.Content.ReadAsByteArrayAsync();
+		Assert.True(pdfBytes.Length > 500);
+		Assert.Equal("%PDF-", System.Text.Encoding.ASCII.GetString(pdfBytes, 0, 5));
+
+		var pdfVazioResp = await adminClient.GetAsync(
+			"/api/pedido/relatorio?periodo=Ano&formato=Pdf&dataReferencia=2020-01-10");
+		Assert.Equal(HttpStatusCode.OK, pdfVazioResp.StatusCode);
+		var pdfVazioBytes = await pdfVazioResp.Content.ReadAsByteArrayAsync();
+		Assert.Equal("%PDF-", System.Text.Encoding.ASCII.GetString(pdfVazioBytes, 0, 5));
+	}
+
 	private static async Task<PedidoResponseDTO> AguardarStatusPedidoAsync(
 		HttpClient client,
 		int pedidoId,

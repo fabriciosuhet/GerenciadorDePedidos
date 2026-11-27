@@ -37,9 +37,34 @@ public class PedidoRepository(GerenciadorDePedidosDbContext context)
 			.Include(p => p.ItensPedidos)
 			.SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
 
-	public async Task<PedidoDashboardStatsDTO> GetDashboardStatsAsync(CancellationToken cancellationToken = default)
+	public Task<List<Pedido>> GetByPeriodoAsync(
+		DateTime dataInicio,
+		DateTime dataFimExclusiva,
+		CancellationToken cancellationToken = default)
+		=> _dbSet
+			.IgnoreQueryFilters()
+			.AsNoTracking()
+			.Include(p => p.Cliente)
+			.Include(p => p.ItensPedidos)
+				.ThenInclude(i => i.Produto)
+			.Where(p => p.DataPedido >= dataInicio && p.DataPedido < dataFimExclusiva)
+			.OrderByDescending(p => p.DataPedido)
+			.ToListAsync(cancellationToken);
+
+	public async Task<PedidoDashboardStatsDTO> GetDashboardStatsAsync(
+		DateTime? dataInicio = null,
+		DateTime? dataFimExclusiva = null,
+		int topProdutos = 5,
+		CancellationToken cancellationToken = default)
 	{
-		var pedidos = _dbSet.AsNoTracking();
+		var pedidos = _dbSet.IgnoreQueryFilters().AsNoTracking();
+
+		if (dataInicio.HasValue && dataFimExclusiva.HasValue)
+		{
+			var inicio = dataInicio.Value;
+			var fim = dataFimExclusiva.Value;
+			pedidos = pedidos.Where(p => p.DataPedido >= inicio && p.DataPedido < fim);
+		}
 
 		var total = await pedidos.CountAsync(cancellationToken);
 		var pendentes = await pedidos.CountAsync(p => p.Status == Status.Pendente, cancellationToken);
@@ -50,7 +75,32 @@ public class PedidoRepository(GerenciadorDePedidosDbContext context)
 			.SelectMany(p => p.ItensPedidos)
 			.SumAsync(i => (decimal?)i.Total, cancellationToken) ?? 0m;
 
-		return new PedidoDashboardStatsDTO(total, pendentes, concluidos, cancelados, faturamento);
+		var itensConcluidos = await pedidos
+			.Where(p => p.Status == Status.Concluido)
+			.SelectMany(p => p.ItensPedidos)
+			.Select(i => new
+			{
+				i.ProdutoId,
+				ProdutoNome = i.Produto != null ? i.Produto.Nome : "Produto Desconhecido",
+				i.Quantidade,
+				i.Total
+			})
+			.ToListAsync(cancellationToken);
+
+		var ranking = itensConcluidos
+			.GroupBy(i => new { i.ProdutoId, i.ProdutoNome })
+			.Select(g => new TopProdutoDashboardDTO(
+				g.Key.ProdutoId,
+				g.Key.ProdutoNome,
+				g.Sum(x => x.Quantidade),
+				g.Sum(x => x.Total)))
+			.OrderByDescending(p => p.FaturamentoTotal)
+			.ThenByDescending(p => p.QuantidadeVendida)
+			.ThenBy(p => p.ProdutoNome)
+			.Take(topProdutos)
+			.ToList();
+
+		return new PedidoDashboardStatsDTO(total, pendentes, concluidos, cancelados, faturamento, ranking);
 	}
 
 	private IQueryable<Pedido> BuildFilteredQuery(string? query, Guid? clienteId)

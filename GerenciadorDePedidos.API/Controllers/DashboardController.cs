@@ -1,5 +1,6 @@
 using GerenciadorDePedidos.API.Authorization;
 using GerenciadorDePedidos.Application.Queries.GetDashboard;
+using GerenciadorDePedidos.Core.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,6 +11,10 @@ namespace GerenciadorDePedidos.API.Controllers;
 public class DashboardController(IMediator mediator) : ApiControllerBase(mediator)
 {
 	[HttpGet]
-	public async Task<IActionResult> GetResumo(CancellationToken cancellationToken)
-		=> Ok(await SendAsync(new GetDashboardQuery(), cancellationToken));
+	public async Task<IActionResult> GetResumo(
+		[FromQuery] PeriodoRelatorio? periodo = null,
+		[FromQuery] DateTime? dataReferencia = null,
+		[FromQuery] int topProdutos = 5,
+		CancellationToken cancellationToken = default)
+		=> Ok(await SendAsync(new GetDashboardQuery(periodo, dataReferencia, topProdutos), cancellationToken));
 }

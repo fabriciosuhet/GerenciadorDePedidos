@@ -3,9 +3,11 @@ using GerenciadorDePedidos.Application.Commands.CancelarPedido;
 using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Application.Commands.DeletePedido;
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Application.Queries.ExportarRelatorioVendas;
 using GerenciadorDePedidos.Application.Queries.GetAllPedidos;
 using GerenciadorDePedidos.Application.Queries.GetPedido;
 using GerenciadorDePedidos.Core.DTOs;
+using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Helpers;
 using GerenciadorDePedidos.Core.Services;
 using MediatR;
@@ -64,6 +66,21 @@ public class PedidoController(
 		CacheService?.RemoveByPrefix(CacheKeyHelper.GetAllPedidosClientePrefix(command.ClienteId));
 		CacheService?.Remove(CacheKeyHelper.GetClienteByIdKey(command.ClienteId));
 		return CreatedAtAction(nameof(GetById), new { id = pedidoId }, new { id = pedidoId });
+	}
+
+	[HttpGet("relatorio")]
+	[AcessoRestrito]
+	public async Task<IActionResult> DownloadRelatorioVendas(
+		[FromQuery] PeriodoRelatorio periodo = PeriodoRelatorio.Mes,
+		[FromQuery] FormatoRelatorio formato = FormatoRelatorio.Pdf,
+		[FromQuery] DateTime? dataReferencia = null,
+		CancellationToken cancellationToken = default)
+	{
+		var arquivo = await SendAsync(
+			new ExportarRelatorioVendasQuery(periodo, formato, dataReferencia),
+			cancellationToken);
+
+		return File(arquivo.Conteudo, arquivo.ContentType, arquivo.NomeArquivo);
 	}
 
 	[HttpPatch("{id:int}/cancelar")]

@@ -1,3 +1,6 @@
+using GerenciadorDePedidos.Core.DTOs;
+using GerenciadorDePedidos.Core.Enums;
+
 namespace GerenciadorDePedidos.Application.Models;
 
 public sealed record DashboardViewModel(
@@ -8,4 +11,10 @@ public sealed record DashboardViewModel(
 	int PedidosPendentes,
 	int PedidosConcluidos,
 	int PedidosCancelados,
-	decimal FaturamentoTotalConcluido);
+	decimal FaturamentoTotalConcluido,
+	decimal TicketMedio = 0m,
+	decimal TaxaCancelamentoPercentual = 0m,
+	PeriodoRelatorio? Periodo = null,
+	DateTime? DataInicio = null,
+	DateTime? DataFim = null,
+	IReadOnlyList<TopProdutoDashboardDTO>? TopProdutos = null);
