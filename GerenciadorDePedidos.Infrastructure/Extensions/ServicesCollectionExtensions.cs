@@ -66,6 +66,7 @@ public static class ServicesCollectionExtensions
 	public static IServiceCollection AddReportServices(this IServiceCollection services)
 	{
 		services.AddSingleton<IRelatorioMovimentacaoEstoqueGenerator, RelatorioMovimentacaoEstoqueGenerator>();
+		services.AddSingleton<IRelatorioVendasGenerator, RelatorioVendasGenerator>();
 		return services;
 	}
 

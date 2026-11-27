@@ -171,9 +171,15 @@ public class QueryHandlersTests
 		produtoRepo.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(12);
 		produtoRepo.Setup(r => r.GetLowStockCountAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(2);
 
+		var topProdutos = new List<TopProdutoDashboardDTO>
+		{
+			new(1, "Notebook Pro", 4, 10000m),
+			new(2, "Mouse", 10, 2500m)
+		};
+
 		var pedidoRepo = new Mock<IPedidoRepository>();
-		pedidoRepo.Setup(r => r.GetDashboardStatsAsync(It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new PedidoDashboardStatsDTO(20, 3, 15, 2, 12500m));
+		pedidoRepo.Setup(r => r.GetDashboardStatsAsync(null, null, 5, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PedidoDashboardStatsDTO(20, 3, 15, 2, 12500m, topProdutos));
 
 		var handler = new GetDashboardQueryHandler(clienteRepo.Object, produtoRepo.Object, pedidoRepo.Object);
 		var result = await handler.Handle(new GetDashboardQuery(), CancellationToken.None);
@@ -184,6 +190,41 @@ public class QueryHandlersTests
 		Assert.Equal(20, result.TotalPedidos);
 		Assert.Equal(15, result.PedidosConcluidos);
 		Assert.Equal(12500m, result.FaturamentoTotalConcluido);
+		Assert.Equal(833.33m, result.TicketMedio);
+		Assert.Equal(10m, result.TaxaCancelamentoPercentual);
+		Assert.NotNull(result.TopProdutos);
+		Assert.Equal(2, result.TopProdutos!.Count);
+		Assert.Equal("Notebook Pro", result.TopProdutos[0].ProdutoNome);
+	}
+
+	[Fact]
+	public async Task GetDashboard_ComFiltroDePeriodo_DevePassarIntervaloParaRepositorio()
+	{
+		var clienteRepo = new Mock<IClienteRepository>();
+		clienteRepo.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(3);
+
+		var produtoRepo = new Mock<IProdutoRepository>();
+		produtoRepo.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(8);
+		produtoRepo.Setup(r => r.GetLowStockCountAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+		var pedidoRepo = new Mock<IPedidoRepository>();
+		pedidoRepo.Setup(r => r.GetDashboardStatsAsync(
+				new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc),
+				new DateTime(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc),
+				3,
+				It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PedidoDashboardStatsDTO(4, 0, 3, 1, 3000m, []));
+
+		var handler = new GetDashboardQueryHandler(clienteRepo.Object, produtoRepo.Object, pedidoRepo.Object);
+		var result = await handler.Handle(
+			new GetDashboardQuery(PeriodoRelatorio.Mes, new DateTime(2026, 11, 15, 0, 0, 0, DateTimeKind.Utc), 3),
+			CancellationToken.None);
+
+		Assert.Equal(PeriodoRelatorio.Mes, result.Periodo);
+		Assert.Equal(new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc), result.DataInicio);
+		Assert.Equal(new DateTime(2026, 11, 30, 0, 0, 0, DateTimeKind.Utc), result.DataFim);
+		Assert.Equal(1000m, result.TicketMedio);
+		Assert.Equal(25m, result.TaxaCancelamentoPercentual);
 	}
 
 	[Fact]
