@@ -64,28 +64,31 @@ public class CancelarPedidoCommandHandlerTests
 		Assert.Equal(10, produto1.Estoque);
 		Assert.Equal(8, produto2.Estoque);
 
-		movimentacaoRepoMock.Verify(r => r.AddAsync(
-			It.Is<MovimentacaoEstoque>(m =>
-				m.ProdutoId == 1 &&
-				m.Quantidade == 2 &&
-				m.TipoMovimentacao == Tipo.Adicao &&
-				m.PrecoUnitario == 1000m &&
-				m.Motivo == MotivoMovimentacao.EstornoCancelamento &&
-				m.PedidoId == 50),
-			It.IsAny<CancellationToken>()), Times.Once);
-
-		movimentacaoRepoMock.Verify(r => r.AddAsync(
-			It.Is<MovimentacaoEstoque>(m =>
-				m.ProdutoId == 2 &&
-				m.Quantidade == 3 &&
-				m.TipoMovimentacao == Tipo.Adicao &&
-				m.PrecoUnitario == 150m &&
-				m.Motivo == MotivoMovimentacao.EstornoCancelamento &&
-				m.PedidoId == 50),
+		movimentacaoRepoMock.Verify(r => r.AddRangeAsync(
+			It.Is<IEnumerable<MovimentacaoEstoque>>(lista =>
+				lista.Count() == 2 &&
+				lista.Any(m =>
+					m.ProdutoId == 1 &&
+					m.Quantidade == 2 &&
+					m.TipoMovimentacao == Tipo.Adicao &&
+					m.PrecoUnitario == 1000m &&
+					m.Motivo == MotivoMovimentacao.EstornoCancelamento &&
+					m.PedidoId == 50) &&
+				lista.Any(m =>
+					m.ProdutoId == 2 &&
+					m.Quantidade == 3 &&
+					m.TipoMovimentacao == Tipo.Adicao &&
+					m.PrecoUnitario == 150m &&
+					m.Motivo == MotivoMovimentacao.EstornoCancelamento &&
+					m.PedidoId == 50)),
 			It.IsAny<CancellationToken>()), Times.Once);
 
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetPedidoByIdKey(50)), Times.Once);
+		cacheMock.Verify(c => c.RemoveMany(
+			It.Is<IEnumerable<string>>(keys =>
+				keys.Contains(CacheKeyHelper.GetProdutoByIdKey(1)) &&
+				keys.Contains(CacheKeyHelper.GetProdutoByIdKey(2)))), Times.Once);
 		cacheMock.Verify(c => c.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix), Times.Once);
 	}
 
@@ -120,7 +123,7 @@ public class CancelarPedidoCommandHandlerTests
 		Assert.Equal(0, result.UnidadesEstornadas);
 		Assert.Equal(10, produto.Estoque);
 		produtoRepoMock.Verify(r => r.GetByIdsIncludingInactiveForUpdateAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()), Times.Never);
-		movimentacaoRepoMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()), Times.Never);
+		movimentacaoRepoMock.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<MovimentacaoEstoque>>(), It.IsAny<CancellationToken>()), Times.Never);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 

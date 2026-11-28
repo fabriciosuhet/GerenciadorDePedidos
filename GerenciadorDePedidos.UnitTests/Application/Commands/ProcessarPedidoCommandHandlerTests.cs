@@ -49,26 +49,30 @@ public class ProcessarPedidoCommandHandlerTests
 		Assert.Equal(Status.Processado, pedido.Status);
 		Assert.Equal(8, produto1.Estoque);
 		Assert.Equal(2, produto2.Estoque);
-		movimentacaoRepoMock.Verify(r => r.AddAsync(
-			It.Is<MovimentacaoEstoque>(m =>
-				m.ProdutoId == 1 &&
-				m.Quantidade == 2 &&
-				m.TipoMovimentacao == Tipo.Remocao &&
-				m.ClienteId == clienteId &&
-				m.PrecoUnitario == 1000m &&
-				m.Motivo == MotivoMovimentacao.VendaPedido &&
-				m.PedidoId == 42),
+		movimentacaoRepoMock.Verify(r => r.AddRangeAsync(
+			It.Is<IEnumerable<MovimentacaoEstoque>>(lista =>
+				lista.Count() == 2 &&
+				lista.Any(m =>
+					m.ProdutoId == 1 &&
+					m.Quantidade == 2 &&
+					m.TipoMovimentacao == Tipo.Remocao &&
+					m.ClienteId == clienteId &&
+					m.PrecoUnitario == 1000m &&
+					m.Motivo == MotivoMovimentacao.VendaPedido &&
+					m.PedidoId == 42) &&
+				lista.Any(m =>
+					m.ProdutoId == 2 &&
+					m.Quantidade == 3 &&
+					m.TipoMovimentacao == Tipo.Remocao &&
+					m.ClienteId == clienteId &&
+					m.PrecoUnitario == 100m &&
+					m.Motivo == MotivoMovimentacao.VendaPedido &&
+					m.PedidoId == 42)),
 			It.IsAny<CancellationToken>()), Times.Once);
-		movimentacaoRepoMock.Verify(r => r.AddAsync(
-			It.Is<MovimentacaoEstoque>(m =>
-				m.ProdutoId == 2 &&
-				m.Quantidade == 3 &&
-				m.TipoMovimentacao == Tipo.Remocao &&
-				m.ClienteId == clienteId &&
-				m.PrecoUnitario == 100m &&
-				m.Motivo == MotivoMovimentacao.VendaPedido &&
-				m.PedidoId == 42),
-			It.IsAny<CancellationToken>()), Times.Once);
+		cacheMock.Verify(c => c.RemoveMany(
+			It.Is<IEnumerable<string>>(keys =>
+				keys.Contains(CacheKeyHelper.GetProdutoByIdKey(1)) &&
+				keys.Contains(CacheKeyHelper.GetProdutoByIdKey(2)))), Times.Once);
 		eventBusMock.Verify(e => e.PublishAsync(
 			It.Is<EstoqueBaixoEvent>(ev =>
 				ev.ProdutoId == 2 &&
@@ -119,7 +123,7 @@ public class ProcessarPedidoCommandHandlerTests
 		Assert.False(result);
 		Assert.Equal(Status.Cancelado, pedido.Status);
 		Assert.Equal(3, produto.Estoque);
-		movimentacaoRepoMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()), Times.Never);
+		movimentacaoRepoMock.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<MovimentacaoEstoque>>(), It.IsAny<CancellationToken>()), Times.Never);
 		eventBusMock.Verify(e => e.PublishAsync(It.IsAny<EstoqueBaixoEvent>(), It.IsAny<CancellationToken>()), Times.Never);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetClienteByIdKey(clienteId)), Times.Once);

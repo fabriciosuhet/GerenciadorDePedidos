@@ -104,18 +104,22 @@ public class ConcluirEDevolverPedidoCommandHandlerTests
 		Assert.Equal(2, result.UnidadesEstornadas);
 		Assert.Equal(10, produto.Estoque);
 
-		movRepoMock.Verify(r => r.AddAsync(
-			It.Is<MovimentacaoEstoque>(m =>
-				m.ProdutoId == 1 &&
-				m.Quantidade == 2 &&
-				m.TipoMovimentacao == Tipo.Adicao &&
-				m.PrecoUnitario == 1200m &&
-				m.Motivo == MotivoMovimentacao.Devolucao &&
-				m.ClienteId == adminId &&
-				m.PedidoId == 80),
+		movRepoMock.Verify(r => r.AddRangeAsync(
+			It.Is<IEnumerable<MovimentacaoEstoque>>(lista =>
+				lista.Count() == 1 &&
+				lista.Any(m =>
+					m.ProdutoId == 1 &&
+					m.Quantidade == 2 &&
+					m.TipoMovimentacao == Tipo.Adicao &&
+					m.PrecoUnitario == 1200m &&
+					m.Motivo == MotivoMovimentacao.Devolucao &&
+					m.ClienteId == adminId &&
+					m.PedidoId == 80)),
 			It.IsAny<CancellationToken>()), Times.Once);
 
 		uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+		cacheMock.Verify(c => c.RemoveMany(
+			It.Is<IEnumerable<string>>(keys => keys.Contains(CacheKeyHelper.GetProdutoByIdKey(1)))), Times.Once);
 		cacheMock.Verify(c => c.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix), Times.Once);
 	}
 
@@ -155,7 +159,7 @@ public class ConcluirEDevolverPedidoCommandHandlerTests
 		Assert.Equal(8, produto.Estoque);
 
 		produtoRepoMock.Verify(r => r.GetByIdsIncludingInactiveForUpdateAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()), Times.Never);
-		movRepoMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()), Times.Never);
+		movRepoMock.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<MovimentacaoEstoque>>(), It.IsAny<CancellationToken>()), Times.Never);
 		uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 

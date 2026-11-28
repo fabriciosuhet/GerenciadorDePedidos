@@ -14,6 +14,9 @@ public class Repository<TEntity, TKey>(GerenciadorDePedidosDbContext context)
 	public async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
 		=> await _dbSet.AddAsync(entity, cancellationToken);
 
+	public async Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+		=> await _dbSet.AddRangeAsync(entities, cancellationToken);
+
 	public async Task DeleteAsync(TKey id, CancellationToken cancellationToken = default)
 	{
 		var entity = await GetByIdAsync(id, cancellationToken);
