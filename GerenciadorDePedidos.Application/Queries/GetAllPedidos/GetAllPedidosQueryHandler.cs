@@ -30,7 +30,7 @@ public sealed class GetAllPedidosQueryHandler(
 			cancellationToken);
 
 		var items = pedidos
-			.Select(p => new PedidoViewModel(p.Id, p.DataPedido.ToBrasiliaTime(), p.Total))
+			.Select(p => new PedidoViewModel(p.Id, p.DataPedido.ToBrasiliaTime(), p.Total, p.Status))
 			.ToList();
 
 		return new PagedResultModel<PedidoViewModel>(items, totalCount, request.PageNumber, request.PageSize);

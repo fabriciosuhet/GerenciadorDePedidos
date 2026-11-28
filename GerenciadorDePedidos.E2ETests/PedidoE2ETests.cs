@@ -107,6 +107,7 @@ public class PedidoE2ETests
 		Assert.NotNull(pedidosPaged);
 		Assert.Single(pedidosPaged.Items);
 		Assert.Equal(3300m, pedidosPaged.Items[0].Total);
+		Assert.Equal(Status.Concluido, pedidosPaged.Items[0].Status);
 
 		// 3. Pedido com quantidade acima do estoque deve ser cancelado pela fila sem alterar estoque
 		var canceladoResp = await userClient.PostAsJsonAsync(
