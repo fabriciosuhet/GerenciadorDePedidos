@@ -1,3 +1,5 @@
+using GerenciadorDePedidos.Application.Mappings;
+using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Events;
@@ -13,7 +15,8 @@ public sealed class CreatePedidoCommandHandler(
 	IProdutoRepository produtoRepository,
 	IUnitOfWork unitOfWork,
 	IEventBus eventBus,
-	ICurrentUserService currentUserService) : IRequestHandler<CreatePedidoCommand, int>
+	ICurrentUserService currentUserService,
+	IPedidoRealtimeNotifier realtimeNotifier) : IRequestHandler<CreatePedidoCommand, int>
 {
 	public async Task<int> Handle(CreatePedidoCommand request, CancellationToken cancellationToken)
 	{
@@ -54,6 +57,16 @@ public sealed class CreatePedidoCommandHandler(
 		}, cancellationToken);
 
 		AppDiagnostics.PedidosCriados.Add(1);
+		await realtimeNotifier.NotificarStatusAtualizadoAsync(
+			new PedidoStatusAtualizadoDTO(
+				pedido.Id,
+				pedido.ClienteId,
+				Status.Pendente,
+				pedido.Status,
+				pedido.Total,
+				pedido.DataPedido.ToBrasiliaTime()),
+			cancellationToken);
+
 		return pedido.Id;
 	}
 }

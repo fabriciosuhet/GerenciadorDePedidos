@@ -1,4 +1,5 @@
 using GerenciadorDePedidos.Application.Commands.ProcessarPedido;
+using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Events;
@@ -34,6 +35,7 @@ public class ProcessarPedidoCommandHandlerTests
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 		var eventBusMock = new Mock<IEventBus>();
 		var cacheMock = new Mock<ICacheService>();
+		var realtimeMock = new Mock<IPedidoRealtimeNotifier>();
 
 		var handler = new ProcessarPedidoCommandHandler(
 			pedidoRepoMock.Object,
@@ -41,12 +43,20 @@ public class ProcessarPedidoCommandHandlerTests
 			movimentacaoRepoMock.Object,
 			unitOfWorkMock.Object,
 			eventBusMock.Object,
-			cacheMock.Object);
+			cacheMock.Object,
+			realtimeMock.Object);
 
 		var result = await handler.Handle(new ProcessarPedidoCommand(42), CancellationToken.None);
 
 		Assert.True(result);
 		Assert.Equal(Status.Processado, pedido.Status);
+		realtimeMock.Verify(n => n.NotificarStatusAtualizadoAsync(
+			It.Is<PedidoStatusAtualizadoDTO>(dto =>
+				dto.PedidoId == 42 &&
+				dto.ClienteId == clienteId &&
+				dto.StatusAnterior == Status.Pendente &&
+				dto.StatusAtual == Status.Processado),
+			It.IsAny<CancellationToken>()), Times.Once);
 		Assert.Equal(8, produto1.Estoque);
 		Assert.Equal(2, produto2.Estoque);
 		movimentacaoRepoMock.Verify(r => r.AddRangeAsync(
@@ -116,7 +126,8 @@ public class ProcessarPedidoCommandHandlerTests
 			movimentacaoRepoMock.Object,
 			unitOfWorkMock.Object,
 			eventBusMock.Object,
-			cacheMock.Object);
+			cacheMock.Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		var result = await handler.Handle(new ProcessarPedidoCommand(43), CancellationToken.None);
 
@@ -149,7 +160,8 @@ public class ProcessarPedidoCommandHandlerTests
 			movimentacaoRepoMock.Object,
 			unitOfWorkMock.Object,
 			eventBusMock.Object,
-			cacheMock.Object);
+			cacheMock.Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		var result = await handler.Handle(new ProcessarPedidoCommand(44), CancellationToken.None);
 

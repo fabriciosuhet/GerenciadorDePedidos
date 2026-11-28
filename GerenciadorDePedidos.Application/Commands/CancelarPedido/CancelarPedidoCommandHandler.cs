@@ -1,4 +1,6 @@
+using GerenciadorDePedidos.Application.Mappings;
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Helpers;
@@ -15,7 +17,8 @@ public sealed class CancelarPedidoCommandHandler(
 	IMovimentacaoEstoqueRepository movimentacaoEstoqueRepository,
 	IUnitOfWork unitOfWork,
 	ICurrentUserService currentUserService,
-	ICacheService cacheService) : IRequestHandler<CancelarPedidoCommand, CancelarPedidoViewModel>
+	ICacheService cacheService,
+	IPedidoRealtimeNotifier realtimeNotifier) : IRequestHandler<CancelarPedidoCommand, CancelarPedidoViewModel>
 {
 	public async Task<CancelarPedidoViewModel> Handle(CancelarPedidoCommand request, CancellationToken cancellationToken)
 	{
@@ -31,6 +34,7 @@ public sealed class CancelarPedidoCommandHandler(
 				throw new UnauthorizedAccessException("Você não tem permissão para cancelar este pedido.");
 		}
 
+		var statusAnterior = pedido.Status;
 		var requerEstorno = pedido.CancelarComEstorno();
 		var unidadesEstornadas = 0;
 		var chavesProdutosAfetados = new List<string>();
@@ -87,6 +91,16 @@ public sealed class CancelarPedidoCommandHandler(
 		cacheService.RemoveByPrefix(CacheKeyHelper.GetAllPedidosAdminPrefix());
 		cacheService.RemoveByPrefix(CacheKeyHelper.GetAllPedidosClientePrefix(pedido.ClienteId));
 		cacheService.Remove(CacheKeyHelper.GetClienteByIdKey(pedido.ClienteId));
+
+		await realtimeNotifier.NotificarStatusAtualizadoAsync(
+			new PedidoStatusAtualizadoDTO(
+				pedido.Id,
+				pedido.ClienteId,
+				statusAnterior,
+				pedido.Status,
+				pedido.Total,
+				(pedido.AtualizadoEm ?? DateTime.UtcNow).ToBrasiliaTime()),
+			cancellationToken);
 
 		return new CancelarPedidoViewModel(
 			pedido.Id,
