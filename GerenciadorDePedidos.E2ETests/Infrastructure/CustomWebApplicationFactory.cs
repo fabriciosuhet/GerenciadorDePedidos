@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using GerenciadorDePedidos.API.Consumers;
 using GerenciadorDePedidos.Application.Commands.LoginCliente;
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Core.Services;
 using GerenciadorDePedidos.Infrastructure.Messaging;
 using GerenciadorDePedidos.Infrastructure.Persistence;
 using MassTransit;
@@ -26,6 +27,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 	private IHost? _kestrelHost;
 
 	public string ServerAddress { get; private set; } = string.Empty;
+	public InMemoryEmailService EmailService { get; } = new();
 
 	protected override void ConfigureWebHost(IWebHostBuilder builder)
 	{
@@ -56,9 +58,12 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 		{
 			services.RemoveAll(typeof(DbContextOptions<GerenciadorDePedidosDbContext>));
 			services.RemoveAll(typeof(GerenciadorDePedidosDbContext));
+			services.RemoveAll(typeof(IEmailService));
 
 			services.AddDbContext<GerenciadorDePedidosDbContext>(options =>
 				options.UseInMemoryDatabase(_databaseName));
+
+			services.AddSingleton<IEmailService>(EmailService);
 
 			// Substitui o transporte RabbitMQ pelo transporte InMemory do MassTransit nos testes E2E
 			var massTransitDescriptors = services

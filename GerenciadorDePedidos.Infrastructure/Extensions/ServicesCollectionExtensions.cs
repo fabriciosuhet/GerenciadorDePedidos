@@ -1,6 +1,7 @@
 using GerenciadorDePedidos.Core.Repositories;
 using GerenciadorDePedidos.Core.Services;
 using GerenciadorDePedidos.Infrastructure.Cache;
+using GerenciadorDePedidos.Infrastructure.Email;
 using GerenciadorDePedidos.Infrastructure.Persistence;
 using GerenciadorDePedidos.Infrastructure.Persistence.Repositories;
 using GerenciadorDePedidos.Infrastructure.Reports;
@@ -23,9 +24,17 @@ public static class ServicesCollectionExtensions
 		services.AddScoped<IMovimentacaoEstoqueRepository, MovimentacaoEstoqueRepository>();
 		services.AddScoped<ILoginRepository, LoginRepository>();
 		services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+		services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
 		services.AddScoped<IAlertaEstoqueRepository, AlertaEstoqueRepository>();
 		services.AddScoped<IUnitOfWork, UnitOfWork>();
 		services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
+		return services;
+	}
+
+	public static IServiceCollection AddEmailService(this IServiceCollection services, IConfiguration configuration)
+	{
+		services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+		services.AddScoped<IEmailService, SmtpEmailService>();
 		return services;
 	}
 

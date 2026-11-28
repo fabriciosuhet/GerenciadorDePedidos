@@ -21,6 +21,16 @@ services:
       - RabbitMQ__Password=${RABBITMQ_PASS}
       - Cors__AllowedOrigins__0=${CORS_ALLOWED_ORIGIN:-}
       - OpenTelemetry__OtlpEndpoint=${OTEL_OTLP_ENDPOINT:-}
+      - PasswordReset__TokenExpirationMinutes=${PASSWORD_RESET_EXPIRATION_MINUTES:-30}
+      - Email__Enabled=${EMAIL_ENABLED:-false}
+      - Email__SmtpHost=${EMAIL_SMTP_HOST:-}
+      - Email__SmtpPort=${EMAIL_SMTP_PORT:-587}
+      - Email__UseSsl=${EMAIL_USE_SSL:-true}
+      - Email__Username=${EMAIL_USERNAME:-}
+      - Email__Password=${EMAIL_PASSWORD:-}
+      - Email__FromAddress=${EMAIL_FROM_ADDRESS:-noreply@gerenciadordepedidos.local}
+      - Email__FromName=${EMAIL_FROM_NAME:-Gerenciador de Pedidos}
+      - Email__FrontendResetPasswordUrl=${EMAIL_FRONTEND_RESET_URL:-}
     depends_on:
       db:
         condition: service_healthy

@@ -1,9 +1,12 @@
 using GerenciadorDePedidos.Application.Commands.AdicionarProdutoEstoque;
+using GerenciadorDePedidos.Application.Commands.ChangePassword;
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
 using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
+using GerenciadorDePedidos.Application.Commands.ForgotPassword;
 using GerenciadorDePedidos.Application.Commands.RegisterCliente;
 using GerenciadorDePedidos.Application.Commands.RemoverProdutoEstoque;
+using GerenciadorDePedidos.Application.Commands.ResetPassword;
 using GerenciadorDePedidos.Application.Validators;
 using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Enums;
@@ -118,5 +121,25 @@ public class ValidatorsTests
 
 		var qtdExcessiva = new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = 1, Quantidade = 10_001 }], Guid.NewGuid(), Status.Pendente);
 		Assert.False(validator.Validate(qtdExcessiva).IsValid);
+	}
+
+	[Fact]
+	public void PasswordResetValidators_DadosValidosEInvalidos_DevemValidarCorretamente()
+	{
+		var forgotValidator = new ForgotPasswordCommandValidator();
+		Assert.True(forgotValidator.Validate(new ForgotPasswordCommand("usuario@teste.com")).IsValid);
+		Assert.False(forgotValidator.Validate(new ForgotPasswordCommand("email-invalido")).IsValid);
+
+		var resetValidator = new ResetPasswordCommandValidator();
+		Assert.True(resetValidator.Validate(new ResetPasswordCommand("token-valido", "Nova@1234", "Nova@1234")).IsValid);
+		Assert.False(resetValidator.Validate(new ResetPasswordCommand("", "Nova@1234", "Nova@1234")).IsValid);
+		Assert.False(resetValidator.Validate(new ResetPasswordCommand("token-valido", "fraca", "fraca")).IsValid);
+		Assert.False(resetValidator.Validate(new ResetPasswordCommand("token-valido", "Nova@1234", "Diferente@1234")).IsValid);
+
+		var changeValidator = new ChangePasswordCommandValidator();
+		Assert.True(changeValidator.Validate(new ChangePasswordCommand("Atual@1234", "Nova@1234", "Nova@1234")).IsValid);
+		Assert.False(changeValidator.Validate(new ChangePasswordCommand("", "Nova@1234", "Nova@1234")).IsValid);
+		Assert.False(changeValidator.Validate(new ChangePasswordCommand("Atual@1234", "fraca", "fraca")).IsValid);
+		Assert.False(changeValidator.Validate(new ChangePasswordCommand("Atual@1234", "Nova@1234", "Outra@1234")).IsValid);
 	}
 }

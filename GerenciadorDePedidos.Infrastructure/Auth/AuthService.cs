@@ -49,6 +49,15 @@ public class AuthService(IConfiguration configuration) : IAuthService
 			.TrimEnd('=');
 	}
 
+	public string GeneratePasswordResetToken()
+	{
+		var randomBytes = RandomNumberGenerator.GetBytes(32);
+		return Convert.ToBase64String(randomBytes)
+			.Replace("+", "-")
+			.Replace("/", "_")
+			.TrimEnd('=');
+	}
+
 	public string HashToken(string token)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(token);
@@ -60,6 +69,13 @@ public class AuthService(IConfiguration configuration) : IAuthService
 	{
 		var expirationDays = configuration.GetValue("Jwt:RefreshTokenExpirationDays", 7);
 		return DateTime.UtcNow.AddDays(expirationDays);
+	}
+
+	public DateTime GetPasswordResetTokenExpirationUtc()
+	{
+		var expirationMinutes = configuration.GetValue("PasswordReset:TokenExpirationMinutes", 30);
+		expirationMinutes = Math.Clamp(expirationMinutes, 5, 1440);
+		return DateTime.UtcNow.AddMinutes(expirationMinutes);
 	}
 
 	public string HashPassword(string password) => BCrypt.Net.BCrypt.HashPassword(password);
