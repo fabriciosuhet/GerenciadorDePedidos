@@ -4,6 +4,7 @@ public enum MotivoMovimentacao
 {
 	AjusteManual,
 	VendaPedido,
-	EstornoCancelamento
+	EstornoCancelamento,
+	Devolucao
 }
 

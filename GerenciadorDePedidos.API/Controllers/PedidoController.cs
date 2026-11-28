@@ -1,7 +1,9 @@
 using GerenciadorDePedidos.API.Authorization;
 using GerenciadorDePedidos.Application.Commands.CancelarPedido;
+using GerenciadorDePedidos.Application.Commands.ConcluirPedido;
 using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Application.Commands.DeletePedido;
+using GerenciadorDePedidos.Application.Commands.DevolverPedido;
 using GerenciadorDePedidos.Application.Models;
 using GerenciadorDePedidos.Application.Queries.ExportarRelatorioVendas;
 using GerenciadorDePedidos.Application.Queries.GetAllPedidos;
@@ -90,6 +92,27 @@ public class PedidoController(
 		return Ok(resultado);
 	}
 
+	[HttpPatch("{id:int}/concluir")]
+	[AcessoRestrito]
+	public async Task<IActionResult> Concluir(int id, CancellationToken cancellationToken)
+	{
+		var resultado = await SendAsync(new ConcluirPedidoCommand(id), cancellationToken);
+		return Ok(resultado);
+	}
+
+	[HttpPatch("{id:int}/devolver")]
+	[AcessoRestrito]
+	public async Task<IActionResult> Devolver(
+		int id,
+		[FromBody] DevolverPedidoRequest request,
+		CancellationToken cancellationToken)
+	{
+		var resultado = await SendAsync(
+			new DevolverPedidoCommand(id, request.Motivo, request.RetornarAoEstoque),
+			cancellationToken);
+		return Ok(resultado);
+	}
+
 	[HttpDelete("deletar-pedido")]
 	[AcessoRestrito]
 	public async Task<IActionResult> Delete([FromQuery] int id, CancellationToken cancellationToken)
@@ -100,3 +123,5 @@ public class PedidoController(
 		return Ok("pedido deletado com sucesso");
 	}
 }
+
+public sealed record DevolverPedidoRequest(string Motivo, bool RetornarAoEstoque = true);

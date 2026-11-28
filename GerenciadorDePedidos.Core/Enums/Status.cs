@@ -5,5 +5,6 @@ public enum Status
 	Pendente,
 	Processado,
 	Concluido,
-	Cancelado
+	Cancelado,
+	Devolvido
 }

@@ -530,6 +530,7 @@ public sealed class RelatorioMovimentacaoEstoqueGenerator : IRelatorioMovimentac
 			MotivoMovimentacao.AjusteManual => "Ajuste Manual",
 			MotivoMovimentacao.VendaPedido => "Venda (Pedido)",
 			MotivoMovimentacao.EstornoCancelamento => "Estorno",
+			MotivoMovimentacao.Devolucao => "Devolução",
 			_ => motivo.ToString()
 		};
 

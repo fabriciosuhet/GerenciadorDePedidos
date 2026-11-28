@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using GerenciadorDePedidos.API.Controllers;
 using GerenciadorDePedidos.Application.Commands.CreateCliente;
 using GerenciadorDePedidos.Application.Commands.CreatePedido;
 using GerenciadorDePedidos.Application.Commands.CreateProduto;
@@ -66,14 +67,25 @@ public class PedidoE2ETests
 		Assert.Equal(HttpStatusCode.Created, createPedidoResp.StatusCode);
 		var pedidoCreated = await createPedidoResp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
 
-		// Aguarda o MassTransit + PedidoCriadoConsumer processar e concluir o pedido
-		var pedidoDetails = await AguardarStatusPedidoAsync(userClient, pedidoCreated!.Id, Status.Concluido);
-		Assert.Equal(Status.Concluido, pedidoDetails.Status);
-		Assert.Equal(3300m, pedidoDetails.Total);
-		Assert.Equal("Maria Silva", pedidoDetails.ClienteNome);
-		Assert.Equal(2, pedidoDetails.ItensPedidos.Count);
+		// Aguarda o MassTransit + PedidoCriadoConsumer processar o pedido (baixa estoque e aguarda entrega)
+		var pedidoProcessado = await AguardarStatusPedidoAsync(userClient, pedidoCreated!.Id, Status.Processado);
+		Assert.Equal(Status.Processado, pedidoProcessado.Status);
+		Assert.Equal(3300m, pedidoProcessado.Total);
+		Assert.Equal("Maria Silva", pedidoProcessado.ClienteNome);
+		Assert.Equal(2, pedidoProcessado.ItensPedidos.Count);
 
-		// /api/cliente/me deve refletir o novo pedido (cache de cliente invalidado após criação e processamento)
+		// Usuário comum não pode concluir/entregar pedido (403 Forbidden)
+		var concluirAsUser = await userClient.PatchAsync($"/api/pedido/{pedidoCreated.Id}/concluir", null);
+		Assert.Equal(HttpStatusCode.Forbidden, concluirAsUser.StatusCode);
+
+		// Admin confirma a entrega -> Status passa para Concluido
+		var concluirAsAdmin = await adminClient.PatchAsync($"/api/pedido/{pedidoCreated.Id}/concluir", null);
+		Assert.Equal(HttpStatusCode.OK, concluirAsAdmin.StatusCode);
+		var concluidoView = await concluirAsAdmin.Content.ReadFromJsonAsync<ConcluirPedidoViewModel>();
+		Assert.NotNull(concluidoView);
+		Assert.Equal(Status.Concluido, concluidoView.Status);
+
+		// /api/cliente/me deve refletir o novo pedido (cache de cliente invalidado após criação, processamento e entrega)
 		var meDepois = await userClient.GetFromJsonAsync<ClienteDetailsViewModel>("/api/cliente/me");
 		Assert.NotNull(meDepois);
 		Assert.Contains(meDepois.Pedidos, p => p.Id == pedidoCreated.Id && p.Status == Status.Concluido);
@@ -182,7 +194,7 @@ public class PedidoE2ETests
 	}
 
 	[Fact]
-	public async Task CancelarPedidoConcluido_DeveEstornarEstoqueEPreservarSnapshotDePrecoNoRelatorio()
+	public async Task CancelarPedidoProcessado_DeveEstornarEstoqueEPreservarSnapshotDePrecoNoRelatorio()
 	{
 		using var factory = new CustomWebApplicationFactory();
 		var (_, adminToken) = await factory.BootstrapAdminAsync();
@@ -207,15 +219,15 @@ public class PedidoE2ETests
 		using var mariaClient = factory.CreateAuthenticatedClient(mariaToken);
 		using var outroClient = factory.CreateAuthenticatedClient(outroToken);
 
-		// 1. Maria cria pedido de 2 unidades -> aguarda conclusão (estoque vai de 10 para 8)
+		// 1. Maria cria pedido de 2 unidades -> aguarda processamento (estoque vai de 10 para 8)
 		var pedidoResp = await mariaClient.PostAsJsonAsync(
 			"/api/pedido",
 			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prod!.Id, Quantidade = 2 }], maria!.Id, Status.Pendente));
 		Assert.Equal(HttpStatusCode.Created, pedidoResp.StatusCode);
 		var pedidoCreated = await pedidoResp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
 
-		var pedidoConcluido = await AguardarStatusPedidoAsync(mariaClient, pedidoCreated!.Id, Status.Concluido);
-		Assert.Equal(Status.Concluido, pedidoConcluido.Status);
+		var pedidoProcessado = await AguardarStatusPedidoAsync(mariaClient, pedidoCreated!.Id, Status.Processado);
+		Assert.Equal(Status.Processado, pedidoProcessado.Status);
 
 		var prodAposVenda = await mariaClient.GetFromJsonAsync<ProdutoDetailsViewModel>($"/api/produto/{prod.Id}");
 		Assert.Equal(8, prodAposVenda!.Estoque);
@@ -294,13 +306,15 @@ public class PedidoE2ETests
 			"/api/pedido",
 			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prod1!.Id, Quantidade = 1 }], cliente!.Id, Status.Pendente));
 		var p1 = await p1Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
-		await AguardarStatusPedidoAsync(userClient, p1!.Id, Status.Concluido);
+		await AguardarStatusPedidoAsync(userClient, p1!.Id, Status.Processado);
+		Assert.Equal(HttpStatusCode.OK, (await adminClient.PatchAsync($"/api/pedido/{p1.Id}/concluir", null)).StatusCode);
 
 		var p2Resp = await userClient.PostAsJsonAsync(
 			"/api/pedido",
 			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prod2!.Id, Quantidade = 2 }], cliente.Id, Status.Pendente));
 		var p2 = await p2Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
-		await AguardarStatusPedidoAsync(userClient, p2!.Id, Status.Concluido);
+		await AguardarStatusPedidoAsync(userClient, p2!.Id, Status.Processado);
+		Assert.Equal(HttpStatusCode.OK, (await adminClient.PatchAsync($"/api/pedido/{p2.Id}/concluir", null)).StatusCode);
 
 		var p3Resp = await userClient.PostAsJsonAsync(
 			"/api/pedido",
@@ -372,6 +386,110 @@ public class PedidoE2ETests
 		Assert.Equal(HttpStatusCode.OK, pdfVazioResp.StatusCode);
 		var pdfVazioBytes = await pdfVazioResp.Content.ReadAsByteArrayAsync();
 		Assert.Equal("%PDF-", System.Text.Encoding.ASCII.GetString(pdfVazioBytes, 0, 5));
+	}
+
+	[Fact]
+	public async Task PedidoConcluido_BloqueiaCancelamento_EPermiteDevolucaoApenasPorAdminComESemRetornoEstoque()
+	{
+		using var factory = new CustomWebApplicationFactory();
+		var (_, adminToken) = await factory.BootstrapAdminAsync();
+		using var adminClient = factory.CreateAuthenticatedClient(adminToken);
+
+		var clienteResp = await adminClient.PostAsJsonAsync(
+			"/api/cliente",
+			new CreateClienteCommand("Cliente Devolucao", Role.Usuario, "Devol@123", "devolucao@teste.com", "11977771111"));
+		var cliente = await clienteResp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIdResponse>();
+
+		var prodResp = await adminClient.PostAsJsonAsync("/api/produto", new CreateProdutoCommand("Webcam 4K", 800m, 10));
+		var prod = await prodResp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+
+		using var anonClient = factory.CreateClient();
+		var userToken = await factory.LoginAsync(anonClient, "devolucao@teste.com", "Devol@123");
+		using var userClient = factory.CreateAuthenticatedClient(userToken);
+
+		// Cria dois pedidos de 2 unidades cada (estoque: 10 -> 8 -> 6)
+		var p1Resp = await userClient.PostAsJsonAsync(
+			"/api/pedido",
+			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prod!.Id, Quantidade = 2 }], cliente!.Id, Status.Pendente));
+		var p1 = await p1Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+		await AguardarStatusPedidoAsync(userClient, p1!.Id, Status.Processado);
+		Assert.Equal(HttpStatusCode.OK, (await adminClient.PatchAsync($"/api/pedido/{p1.Id}/concluir", null)).StatusCode);
+
+		var p2Resp = await userClient.PostAsJsonAsync(
+			"/api/pedido",
+			new CreatePedidoCommand([new ItemPedidoDTO { ProdutoId = prod.Id, Quantidade = 2 }], cliente.Id, Status.Pendente));
+		var p2 = await p2Resp.Content.ReadFromJsonAsync<CustomWebApplicationFactory.CreatedIntIdResponse>();
+		await AguardarStatusPedidoAsync(userClient, p2!.Id, Status.Processado);
+		Assert.Equal(HttpStatusCode.OK, (await adminClient.PatchAsync($"/api/pedido/{p2.Id}/concluir", null)).StatusCode);
+
+		var prodAntes = await adminClient.GetFromJsonAsync<ProdutoDetailsViewModel>($"/api/produto/{prod.Id}");
+		Assert.Equal(6, prodAntes!.Estoque);
+
+		// 1. Cancelar pedido já Concluido/Entregue deve ser BLOQUEADO (409 Conflict) tanto para cliente quanto para Admin
+		var cancelClienteResp = await userClient.PatchAsync($"/api/pedido/{p1.Id}/cancelar", null);
+		Assert.Equal(HttpStatusCode.Conflict, cancelClienteResp.StatusCode);
+
+		var cancelAdminResp = await adminClient.PatchAsync($"/api/pedido/{p1.Id}/cancelar", null);
+		Assert.Equal(HttpStatusCode.Conflict, cancelAdminResp.StatusCode);
+
+		// Estoque permanece intacto em 6
+		var prodAposTentativaCancel = await adminClient.GetFromJsonAsync<ProdutoDetailsViewModel>($"/api/produto/{prod.Id}");
+		Assert.Equal(6, prodAposTentativaCancel!.Estoque);
+
+		// 2. Usuário comum não pode registrar devolução (403 Forbidden)
+		var devolverUserResp = await userClient.PatchAsJsonAsync(
+			$"/api/pedido/{p1.Id}/devolver",
+			new DevolverPedidoRequest("Desistência", true));
+		Assert.Equal(HttpStatusCode.Forbidden, devolverUserResp.StatusCode);
+
+		// 3. Admin devolve pedido 1 COM retorno ao estoque (6 -> 8)
+		var devolver1Resp = await adminClient.PatchAsJsonAsync(
+			$"/api/pedido/{p1.Id}/devolver",
+			new DevolverPedidoRequest("Arrependimento dentro do prazo", RetornarAoEstoque: true));
+		Assert.Equal(HttpStatusCode.OK, devolver1Resp.StatusCode);
+		var dev1 = await devolver1Resp.Content.ReadFromJsonAsync<DevolverPedidoViewModel>();
+		Assert.NotNull(dev1);
+		Assert.Equal(Status.Devolvido, dev1.Status);
+		Assert.True(dev1.EstoqueEstornado);
+		Assert.Equal(2, dev1.UnidadesEstornadas);
+
+		var prodAposDev1 = await adminClient.GetFromJsonAsync<ProdutoDetailsViewModel>($"/api/produto/{prod.Id}");
+		Assert.Equal(8, prodAposDev1!.Estoque);
+
+		// Re-devolver ou cancelar pedido já devolvido -> 409 Conflict
+		var devolverDuplicado = await adminClient.PatchAsJsonAsync(
+			$"/api/pedido/{p1.Id}/devolver",
+			new DevolverPedidoRequest("Duplicado", true));
+		Assert.Equal(HttpStatusCode.Conflict, devolverDuplicado.StatusCode);
+
+		// 4. Admin devolve pedido 2 SEM retorno ao estoque (item avariado -> estoque continua em 8)
+		var devolver2Resp = await adminClient.PatchAsJsonAsync(
+			$"/api/pedido/{p2.Id}/devolver",
+			new DevolverPedidoRequest("Item avariado no transporte", RetornarAoEstoque: false));
+		Assert.Equal(HttpStatusCode.OK, devolver2Resp.StatusCode);
+		var dev2 = await devolver2Resp.Content.ReadFromJsonAsync<DevolverPedidoViewModel>();
+		Assert.NotNull(dev2);
+		Assert.Equal(Status.Devolvido, dev2.Status);
+		Assert.False(dev2.EstoqueEstornado);
+		Assert.Equal(0, dev2.UnidadesEstornadas);
+
+		var prodAposDev2 = await adminClient.GetFromJsonAsync<ProdutoDetailsViewModel>($"/api/produto/{prod.Id}");
+		Assert.Equal(8, prodAposDev2!.Estoque);
+
+		// 5. Detalhes do pedido preservam MotivoDevolucao e relatórios refletem Devolução
+		var p2Details = await adminClient.GetFromJsonAsync<PedidoResponseDTO>($"/api/pedido/{p2.Id}");
+		Assert.Equal(Status.Devolvido, p2Details!.Status);
+		Assert.Equal("Item avariado no transporte", p2Details.MotivoDevolucao);
+		Assert.NotNull(p2Details.DevolvidoEm);
+
+		var dashboard = await adminClient.GetFromJsonAsync<DashboardViewModel>("/api/dashboard");
+		Assert.Equal(2, dashboard!.PedidosDevolvidos);
+		Assert.Equal(0, dashboard.PedidosConcluidos);
+		Assert.Equal(0m, dashboard.FaturamentoTotalConcluido);
+
+		var csvEstoque = await (await adminClient.GetAsync("/api/produto/movimentacao-estoque/relatorio?periodo=Mes&formato=Csv"))
+			.Content.ReadAsStringAsync();
+		Assert.Contains("Devolução", csvEstoque);
 	}
 
 	private static async Task<PedidoResponseDTO> AguardarStatusPedidoAsync(

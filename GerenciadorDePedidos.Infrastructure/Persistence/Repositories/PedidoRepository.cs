@@ -68,8 +68,10 @@ public class PedidoRepository(GerenciadorDePedidosDbContext context)
 
 		var total = await pedidos.CountAsync(cancellationToken);
 		var pendentes = await pedidos.CountAsync(p => p.Status == Status.Pendente, cancellationToken);
+		var processados = await pedidos.CountAsync(p => p.Status == Status.Processado, cancellationToken);
 		var concluidos = await pedidos.CountAsync(p => p.Status == Status.Concluido, cancellationToken);
 		var cancelados = await pedidos.CountAsync(p => p.Status == Status.Cancelado, cancellationToken);
+		var devolvidos = await pedidos.CountAsync(p => p.Status == Status.Devolvido, cancellationToken);
 		var faturamento = await pedidos
 			.Where(p => p.Status == Status.Concluido)
 			.SelectMany(p => p.ItensPedidos)
@@ -100,7 +102,7 @@ public class PedidoRepository(GerenciadorDePedidosDbContext context)
 			.Take(topProdutos)
 			.ToList();
 
-		return new PedidoDashboardStatsDTO(total, pendentes, concluidos, cancelados, faturamento, ranking);
+		return new PedidoDashboardStatsDTO(total, pendentes, concluidos, cancelados, faturamento, ranking, processados, devolvidos);
 	}
 
 	private IQueryable<Pedido> BuildFilteredQuery(string? query, Guid? clienteId)

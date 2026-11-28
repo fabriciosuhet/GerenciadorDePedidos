@@ -58,6 +58,8 @@ public sealed class GetDashboardQueryHandler(
 			request.Periodo,
 			dataInicio,
 			dataFimInclusiva,
-			pedidoStats.TopProdutos ?? []);
+			pedidoStats.TopProdutos ?? [],
+			pedidoStats.PedidosProcessados,
+			pedidoStats.PedidosDevolvidos);
 	}
 }

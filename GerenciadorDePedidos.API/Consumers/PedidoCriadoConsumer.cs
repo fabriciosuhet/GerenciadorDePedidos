@@ -17,8 +17,8 @@ public sealed class PedidoCriadoConsumer(
 		var processado = await sender.Send(new ProcessarPedidoCommand(pedidoId), context.CancellationToken);
 
 		if (processado)
-			logger.LogInformation("Pedido {PedidoId} concluído com sucesso e estoque atualizado.", pedidoId);
+			logger.LogInformation("Pedido {PedidoId} processado com sucesso, estoque reservado e aguardando entrega.", pedidoId);
 		else
-			logger.LogWarning("Pedido {PedidoId} não concluído (cancelado por falta de estoque ou já processado).", pedidoId);
+			logger.LogWarning("Pedido {PedidoId} não processado (cancelado por falta de estoque ou já processado).", pedidoId);
 	}
 }

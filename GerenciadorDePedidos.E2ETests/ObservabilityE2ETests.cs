@@ -93,13 +93,13 @@ public class ObservabilityE2ETests
 		while (DateTime.UtcNow < deadline)
 		{
 			pedidoDetails = await adminClient.GetFromJsonAsync<PedidoResponseDTO>($"/api/pedido/{pedidoCreated!.Id}");
-			if (pedidoDetails?.Status == Status.Concluido)
+			if (pedidoDetails?.Status == Status.Processado)
 				break;
 			await Task.Delay(100);
 		}
 
 		Assert.NotNull(pedidoDetails);
-		Assert.Equal(Status.Concluido, pedidoDetails.Status);
+		Assert.Equal(Status.Processado, pedidoDetails.Status);
 	}
 }
 

@@ -24,11 +24,13 @@ public sealed class ExportarRelatorioVendasQueryHandler(
 
 		var pedidosConcluidos = pedidos.Where(p => p.Status == Status.Concluido).ToList();
 		var pedidosCancelados = pedidos.Where(p => p.Status == Status.Cancelado).ToList();
+		var pedidosDevolvidos = pedidos.Where(p => p.Status == Status.Devolvido).ToList();
 		var pedidosPendentes = pedidos.Count(p => p.Status == Status.Pendente);
 		var pedidosProcessados = pedidos.Count(p => p.Status == Status.Processado);
 
 		var faturamentoConcluido = pedidosConcluidos.Sum(p => p.Total);
 		var valorCancelado = pedidosCancelados.Sum(p => p.Total);
+		var valorDevolvido = pedidosDevolvidos.Sum(p => p.Total);
 		var totalUnidadesVendidas = pedidosConcluidos
 			.SelectMany(p => p.ItensPedidos)
 			.Sum(i => i.Quantidade);
@@ -116,7 +118,9 @@ public sealed class ExportarRelatorioVendasQueryHandler(
 			taxaCancelamento,
 			topProdutos,
 			clientesMaisAtivos,
-			itensPedidos);
+			itensPedidos,
+			pedidosDevolvidos.Count,
+			valorDevolvido);
 
 		return relatorioVendasGenerator.Gerar(relatorio, request.Formato);
 	}

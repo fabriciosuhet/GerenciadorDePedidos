@@ -12,7 +12,7 @@ namespace GerenciadorDePedidos.UnitTests.Application.Commands;
 public class ProcessarPedidoCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_PedidoPendenteComEstoqueSuficiente_DeveConcluirBaixarEstoqueEPublicarAlertaQuandoEstoqueBaixo()
+	public async Task Handle_PedidoPendenteComEstoqueSuficiente_DeveProcessarBaixarEstoqueEPublicarAlertaQuandoEstoqueBaixo()
 	{
 		var clienteId = Guid.NewGuid();
 		var produto1 = new Produto("Monitor", 1000m, 10, estoqueMinimo: 5) { Id = 1 }; // 10 - 2 = 8 (> 5, sem alerta)
@@ -46,7 +46,7 @@ public class ProcessarPedidoCommandHandlerTests
 		var result = await handler.Handle(new ProcessarPedidoCommand(42), CancellationToken.None);
 
 		Assert.True(result);
-		Assert.Equal(Status.Concluido, pedido.Status);
+		Assert.Equal(Status.Processado, pedido.Status);
 		Assert.Equal(8, produto1.Estoque);
 		Assert.Equal(2, produto2.Estoque);
 		movimentacaoRepoMock.Verify(r => r.AddAsync(

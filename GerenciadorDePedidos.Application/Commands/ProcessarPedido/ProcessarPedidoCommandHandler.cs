@@ -76,14 +76,12 @@ public sealed class ProcessarPedidoCommandHandler(
 			cacheService.Remove(CacheKeyHelper.GetProdutoByIdKey(produto.Id));
 		}
 
-		pedido.Concluir();
-
 		// Publica eventos antes do SaveChanges para persistir no Outbox na mesma transação
 		foreach (var evento in eventosEstoqueBaixo)
 			await eventBus.PublishAsync(evento, cancellationToken);
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);
-		AppDiagnostics.PedidosConcluidos.Add(1);
+		AppDiagnostics.PedidosProcessados.Add(1);
 
 		InvalidarCachePedido(pedido.Id, pedido.ClienteId);
 		cacheService.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix);
