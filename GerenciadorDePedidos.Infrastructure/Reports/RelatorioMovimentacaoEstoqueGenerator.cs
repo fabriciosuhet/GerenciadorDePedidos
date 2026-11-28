@@ -28,71 +28,192 @@ public sealed class RelatorioMovimentacaoEstoqueGenerator : IRelatorioMovimentac
 
 	private static ArquivoRelatorioDTO GerarCsv(RelatorioMovimentacaoEstoqueDTO relatorio)
 	{
+		const int totalColunas = 12;
 		var sb = new StringBuilder();
 
-		sb.AppendLine("RESUMO DO PERIODO");
-		sb.AppendLine("Indicador;Valor");
-		sb.AppendLine($"Periodo;{EscaparCsv(FormatarPeriodo(relatorio.Periodo))}");
-		sb.AppendLine($"DataInicio;{relatorio.DataInicio.ToString("dd/MM/yyyy", PtBr)}");
-		sb.AppendLine($"DataFim;{relatorio.DataFim.ToString("dd/MM/yyyy", PtBr)}");
-		sb.AppendLine($"GeradoEmUtc;{relatorio.GeradoEmUtc.ToString("dd/MM/yyyy HH:mm:ss", PtBr)}");
-		sb.AppendLine($"TotalMovimentacoes;{relatorio.TotalMovimentacoes}");
-		sb.AppendLine($"TotalEntradas;{relatorio.TotalEntradas}");
-		sb.AppendLine($"TotalSaidas;{relatorio.TotalSaidas}");
-		sb.AppendLine($"QuantidadeAdicionada;{relatorio.QuantidadeTotalAdicionada}");
-		sb.AppendLine($"QuantidadeRemovida;{relatorio.QuantidadeTotalRemovida}");
-		sb.AppendLine($"SaldoQuantidade;{relatorio.SaldoQuantidade}");
-		sb.AppendLine($"ValorTotalEntradas;{FormatarDecimal(relatorio.ValorTotalEntradas)}");
-		sb.AppendLine($"ValorTotalSaidas;{FormatarDecimal(relatorio.ValorTotalSaidas)}");
-		sb.AppendLine($"SaldoFinanceiro;{FormatarDecimal(relatorio.SaldoFinanceiro)}");
-		sb.AppendLine($"ValorTotalMovimentado;{FormatarDecimal(relatorio.ValorTotalMovimentado)}");
+		// Cabeçalho do relatório
+		CsvReportHelper.AppendSectionHeader(sb, totalColunas, "RELATÓRIO DE MOVIMENTAÇÃO DE ESTOQUE");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Período",
+			CsvReportHelper.Escape(FormatarPeriodo(relatorio.Periodo)),
+			"Vigência",
+			$"{CsvReportHelper.FormatDate(relatorio.DataInicio)} a {CsvReportHelper.FormatDate(relatorio.DataFim)}",
+			"Gerado em (Brasília)",
+			CsvReportHelper.FormatDateTimeBrasilia(relatorio.GeradoEmUtc));
+		CsvReportHelper.AppendBlankRow(sb, totalColunas);
 
-		sb.AppendLine();
-		sb.AppendLine("RESUMO POR PRODUTO");
-		sb.AppendLine("ProdutoId;Produto;PrecoUnitario;EstoqueAtual;QtdAdicionada;QtdRemovida;SaldoQuantidade;ValorEntradas;ValorSaidas;ValorTotalMovimentado");
-		foreach (var prod in relatorio.ResumoPorProduto)
+		// Seção 1: Resumo do Período
+		CsvReportHelper.AppendSectionHeader(sb, totalColunas, "RESUMO DO PERÍODO");
+		CsvReportHelper.AppendRow(sb, totalColunas, "Indicador", "Valor", "Detalhamento");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Total de Movimentações",
+			CsvReportHelper.FormatInteger(relatorio.TotalMovimentacoes),
+			$"{relatorio.TotalEntradas} entrada(s) | {relatorio.TotalSaidas} saída(s)");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Unidades Adicionadas",
+			CsvReportHelper.FormatInteger(relatorio.QuantidadeTotalAdicionada),
+			"Entradas registradas no período");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Unidades Removidas",
+			CsvReportHelper.FormatInteger(relatorio.QuantidadeTotalRemovida),
+			"Saídas registradas no período");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Saldo de Quantidade",
+			CsvReportHelper.FormatInteger(relatorio.SaldoQuantidade),
+			"Entradas menos saídas");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Valor Total de Entradas",
+			CsvReportHelper.FormatCurrency(relatorio.ValorTotalEntradas),
+			"Soma financeira das entradas");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Valor Total de Saídas",
+			CsvReportHelper.FormatCurrency(relatorio.ValorTotalSaidas),
+			"Soma financeira das saídas");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Saldo Financeiro",
+			CsvReportHelper.FormatCurrency(relatorio.SaldoFinanceiro),
+			"Entradas menos saídas");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Valor Total Movimentado",
+			CsvReportHelper.FormatCurrency(relatorio.ValorTotalMovimentado),
+			"Volume financeiro total movimentado");
+		CsvReportHelper.AppendBlankRow(sb, totalColunas);
+
+		// Seção 2: Resumo por Produto
+		CsvReportHelper.AppendSectionHeader(sb, totalColunas, "RESUMO POR PRODUTO");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Cód. Produto",
+			"Produto",
+			"Preço Unitário",
+			"Estoque Atual",
+			"Qtd. Adicionada",
+			"Qtd. Removida",
+			"Saldo Qtd.",
+			"Valor Entradas",
+			"Valor Saídas",
+			"Valor Movimentado");
+
+		if (relatorio.ResumoPorProduto.Count == 0)
 		{
-			sb.AppendLine(string.Join(';',
-				prod.ProdutoId.ToString(PtBr),
-				EscaparCsv(prod.ProdutoNome),
-				FormatarDecimal(prod.PrecoUnitario),
-				prod.EstoqueAtual.ToString(PtBr),
-				prod.QuantidadeAdicionada.ToString(PtBr),
-				prod.QuantidadeRemovida.ToString(PtBr),
-				prod.SaldoQuantidade.ToString(PtBr),
-				FormatarDecimal(prod.ValorEntradas),
-				FormatarDecimal(prod.ValorSaidas),
-				FormatarDecimal(prod.ValorTotalMovimentado)));
+			CsvReportHelper.AppendRow(sb, totalColunas, "Sem produtos movimentados no período.");
+		}
+		else
+		{
+			foreach (var prod in relatorio.ResumoPorProduto)
+			{
+				CsvReportHelper.AppendRow(
+					sb,
+					totalColunas,
+					prod.ProdutoId.ToString(PtBr),
+					CsvReportHelper.Escape(prod.ProdutoNome),
+					CsvReportHelper.FormatCurrency(prod.PrecoUnitario),
+					CsvReportHelper.FormatInteger(prod.EstoqueAtual),
+					CsvReportHelper.FormatInteger(prod.QuantidadeAdicionada),
+					CsvReportHelper.FormatInteger(prod.QuantidadeRemovida),
+					CsvReportHelper.FormatInteger(prod.SaldoQuantidade),
+					CsvReportHelper.FormatCurrency(prod.ValorEntradas),
+					CsvReportHelper.FormatCurrency(prod.ValorSaidas),
+					CsvReportHelper.FormatCurrency(prod.ValorTotalMovimentado));
+			}
+
+			CsvReportHelper.AppendRow(
+				sb,
+				totalColunas,
+				"TOTAL",
+				$"{relatorio.ResumoPorProduto.Count} produto(s)",
+				string.Empty,
+				string.Empty,
+				CsvReportHelper.FormatInteger(relatorio.QuantidadeTotalAdicionada),
+				CsvReportHelper.FormatInteger(relatorio.QuantidadeTotalRemovida),
+				CsvReportHelper.FormatInteger(relatorio.SaldoQuantidade),
+				CsvReportHelper.FormatCurrency(relatorio.ValorTotalEntradas),
+				CsvReportHelper.FormatCurrency(relatorio.ValorTotalSaidas),
+				CsvReportHelper.FormatCurrency(relatorio.ValorTotalMovimentado));
 		}
 
-		sb.AppendLine();
-		sb.AppendLine("MOVIMENTACOES DETALHADAS");
-		sb.AppendLine("Id;DataMovimentacaoUtc;Tipo;Motivo;PedidoId;ProdutoId;Produto;Responsavel;Quantidade;PrecoUnitario;ValorTotal;EstoqueAtualProduto");
-		foreach (var item in relatorio.Movimentacoes)
-		{
-			sb.AppendLine(string.Join(';',
-				item.Id.ToString(PtBr),
-				item.DataMovimentacao.ToString("dd/MM/yyyy HH:mm:ss", PtBr),
-				FormatarTipo(item.TipoMovimentacao),
-				EscaparCsv(FormatarMotivo(item.Motivo)),
-				item.PedidoId?.ToString(PtBr) ?? string.Empty,
-				item.ProdutoId.ToString(PtBr),
-				EscaparCsv(item.ProdutoNome),
-				EscaparCsv(item.ClienteNome),
-				item.Quantidade.ToString(PtBr),
-				FormatarDecimal(item.PrecoUnitario),
-				FormatarDecimal(item.ValorTotal),
-				item.EstoqueAtualProduto.ToString(PtBr)));
-		}
+		CsvReportHelper.AppendBlankRow(sb, totalColunas);
 
-		var preamble = Encoding.UTF8.GetPreamble();
-		var body = Encoding.UTF8.GetBytes(sb.ToString());
-		var conteudo = new byte[preamble.Length + body.Length];
-		Buffer.BlockCopy(preamble, 0, conteudo, 0, preamble.Length);
-		Buffer.BlockCopy(body, 0, conteudo, preamble.Length, body.Length);
+		// Seção 3: Movimentações Detalhadas
+		CsvReportHelper.AppendSectionHeader(sb, totalColunas, "MOVIMENTAÇÕES DETALHADAS");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"ID",
+			"Data/Hora (Brasília)",
+			"Tipo",
+			"Motivo",
+			"Nº Pedido",
+			"Cód. Produto",
+			"Produto",
+			"Responsável",
+			"Quantidade",
+			"Preço Unitário",
+			"Valor Total",
+			"Estoque Atual");
+
+		if (relatorio.Movimentacoes.Count == 0)
+		{
+			CsvReportHelper.AppendRow(sb, totalColunas, "Sem movimentações registradas no período.");
+		}
+		else
+		{
+			foreach (var item in relatorio.Movimentacoes)
+			{
+				CsvReportHelper.AppendRow(
+					sb,
+					totalColunas,
+					item.Id.ToString(PtBr),
+					CsvReportHelper.FormatDateTimeBrasilia(item.DataMovimentacao),
+					CsvReportHelper.Escape(FormatarTipo(item.TipoMovimentacao)),
+					CsvReportHelper.Escape(FormatarMotivo(item.Motivo)),
+					item.PedidoId?.ToString(PtBr) ?? "-",
+					item.ProdutoId.ToString(PtBr),
+					CsvReportHelper.Escape(item.ProdutoNome),
+					CsvReportHelper.Escape(item.ClienteNome),
+					CsvReportHelper.FormatInteger(item.Quantidade),
+					CsvReportHelper.FormatCurrency(item.PrecoUnitario),
+					CsvReportHelper.FormatCurrency(item.ValorTotal),
+					CsvReportHelper.FormatInteger(item.EstoqueAtualProduto));
+			}
+
+			CsvReportHelper.AppendRow(
+				sb,
+				totalColunas,
+				"TOTAL",
+				$"{relatorio.Movimentacoes.Count} movimentação(ões)",
+				string.Empty,
+				string.Empty,
+				string.Empty,
+				string.Empty,
+				string.Empty,
+				string.Empty,
+				CsvReportHelper.FormatInteger(relatorio.Movimentacoes.Sum(m => m.Quantidade)),
+				string.Empty,
+				CsvReportHelper.FormatCurrency(relatorio.ValorTotalMovimentado));
+		}
 
 		return new ArquivoRelatorioDTO(
-			conteudo,
+			CsvReportHelper.ToUtf8WithBom(sb.ToString()),
 			"text/csv; charset=utf-8",
 			ConstruirNomeArquivo(relatorio, "csv"));
 	}
@@ -413,34 +534,6 @@ public sealed class RelatorioMovimentacaoEstoqueGenerator : IRelatorioMovimentac
 		};
 
 	private static string FormatarMoeda(decimal valor)
-		=> valor.ToString("C2", PtBr);
-
-	private static string FormatarDecimal(decimal valor)
-		=> valor.ToString("F2", PtBr);
-
-	private static string EscaparCsv(string valor)
-	{
-		if (string.IsNullOrEmpty(valor))
-			return string.Empty;
-
-		var sanitizado = valor;
-		var semEspacosIniciais = sanitizado.TrimStart();
-		if ((semEspacosIniciais.Length > 0 && semEspacosIniciais[0] is '=' or '+' or '-' or '@' or '\t' or '\r')
-			|| sanitizado[0] is '\t' or '\r')
-		{
-			sanitizado = $"'{sanitizado}";
-		}
-
-		if (sanitizado.Contains(';')
-			|| sanitizado.Contains('"')
-			|| sanitizado.Contains('\n')
-			|| sanitizado.Contains('\r')
-			|| sanitizado.StartsWith('\''))
-		{
-			return $"\"{sanitizado.Replace("\"", "\"\"")}\"";
-		}
-
-		return sanitizado;
-	}
+		=> CsvReportHelper.FormatCurrency(valor);
 }
 

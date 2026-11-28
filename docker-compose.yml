@@ -45,10 +45,11 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u\"$MYSQL_USER\" -p\"$MYSQL_PASSWORD\""]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --protocol=tcp -u\"$$MYSQL_USER\" -p\"$$MYSQL_PASSWORD\""]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 15
+      start_period: 15s
 
   rabbitmq:
     image: rabbitmq:3-management

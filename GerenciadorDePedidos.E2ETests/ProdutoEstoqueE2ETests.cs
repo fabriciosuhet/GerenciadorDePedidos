@@ -185,13 +185,19 @@ public class ProdutoEstoqueE2ETests
 		Assert.Equal(0xBF, csvBytes[2]);
 
 		var csvText = System.Text.Encoding.UTF8.GetString(csvBytes, 3, csvBytes.Length - 3);
-		Assert.Contains("RESUMO DO PERIODO", csvText);
+		Assert.Contains("RELATÓRIO DE MOVIMENTAÇÃO DE ESTOQUE", csvText);
+		Assert.Contains("RESUMO DO PERÍODO", csvText);
 		Assert.Contains("RESUMO POR PRODUTO", csvText);
-		Assert.Contains("MOVIMENTACOES DETALHADAS", csvText);
+		Assert.Contains("MOVIMENTAÇÕES DETALHADAS", csvText);
 		Assert.Contains("Monitor 4K", csvText);
 		Assert.Contains("Headset Pro", csvText);
-		Assert.Contains("10000,00", csvText); // 4 * 2500
-		Assert.Contains("1200,00", csvText);  // 3 * 400
+		Assert.Contains("R$ 10.000,00", csvText); // 4 * 2500
+		Assert.Contains("R$ 1.200,00", csvText);  // 3 * 400
+		Assert.Contains("TOTAL;", csvText);
+
+		// Todas as linhas devem manter grade retangular consistente de 12 colunas (11 separadores ';')
+		var linhasCsv = csvText.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+		Assert.All(linhasCsv, linha => Assert.Equal(11, linha.Count(c => c == ';')));
 
 		// 2. Download PDF (Semanal e Anual)
 		foreach (var periodo in new[] { "Semana", "Ano" })
