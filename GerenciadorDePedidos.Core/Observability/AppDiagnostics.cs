@@ -14,11 +14,17 @@ public static class AppDiagnostics
 	public static readonly Counter<long> PedidosCriados =
 		Meter.CreateCounter<long>("gerenciador_pedidos_criados_total", description: "Total de pedidos criados.");
 
+	public static readonly Counter<long> PedidosProcessados =
+		Meter.CreateCounter<long>("gerenciador_pedidos_processados_total", description: "Total de pedidos processados (estoque reservado).");
+
 	public static readonly Counter<long> PedidosConcluidos =
-		Meter.CreateCounter<long>("gerenciador_pedidos_concluidos_total", description: "Total de pedidos concluídos.");
+		Meter.CreateCounter<long>("gerenciador_pedidos_concluidos_total", description: "Total de pedidos concluídos/entregues.");
 
 	public static readonly Counter<long> PedidosCancelados =
 		Meter.CreateCounter<long>("gerenciador_pedidos_cancelados_total", description: "Total de pedidos cancelados.");
+
+	public static readonly Counter<long> PedidosDevolvidos =
+		Meter.CreateCounter<long>("gerenciador_pedidos_devolvidos_total", description: "Total de pedidos devolvidos após entrega.");
 
 	public static readonly Counter<long> AlertasEstoqueBaixo =
 		Meter.CreateCounter<long>("gerenciador_alertas_estoque_baixo_total", description: "Total de alertas de estoque baixo registrados.");

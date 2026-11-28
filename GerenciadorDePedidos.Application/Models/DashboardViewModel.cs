@@ -17,4 +17,6 @@ public sealed record DashboardViewModel(
 	PeriodoRelatorio? Periodo = null,
 	DateTime? DataInicio = null,
 	DateTime? DataFim = null,
-	IReadOnlyList<TopProdutoDashboardDTO>? TopProdutos = null);
+	IReadOnlyList<TopProdutoDashboardDTO>? TopProdutos = null,
+	int PedidosProcessados = 0,
+	int PedidosDevolvidos = 0);

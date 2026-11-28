@@ -10,5 +10,8 @@ public class PedidoResponseDTO
 	public Guid ClienteId { get; set; }
 	public string ClienteNome { get; set; } = string.Empty;
 	public Status Status { get; set; }
+	public DateTime? ConcluidoEm { get; set; }
+	public DateTime? DevolvidoEm { get; set; }
+	public string? MotivoDevolucao { get; set; }
 	public List<ItemPedidoResponseDTO> ItensPedidos { get; set; } = [];
 }

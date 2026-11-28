@@ -43,23 +43,54 @@ public class PedidoTests
 
 		pedido.Concluir();
 		Assert.Equal(Status.Concluido, pedido.Status);
+		Assert.NotNull(pedido.ConcluidoEm);
 
 		Assert.Throws<InvalidOperationException>(() => pedido.Cancelar());
+		Assert.Throws<InvalidOperationException>(() => pedido.CancelarComEstorno());
+
+		pedido.Devolver("Produto com avaria na embalagem");
+		Assert.Equal(Status.Devolvido, pedido.Status);
+		Assert.NotNull(pedido.DevolvidoEm);
+		Assert.Equal("Produto com avaria na embalagem", pedido.MotivoDevolucao);
+
+		Assert.Throws<InvalidOperationException>(() => pedido.Cancelar());
+		Assert.Throws<InvalidOperationException>(() => pedido.CancelarComEstorno());
+		Assert.Throws<InvalidOperationException>(() => pedido.Devolver("Segunda tentativa"));
 	}
 
 	[Fact]
-	public void CancelarComEstorno_DeveRetornarTrueParaConcluidoEFalseParaPendente()
+	public void CancelarComEstorno_DeveRetornarTrueParaProcessadoFalseParaPendenteEBloquearConcluido()
 	{
 		var pedidoPendente = new Pedido(Guid.NewGuid(), Status.Pendente);
 		Assert.False(pedidoPendente.CancelarComEstorno());
 		Assert.Equal(Status.Cancelado, pedidoPendente.Status);
 		Assert.Throws<InvalidOperationException>(() => pedidoPendente.CancelarComEstorno());
 
+		var pedidoProcessado = new Pedido(Guid.NewGuid(), Status.Pendente);
+		pedidoProcessado.MarcarComoProcessado();
+		Assert.True(pedidoProcessado.CancelarComEstorno());
+		Assert.Equal(Status.Cancelado, pedidoProcessado.Status);
+
 		var pedidoConcluido = new Pedido(Guid.NewGuid(), Status.Pendente);
 		pedidoConcluido.MarcarComoProcessado();
 		pedidoConcluido.Concluir();
-		Assert.True(pedidoConcluido.CancelarComEstorno());
-		Assert.Equal(Status.Cancelado, pedidoConcluido.Status);
+		Assert.Throws<InvalidOperationException>(() => pedidoConcluido.CancelarComEstorno());
+	}
+
+	[Fact]
+	public void Devolver_ForaDeConcluidoOuSemMotivo_DeveLancarExcecao()
+	{
+		var pedidoPendente = new Pedido(Guid.NewGuid(), Status.Pendente);
+		Assert.Throws<InvalidOperationException>(() => pedidoPendente.Devolver("Desistência"));
+
+		var pedidoProcessado = new Pedido(Guid.NewGuid(), Status.Pendente);
+		pedidoProcessado.MarcarComoProcessado();
+		Assert.Throws<InvalidOperationException>(() => pedidoProcessado.Devolver("Desistência"));
+
+		var pedidoConcluido = new Pedido(Guid.NewGuid(), Status.Pendente);
+		pedidoConcluido.MarcarComoProcessado();
+		pedidoConcluido.Concluir();
+		Assert.Throws<ArgumentException>(() => pedidoConcluido.Devolver("   "));
 	}
 
 	[Fact]

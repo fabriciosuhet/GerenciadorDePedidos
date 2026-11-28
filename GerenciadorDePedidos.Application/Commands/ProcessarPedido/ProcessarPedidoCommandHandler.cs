@@ -45,22 +45,23 @@ public sealed class ProcessarPedidoCommandHandler(
 		}
 
 		pedido.MarcarComoProcessado();
+		var movimentacoes = new List<MovimentacaoEstoque>(itensPorProduto.Count);
 		var eventosEstoqueBaixo = new List<EstoqueBaixoEvent>();
+		var chavesProdutosAfetados = new List<string>(itensPorProduto.Count);
 
 		foreach (var (produtoId, itemInfo) in itensPorProduto)
 		{
 			var produto = produtosPorId[produtoId];
 			produto.RemoverEstoque(itemInfo.Quantidade);
 
-			var movimentacao = new MovimentacaoEstoque(
+			movimentacoes.Add(new MovimentacaoEstoque(
 				itemInfo.Quantidade,
 				Tipo.Remocao,
 				produto.Id,
 				pedido.ClienteId,
 				itemInfo.PrecoUnitario,
 				MotivoMovimentacao.VendaPedido,
-				pedido.Id);
-			await movimentacaoEstoqueRepository.AddAsync(movimentacao, cancellationToken);
+				pedido.Id));
 
 			if (produto.EstaComEstoqueBaixo())
 			{
@@ -73,20 +74,25 @@ public sealed class ProcessarPedidoCommandHandler(
 					pedido.Id));
 			}
 
-			cacheService.Remove(CacheKeyHelper.GetProdutoByIdKey(produto.Id));
+			chavesProdutosAfetados.Add(CacheKeyHelper.GetProdutoByIdKey(produto.Id));
 		}
 
-		pedido.Concluir();
+		if (movimentacoes.Count > 0)
+			await movimentacaoEstoqueRepository.AddRangeAsync(movimentacoes, cancellationToken);
 
 		// Publica eventos antes do SaveChanges para persistir no Outbox na mesma transação
 		foreach (var evento in eventosEstoqueBaixo)
 			await eventBus.PublishAsync(evento, cancellationToken);
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);
-		AppDiagnostics.PedidosConcluidos.Add(1);
+		AppDiagnostics.PedidosProcessados.Add(1);
 
 		InvalidarCachePedido(pedido.Id, pedido.ClienteId);
-		cacheService.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix);
+		if (chavesProdutosAfetados.Count > 0)
+		{
+			cacheService.RemoveMany(chavesProdutosAfetados);
+			cacheService.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix);
+		}
 
 		return true;
 	}

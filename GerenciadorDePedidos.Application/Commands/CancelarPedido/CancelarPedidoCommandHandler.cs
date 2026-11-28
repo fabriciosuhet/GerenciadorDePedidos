@@ -33,6 +33,7 @@ public sealed class CancelarPedidoCommandHandler(
 
 		var requerEstorno = pedido.CancelarComEstorno();
 		var unidadesEstornadas = 0;
+		var chavesProdutosAfetados = new List<string>();
 
 		if (requerEstorno && pedido.ItensPedidos.Count > 0)
 		{
@@ -47,6 +48,7 @@ public sealed class CancelarPedidoCommandHandler(
 				cancellationToken);
 			var produtosPorId = produtos.ToDictionary(p => p.Id);
 			var responsavelId = currentUserService.ClienteId ?? pedido.ClienteId;
+			var movimentacoes = new List<MovimentacaoEstoque>(itensPorProduto.Count);
 
 			foreach (var (produtoId, itemInfo) in itensPorProduto)
 			{
@@ -56,24 +58,30 @@ public sealed class CancelarPedidoCommandHandler(
 				produto.AdicionarEstoque(itemInfo.Quantidade);
 				unidadesEstornadas += itemInfo.Quantidade;
 
-				var movimentacao = new MovimentacaoEstoque(
+				movimentacoes.Add(new MovimentacaoEstoque(
 					itemInfo.Quantidade,
 					Tipo.Adicao,
 					produto.Id,
 					responsavelId,
 					itemInfo.PrecoUnitario,
 					MotivoMovimentacao.EstornoCancelamento,
-					pedido.Id);
+					pedido.Id));
 
-				await movimentacaoEstoqueRepository.AddAsync(movimentacao, cancellationToken);
-				cacheService.Remove(CacheKeyHelper.GetProdutoByIdKey(produto.Id));
+				chavesProdutosAfetados.Add(CacheKeyHelper.GetProdutoByIdKey(produto.Id));
 			}
 
-			cacheService.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix);
+			if (movimentacoes.Count > 0)
+				await movimentacaoEstoqueRepository.AddRangeAsync(movimentacoes, cancellationToken);
 		}
 
 		await unitOfWork.SaveChangesAsync(cancellationToken);
 		AppDiagnostics.PedidosCancelados.Add(1, new KeyValuePair<string, object?>("motivo", "cancelamento_manual"));
+
+		if (chavesProdutosAfetados.Count > 0)
+		{
+			cacheService.RemoveMany(chavesProdutosAfetados);
+			cacheService.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix);
+		}
 
 		cacheService.Remove(CacheKeyHelper.GetPedidoByIdKey(pedido.Id));
 		cacheService.RemoveByPrefix(CacheKeyHelper.GetAllPedidosAdminPrefix());

@@ -35,6 +35,9 @@ public static class PedidoMappingExtensions
 		ClienteId = pedido.ClienteId,
 		ClienteNome = pedido.Cliente?.NomeCompleto ?? string.Empty,
 		Status = pedido.Status,
+		ConcluidoEm = pedido.ConcluidoEm?.ToBrasiliaTime(),
+		DevolvidoEm = pedido.DevolvidoEm?.ToBrasiliaTime(),
+		MotivoDevolucao = pedido.MotivoDevolucao,
 		ItensPedidos = pedido.ItensPedidos.Select(i => new ItemPedidoResponseDTO
 		{
 			Id = i.Id,

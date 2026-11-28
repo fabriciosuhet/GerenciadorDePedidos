@@ -40,6 +40,12 @@ public class CacheService(IMemoryCache memoryCache) : ICacheService
 		TrackedKeys.TryRemove(key, out _);
 	}
 
+	public void RemoveMany(IEnumerable<string> keys)
+	{
+		foreach (var key in keys)
+			Remove(key);
+	}
+
 	public void RemoveByPrefix(string prefix)
 	{
 		var matchingKeys = TrackedKeys.Keys

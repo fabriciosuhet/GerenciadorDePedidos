@@ -116,6 +116,12 @@ public class ExportarRelatorioVendasTests
 		{
 			pedido.Cancelar();
 		}
+		else if (statusFinal == Status.Devolvido)
+		{
+			pedido.MarcarComoProcessado();
+			pedido.Concluir();
+			pedido.Devolver("Devolução de teste");
+		}
 
 		typeof(Pedido).GetProperty(nameof(Pedido.Cliente), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
 			.SetValue(pedido, cliente);

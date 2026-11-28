@@ -10,11 +10,14 @@ public class PedidoConfiguration : IEntityTypeConfiguration<Pedido>
 	{
 		builder
 			.HasKey(p => p.Id);
-		
+
+		builder.Property(p => p.MotivoDevolucao)
+			.HasMaxLength(500);
+
 		builder
 			.HasOne(p => p.Cliente)
 			.WithMany(c => c.Pedidos)
 			.HasForeignKey(p => p.ClienteId)
 			.OnDelete(DeleteBehavior.Restrict);
-    }
+	}
 }

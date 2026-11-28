@@ -20,7 +20,7 @@ public class CancelarPedidoCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_PedidoConcluido_DeveCancelarEstornarEstoqueERegistrarMovimentacaoComSnapshot()
+	public async Task Handle_PedidoProcessado_DeveCancelarEstornarEstoqueERegistrarMovimentacaoComSnapshot()
 	{
 		var clienteId = Guid.NewGuid();
 		var produto1 = new Produto("Monitor", 1000m, 8) { Id = 1 };
@@ -31,7 +31,6 @@ public class CancelarPedidoCommandHandlerTests
 		pedido.AdicionarItem(produto1, 2);
 		pedido.AdicionarItem(produto2, 3);
 		pedido.MarcarComoProcessado();
-		pedido.Concluir();
 
 		// Altera o preço do produto depois da venda para validar que o estorno usa o snapshot do item
 		produto1.AlterarPreco(1300m);
@@ -65,28 +64,31 @@ public class CancelarPedidoCommandHandlerTests
 		Assert.Equal(10, produto1.Estoque);
 		Assert.Equal(8, produto2.Estoque);
 
-		movimentacaoRepoMock.Verify(r => r.AddAsync(
-			It.Is<MovimentacaoEstoque>(m =>
-				m.ProdutoId == 1 &&
-				m.Quantidade == 2 &&
-				m.TipoMovimentacao == Tipo.Adicao &&
-				m.PrecoUnitario == 1000m &&
-				m.Motivo == MotivoMovimentacao.EstornoCancelamento &&
-				m.PedidoId == 50),
-			It.IsAny<CancellationToken>()), Times.Once);
-
-		movimentacaoRepoMock.Verify(r => r.AddAsync(
-			It.Is<MovimentacaoEstoque>(m =>
-				m.ProdutoId == 2 &&
-				m.Quantidade == 3 &&
-				m.TipoMovimentacao == Tipo.Adicao &&
-				m.PrecoUnitario == 150m &&
-				m.Motivo == MotivoMovimentacao.EstornoCancelamento &&
-				m.PedidoId == 50),
+		movimentacaoRepoMock.Verify(r => r.AddRangeAsync(
+			It.Is<IEnumerable<MovimentacaoEstoque>>(lista =>
+				lista.Count() == 2 &&
+				lista.Any(m =>
+					m.ProdutoId == 1 &&
+					m.Quantidade == 2 &&
+					m.TipoMovimentacao == Tipo.Adicao &&
+					m.PrecoUnitario == 1000m &&
+					m.Motivo == MotivoMovimentacao.EstornoCancelamento &&
+					m.PedidoId == 50) &&
+				lista.Any(m =>
+					m.ProdutoId == 2 &&
+					m.Quantidade == 3 &&
+					m.TipoMovimentacao == Tipo.Adicao &&
+					m.PrecoUnitario == 150m &&
+					m.Motivo == MotivoMovimentacao.EstornoCancelamento &&
+					m.PedidoId == 50)),
 			It.IsAny<CancellationToken>()), Times.Once);
 
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetPedidoByIdKey(50)), Times.Once);
+		cacheMock.Verify(c => c.RemoveMany(
+			It.Is<IEnumerable<string>>(keys =>
+				keys.Contains(CacheKeyHelper.GetProdutoByIdKey(1)) &&
+				keys.Contains(CacheKeyHelper.GetProdutoByIdKey(2)))), Times.Once);
 		cacheMock.Verify(c => c.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix), Times.Once);
 	}
 
@@ -121,7 +123,7 @@ public class CancelarPedidoCommandHandlerTests
 		Assert.Equal(0, result.UnidadesEstornadas);
 		Assert.Equal(10, produto.Estoque);
 		produtoRepoMock.Verify(r => r.GetByIdsIncludingInactiveForUpdateAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()), Times.Never);
-		movimentacaoRepoMock.Verify(r => r.AddAsync(It.IsAny<MovimentacaoEstoque>(), It.IsAny<CancellationToken>()), Times.Never);
+		movimentacaoRepoMock.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<MovimentacaoEstoque>>(), It.IsAny<CancellationToken>()), Times.Never);
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 
@@ -144,6 +146,43 @@ public class CancelarPedidoCommandHandlerTests
 
 		await Assert.ThrowsAsync<InvalidOperationException>(() =>
 			handler.Handle(new CancelarPedidoCommand(52), CancellationToken.None));
+	}
+
+	[Fact]
+	public async Task Handle_PedidoConcluidoOuDevolvido_DeveLancarInvalidOperationExceptionSemEstornarEstoque()
+	{
+		var clienteId = Guid.NewGuid();
+		var pedidoConcluido = new Pedido(clienteId, Status.Pendente) { Id = 55 };
+		pedidoConcluido.MarcarComoProcessado();
+		pedidoConcluido.Concluir();
+
+		var pedidoDevolvido = new Pedido(clienteId, Status.Pendente) { Id = 56 };
+		pedidoDevolvido.MarcarComoProcessado();
+		pedidoDevolvido.Concluir();
+		pedidoDevolvido.Devolver("Item com defeito");
+
+		var pedidoRepoMock = new Mock<IPedidoRepository>();
+		pedidoRepoMock.Setup(r => r.GetByIdWithItensAsync(55, It.IsAny<CancellationToken>())).ReturnsAsync(pedidoConcluido);
+		pedidoRepoMock.Setup(r => r.GetByIdWithItensAsync(56, It.IsAny<CancellationToken>())).ReturnsAsync(pedidoDevolvido);
+
+		var produtoRepoMock = new Mock<IProdutoRepository>();
+		var unitOfWorkMock = new Mock<IUnitOfWork>();
+
+		var handler = new CancelarPedidoCommandHandler(
+			pedidoRepoMock.Object,
+			produtoRepoMock.Object,
+			new Mock<IMovimentacaoEstoqueRepository>().Object,
+			unitOfWorkMock.Object,
+			CreateUser(clienteId, isAdmin: true),
+			new Mock<ICacheService>().Object);
+
+		await Assert.ThrowsAsync<InvalidOperationException>(() =>
+			handler.Handle(new CancelarPedidoCommand(55), CancellationToken.None));
+		await Assert.ThrowsAsync<InvalidOperationException>(() =>
+			handler.Handle(new CancelarPedidoCommand(56), CancellationToken.None));
+
+		produtoRepoMock.Verify(r => r.GetByIdsIncludingInactiveForUpdateAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()), Times.Never);
+		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]

@@ -67,6 +67,25 @@ public sealed class RedisCacheService(
 		}
 	}
 
+	public void RemoveMany(IEnumerable<string> keys)
+	{
+		try
+		{
+			var redisKeys = keys
+				.Where(k => !string.IsNullOrWhiteSpace(k))
+				.Distinct(StringComparer.Ordinal)
+				.Select(k => (RedisKey)BuildKey(k))
+				.ToArray();
+
+			if (redisKeys.Length > 0)
+				Database.KeyDelete(redisKeys);
+		}
+		catch (Exception ex)
+		{
+			logger.LogWarning(ex, "Falha ao remover lote de chaves no Redis.");
+		}
+	}
+
 	public void RemoveByPrefix(string prefix)
 	{
 		try

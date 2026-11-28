@@ -12,4 +12,6 @@ public sealed record PedidoDashboardStatsDTO(
 	int PedidosConcluidos,
 	int PedidosCancelados,
 	decimal FaturamentoTotalConcluido,
-	IReadOnlyList<TopProdutoDashboardDTO>? TopProdutos = null);
+	IReadOnlyList<TopProdutoDashboardDTO>? TopProdutos = null,
+	int PedidosProcessados = 0,
+	int PedidosDevolvidos = 0);

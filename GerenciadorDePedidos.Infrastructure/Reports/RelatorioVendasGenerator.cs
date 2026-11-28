@@ -52,7 +52,7 @@ public sealed class RelatorioVendasGenerator : IRelatorioVendasGenerator
 			totalColunas,
 			"Total de Pedidos",
 			CsvReportHelper.FormatInteger(relatorio.TotalPedidos),
-			$"{relatorio.PedidosConcluidos} concluído(s) | {relatorio.PedidosPendentes} pendente(s) | {relatorio.PedidosProcessados} processado(s) | {relatorio.PedidosCancelados} cancelado(s)");
+			$"{relatorio.PedidosConcluidos} concluído(s) | {relatorio.PedidosPendentes} pendente(s) | {relatorio.PedidosProcessados} processado(s) | {relatorio.PedidosCancelados} cancelado(s) | {relatorio.PedidosDevolvidos} devolvido(s)");
 		CsvReportHelper.AppendRow(
 			sb,
 			totalColunas,
@@ -71,6 +71,12 @@ public sealed class RelatorioVendasGenerator : IRelatorioVendasGenerator
 			"Valor Cancelado",
 			CsvReportHelper.FormatCurrency(relatorio.ValorTotalCancelado),
 			"Pedidos cancelados no período");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Valor Devolvido",
+			CsvReportHelper.FormatCurrency(relatorio.ValorTotalDevolvido),
+			"Pedidos devolvidos após entrega");
 		CsvReportHelper.AppendRow(
 			sb,
 			totalColunas,
@@ -314,7 +320,7 @@ public sealed class RelatorioVendasGenerator : IRelatorioVendasGenerator
 			{
 				row.Spacing(8);
 				AdicionarCard(row, "Total de Pedidos", relatorio.TotalPedidos.ToString(PtBr),
-					$"{relatorio.PedidosConcluidos} concluídos / {relatorio.PedidosCancelados} cancelados");
+					$"{relatorio.PedidosConcluidos} concluídos / {relatorio.PedidosCancelados} cancelados / {relatorio.PedidosDevolvidos} devolvidos");
 				AdicionarCard(row, "Faturamento Concluído", FormatarMoeda(relatorio.FaturamentoTotalConcluido),
 					$"{relatorio.TotalUnidadesVendidas} unidades vendidas", "#15803D");
 				AdicionarCard(row, "Ticket Médio", FormatarMoeda(relatorio.TicketMedio),
@@ -468,6 +474,7 @@ public sealed class RelatorioVendasGenerator : IRelatorioVendasGenerator
 					{
 						Status.Concluido => "#15803D",
 						Status.Cancelado => "#B91C1C",
+						Status.Devolvido => "#7C3AED",
 						_ => "#B45309"
 					};
 
@@ -561,6 +568,7 @@ public sealed class RelatorioVendasGenerator : IRelatorioVendasGenerator
 			Status.Processado => "Processado",
 			Status.Concluido => "Concluído",
 			Status.Cancelado => "Cancelado",
+			Status.Devolvido => "Devolvido",
 			_ => status.ToString()
 		};
 

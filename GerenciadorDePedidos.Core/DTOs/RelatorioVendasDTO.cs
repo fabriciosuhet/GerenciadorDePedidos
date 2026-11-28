@@ -44,5 +44,7 @@ public sealed record RelatorioVendasDTO(
 	decimal TaxaCancelamentoPercentual,
 	IReadOnlyList<RelatorioVendaProdutoRankingDTO> TopProdutos,
 	IReadOnlyList<RelatorioVendaClienteRankingDTO> ClientesMaisAtivos,
-	IReadOnlyList<RelatorioVendaPedidoItemDTO> Pedidos);
+	IReadOnlyList<RelatorioVendaPedidoItemDTO> Pedidos,
+	int PedidosDevolvidos = 0,
+	decimal ValorTotalDevolvido = 0m);
 

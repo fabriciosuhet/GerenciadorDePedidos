@@ -226,6 +226,9 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
                     b.Property<Guid>("ClienteId")
                         .HasColumnType("char(36)");
 
+                    b.Property<DateTime?>("ConcluidoEm")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("CriadoEm")
                         .HasColumnType("datetime(6)");
 
@@ -234,6 +237,13 @@ namespace GerenciadorDePedidos.Infrastructure.Migrations
 
                     b.Property<DateTime?>("DesativadoEm")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DevolvidoEm")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("MotivoDevolucao")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
