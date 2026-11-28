@@ -28,75 +28,204 @@ public sealed class RelatorioVendasGenerator : IRelatorioVendasGenerator
 
 	private static ArquivoRelatorioDTO GerarCsv(RelatorioVendasDTO relatorio)
 	{
+		const int totalColunas = 7;
 		var sb = new StringBuilder();
 
-		sb.AppendLine("RESUMO EXECUTIVO");
-		sb.AppendLine("Indicador;Valor");
-		sb.AppendLine($"Periodo;{EscaparCsv(FormatarPeriodo(relatorio.Periodo))}");
-		sb.AppendLine($"DataInicio;{relatorio.DataInicio.ToString("dd/MM/yyyy", PtBr)}");
-		sb.AppendLine($"DataFim;{relatorio.DataFim.ToString("dd/MM/yyyy", PtBr)}");
-		sb.AppendLine($"GeradoEmUtc;{relatorio.GeradoEmUtc.ToString("dd/MM/yyyy HH:mm:ss", PtBr)}");
-		sb.AppendLine($"TotalPedidos;{relatorio.TotalPedidos}");
-		sb.AppendLine($"PedidosPendentes;{relatorio.PedidosPendentes}");
-		sb.AppendLine($"PedidosProcessados;{relatorio.PedidosProcessados}");
-		sb.AppendLine($"PedidosConcluidos;{relatorio.PedidosConcluidos}");
-		sb.AppendLine($"PedidosCancelados;{relatorio.PedidosCancelados}");
-		sb.AppendLine($"TotalUnidadesVendidas;{relatorio.TotalUnidadesVendidas}");
-		sb.AppendLine($"FaturamentoTotalConcluido;{FormatarDecimal(relatorio.FaturamentoTotalConcluido)}");
-		sb.AppendLine($"ValorTotalCancelado;{FormatarDecimal(relatorio.ValorTotalCancelado)}");
-		sb.AppendLine($"TicketMedio;{FormatarDecimal(relatorio.TicketMedio)}");
-		sb.AppendLine($"TaxaCancelamentoPercentual;{FormatarDecimal(relatorio.TaxaCancelamentoPercentual)}");
+		// Cabeçalho do relatório
+		CsvReportHelper.AppendSectionHeader(sb, totalColunas, "RELATÓRIO DE VENDAS");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Período",
+			CsvReportHelper.Escape(FormatarPeriodo(relatorio.Periodo)),
+			"Vigência",
+			$"{CsvReportHelper.FormatDate(relatorio.DataInicio)} a {CsvReportHelper.FormatDate(relatorio.DataFim)}",
+			"Gerado em (Brasília)",
+			CsvReportHelper.FormatDateTimeBrasilia(relatorio.GeradoEmUtc));
+		CsvReportHelper.AppendBlankRow(sb, totalColunas);
 
-		sb.AppendLine();
-		sb.AppendLine("TOP PRODUTOS");
-		sb.AppendLine("ProdutoId;Produto;QuantidadeVendida;FaturamentoTotal;ParticipacaoPercentual");
-		foreach (var prod in relatorio.TopProdutos)
+		// Seção 1: Resumo Executivo
+		CsvReportHelper.AppendSectionHeader(sb, totalColunas, "RESUMO EXECUTIVO");
+		CsvReportHelper.AppendRow(sb, totalColunas, "Indicador", "Valor", "Detalhamento");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Total de Pedidos",
+			CsvReportHelper.FormatInteger(relatorio.TotalPedidos),
+			$"{relatorio.PedidosConcluidos} concluído(s) | {relatorio.PedidosPendentes} pendente(s) | {relatorio.PedidosProcessados} processado(s) | {relatorio.PedidosCancelados} cancelado(s)");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Unidades Vendidas",
+			CsvReportHelper.FormatInteger(relatorio.TotalUnidadesVendidas),
+			"Itens de pedidos concluídos");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Faturamento Concluído",
+			CsvReportHelper.FormatCurrency(relatorio.FaturamentoTotalConcluido),
+			"Receita efetivada no período");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Valor Cancelado",
+			CsvReportHelper.FormatCurrency(relatorio.ValorTotalCancelado),
+			"Pedidos cancelados no período");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Ticket Médio",
+			CsvReportHelper.FormatCurrency(relatorio.TicketMedio),
+			"Média por pedido concluído");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Taxa de Cancelamento",
+			CsvReportHelper.FormatPercent(relatorio.TaxaCancelamentoPercentual),
+			"Percentual sobre o total de pedidos");
+		CsvReportHelper.AppendBlankRow(sb, totalColunas);
+
+		// Seção 2: Top Produtos
+		CsvReportHelper.AppendSectionHeader(sb, totalColunas, "TOP PRODUTOS");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"#",
+			"Cód. Produto",
+			"Produto",
+			"Qtd. Vendida",
+			"Faturamento Total",
+			"Participação");
+
+		if (relatorio.TopProdutos.Count == 0)
 		{
-			sb.AppendLine(string.Join(';',
-				prod.ProdutoId.ToString(PtBr),
-				EscaparCsv(prod.ProdutoNome),
-				prod.QuantidadeVendida.ToString(PtBr),
-				FormatarDecimal(prod.FaturamentoTotal),
-				FormatarDecimal(prod.ParticipacaoPercentual)));
+			CsvReportHelper.AppendRow(sb, totalColunas, "Sem produtos vendidos no período.");
+		}
+		else
+		{
+			var posicao = 1;
+			foreach (var prod in relatorio.TopProdutos)
+			{
+				CsvReportHelper.AppendRow(
+					sb,
+					totalColunas,
+					posicao.ToString(PtBr),
+					prod.ProdutoId.ToString(PtBr),
+					CsvReportHelper.Escape(prod.ProdutoNome),
+					CsvReportHelper.FormatInteger(prod.QuantidadeVendida),
+					CsvReportHelper.FormatCurrency(prod.FaturamentoTotal),
+					CsvReportHelper.FormatPercent(prod.ParticipacaoPercentual));
+				posicao++;
+			}
+
+			CsvReportHelper.AppendRow(
+				sb,
+				totalColunas,
+				"TOTAL",
+				string.Empty,
+				$"{relatorio.TopProdutos.Count} produto(s)",
+				CsvReportHelper.FormatInteger(relatorio.TopProdutos.Sum(p => p.QuantidadeVendida)),
+				CsvReportHelper.FormatCurrency(relatorio.TopProdutos.Sum(p => p.FaturamentoTotal)),
+				CsvReportHelper.FormatPercent(relatorio.TopProdutos.Sum(p => p.ParticipacaoPercentual)));
 		}
 
-		sb.AppendLine();
-		sb.AppendLine("CLIENTES MAIS ATIVOS");
-		sb.AppendLine("ClienteId;Cliente;PedidosConcluidos;PedidosCancelados;ValorTotalComprado;TicketMedio");
-		foreach (var cliente in relatorio.ClientesMaisAtivos)
+		CsvReportHelper.AppendBlankRow(sb, totalColunas);
+
+		// Seção 3: Clientes Mais Ativos
+		CsvReportHelper.AppendSectionHeader(sb, totalColunas, "CLIENTES MAIS ATIVOS");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"#",
+			"Cliente",
+			"Pedidos Concluídos",
+			"Pedidos Cancelados",
+			"Total Comprado",
+			"Ticket Médio",
+			"ID do Cliente");
+
+		if (relatorio.ClientesMaisAtivos.Count == 0)
 		{
-			sb.AppendLine(string.Join(';',
-				cliente.ClienteId.ToString(),
-				EscaparCsv(cliente.ClienteNome),
-				cliente.PedidosConcluidos.ToString(PtBr),
-				cliente.PedidosCancelados.ToString(PtBr),
-				FormatarDecimal(cliente.ValorTotalComprado),
-				FormatarDecimal(cliente.TicketMedio)));
+			CsvReportHelper.AppendRow(sb, totalColunas, "Sem clientes com pedidos no período.");
+		}
+		else
+		{
+			var posicao = 1;
+			foreach (var cliente in relatorio.ClientesMaisAtivos)
+			{
+				CsvReportHelper.AppendRow(
+					sb,
+					totalColunas,
+					posicao.ToString(PtBr),
+					CsvReportHelper.Escape(cliente.ClienteNome),
+					CsvReportHelper.FormatInteger(cliente.PedidosConcluidos),
+					CsvReportHelper.FormatInteger(cliente.PedidosCancelados),
+					CsvReportHelper.FormatCurrency(cliente.ValorTotalComprado),
+					CsvReportHelper.FormatCurrency(cliente.TicketMedio),
+					cliente.ClienteId.ToString());
+				posicao++;
+			}
+
+			CsvReportHelper.AppendRow(
+				sb,
+				totalColunas,
+				"TOTAL",
+				$"{relatorio.ClientesMaisAtivos.Count} cliente(s)",
+				CsvReportHelper.FormatInteger(relatorio.ClientesMaisAtivos.Sum(c => c.PedidosConcluidos)),
+				CsvReportHelper.FormatInteger(relatorio.ClientesMaisAtivos.Sum(c => c.PedidosCancelados)),
+				CsvReportHelper.FormatCurrency(relatorio.ClientesMaisAtivos.Sum(c => c.ValorTotalComprado)),
+				CsvReportHelper.FormatCurrency(relatorio.TicketMedio));
 		}
 
-		sb.AppendLine();
-		sb.AppendLine("PEDIDOS DETALHADOS");
-		sb.AppendLine("PedidoId;DataPedidoUtc;Cliente;Status;QuantidadeItens;TotalUnidades;ValorTotal");
-		foreach (var pedido in relatorio.Pedidos)
-		{
-			sb.AppendLine(string.Join(';',
-				pedido.PedidoId.ToString(PtBr),
-				pedido.DataPedido.ToString("dd/MM/yyyy HH:mm:ss", PtBr),
-				EscaparCsv(pedido.ClienteNome),
-				FormatarStatus(pedido.Status),
-				pedido.QuantidadeItens.ToString(PtBr),
-				pedido.TotalUnidades.ToString(PtBr),
-				FormatarDecimal(pedido.ValorTotal)));
-		}
+		CsvReportHelper.AppendBlankRow(sb, totalColunas);
 
-		var preamble = Encoding.UTF8.GetPreamble();
-		var body = Encoding.UTF8.GetBytes(sb.ToString());
-		var conteudo = new byte[preamble.Length + body.Length];
-		Buffer.BlockCopy(preamble, 0, conteudo, 0, preamble.Length);
-		Buffer.BlockCopy(body, 0, conteudo, preamble.Length, body.Length);
+		// Seção 4: Pedidos Detalhados
+		CsvReportHelper.AppendSectionHeader(sb, totalColunas, "PEDIDOS DETALHADOS");
+		CsvReportHelper.AppendRow(
+			sb,
+			totalColunas,
+			"Nº Pedido",
+			"Data/Hora (Brasília)",
+			"Cliente",
+			"Status",
+			"Qtd. Itens",
+			"Total Unidades",
+			"Valor Total");
+
+		if (relatorio.Pedidos.Count == 0)
+		{
+			CsvReportHelper.AppendRow(sb, totalColunas, "Sem pedidos registrados no período.");
+		}
+		else
+		{
+			foreach (var pedido in relatorio.Pedidos)
+			{
+				CsvReportHelper.AppendRow(
+					sb,
+					totalColunas,
+					pedido.PedidoId.ToString(PtBr),
+					CsvReportHelper.FormatDateTimeBrasilia(pedido.DataPedido),
+					CsvReportHelper.Escape(pedido.ClienteNome),
+					CsvReportHelper.Escape(FormatarStatus(pedido.Status)),
+					CsvReportHelper.FormatInteger(pedido.QuantidadeItens),
+					CsvReportHelper.FormatInteger(pedido.TotalUnidades),
+					CsvReportHelper.FormatCurrency(pedido.ValorTotal));
+			}
+
+			CsvReportHelper.AppendRow(
+				sb,
+				totalColunas,
+				"TOTAL",
+				$"{relatorio.Pedidos.Count} pedido(s)",
+				string.Empty,
+				string.Empty,
+				CsvReportHelper.FormatInteger(relatorio.Pedidos.Sum(p => p.QuantidadeItens)),
+				CsvReportHelper.FormatInteger(relatorio.Pedidos.Sum(p => p.TotalUnidades)),
+				CsvReportHelper.FormatCurrency(relatorio.Pedidos.Sum(p => p.ValorTotal)));
+		}
 
 		return new ArquivoRelatorioDTO(
-			conteudo,
+			CsvReportHelper.ToUtf8WithBom(sb.ToString()),
 			"text/csv; charset=utf-8",
 			ConstruirNomeArquivo(relatorio, "csv"));
 	}
@@ -436,34 +565,9 @@ public sealed class RelatorioVendasGenerator : IRelatorioVendasGenerator
 		};
 
 	private static string FormatarMoeda(decimal valor)
-		=> valor.ToString("C2", PtBr);
+		=> CsvReportHelper.FormatCurrency(valor);
 
 	private static string FormatarDecimal(decimal valor)
 		=> valor.ToString("F2", PtBr);
-
-	private static string EscaparCsv(string valor)
-	{
-		if (string.IsNullOrEmpty(valor))
-			return string.Empty;
-
-		var sanitizado = valor;
-		var semEspacosIniciais = sanitizado.TrimStart();
-		if ((semEspacosIniciais.Length > 0 && semEspacosIniciais[0] is '=' or '+' or '-' or '@' or '\t' or '\r')
-			|| sanitizado[0] is '\t' or '\r')
-		{
-			sanitizado = $"'{sanitizado}";
-		}
-
-		if (sanitizado.Contains(';')
-			|| sanitizado.Contains('"')
-			|| sanitizado.Contains('\n')
-			|| sanitizado.Contains('\r')
-			|| sanitizado.StartsWith('\''))
-		{
-			return $"\"{sanitizado.Replace("\"", "\"\"")}\"";
-		}
-
-		return sanitizado;
-	}
 }
 

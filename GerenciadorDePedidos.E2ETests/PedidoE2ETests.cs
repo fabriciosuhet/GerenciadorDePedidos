@@ -257,9 +257,9 @@ public class PedidoE2ETests
 		var csvText = await csvResp.Content.ReadAsStringAsync();
 		Assert.Contains("Venda (Pedido)", csvText);
 		Assert.Contains("Estorno", csvText);
-		Assert.Contains("1000,00", csvText);
-		Assert.Contains("2000,00", csvText);
-		Assert.DoesNotContain("3000,00", csvText); // Não usou o novo preço de R$ 1.500,00 retroativamente
+		Assert.Contains("R$ 1.000,00", csvText);
+		Assert.Contains("R$ 2.000,00", csvText);
+		Assert.DoesNotContain("R$ 3.000,00", csvText); // Não usou o novo preço de R$ 1.500,00 retroativamente
 	}
 
 	[Fact]
@@ -342,6 +342,7 @@ public class PedidoE2ETests
 		Assert.Equal(0xBF, csvBytes[2]);
 
 		var csvText = System.Text.Encoding.UTF8.GetString(csvBytes, 3, csvBytes.Length - 3);
+		Assert.Contains("RELATÓRIO DE VENDAS", csvText);
 		Assert.Contains("RESUMO EXECUTIVO", csvText);
 		Assert.Contains("TOP PRODUTOS", csvText);
 		Assert.Contains("CLIENTES MAIS ATIVOS", csvText);
@@ -349,8 +350,14 @@ public class PedidoE2ETests
 		Assert.Contains("Notebook Gamer", csvText);
 		Assert.Contains("Teclado RGB", csvText);
 		Assert.Contains("Carlos Analytics", csvText);
-		Assert.Contains("6000,00", csvText);
-		Assert.Contains("3000,00", csvText);
+		Assert.Contains("R$ 6.000,00", csvText);
+		Assert.Contains("R$ 3.000,00", csvText);
+		Assert.Contains("33,33%", csvText);
+		Assert.Contains("TOTAL;", csvText);
+
+		// Todas as linhas devem manter grade retangular consistente de 7 colunas (6 separadores ';')
+		var linhasCsv = csvText.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+		Assert.All(linhasCsv, linha => Assert.Equal(6, linha.Count(c => c == ';')));
 
 		// 3. Relatório de Vendas em PDF (Semanal e Anual vazio)
 		var pdfResp = await adminClient.GetAsync("/api/pedido/relatorio?periodo=Semana&formato=Pdf");
