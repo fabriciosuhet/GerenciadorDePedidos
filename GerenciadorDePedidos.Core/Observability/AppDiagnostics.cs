@@ -22,5 +22,11 @@ public static class AppDiagnostics
 
 	public static readonly Counter<long> AlertasEstoqueBaixo =
 		Meter.CreateCounter<long>("gerenciador_alertas_estoque_baixo_total", description: "Total de alertas de estoque baixo registrados.");
+
+	public static readonly Counter<long> RedefinicoesSenhaSolicitadas =
+		Meter.CreateCounter<long>("gerenciador_redefinicoes_senha_solicitadas_total", description: "Total de solicitações de redefinição de senha.");
+
+	public static readonly Counter<long> RedefinicoesSenhaConcluidas =
+		Meter.CreateCounter<long>("gerenciador_redefinicoes_senha_concluidas_total", description: "Total de redefinições de senha concluídas.");
 }
 

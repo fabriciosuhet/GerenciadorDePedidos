@@ -29,4 +29,12 @@ public class Login : BaseEntity<int>
 
 		Email = email;
 	}
+
+	public void AlterarSenha(string novaSenhaHash)
+	{
+		if (string.IsNullOrWhiteSpace(novaSenhaHash))
+			throw new ArgumentException("O hash da senha não pode ser vazio.");
+
+		SenhaHash = novaSenhaHash;
+	}
 }

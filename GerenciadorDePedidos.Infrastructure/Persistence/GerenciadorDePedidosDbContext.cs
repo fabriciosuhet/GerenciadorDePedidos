@@ -21,6 +21,7 @@ public class GerenciadorDePedidosDbContext : DbContext
 	public DbSet<Produto> Produtos { get; set; }
 	public DbSet<MovimentacaoEstoque> MovimentacaoEstoques { get; set; }
 	public DbSet<RefreshToken> RefreshTokens { get; set; }
+	public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 	public DbSet<AlertaEstoque> AlertasEstoque { get; set; }
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)

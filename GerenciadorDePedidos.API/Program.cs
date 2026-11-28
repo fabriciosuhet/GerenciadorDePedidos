@@ -40,6 +40,7 @@ builder.Services
 	.AddApplication()
 	.AddDatabase(builder.Configuration)
 	.AddRepositories()
+	.AddEmailService(builder.Configuration)
 	.AddAuthService()
 	.AddJwtAuthentication(builder.Configuration)
 	.AddCorsService(builder.Configuration)
