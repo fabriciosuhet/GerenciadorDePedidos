@@ -1,6 +1,7 @@
 using GerenciadorDePedidos.Application.Commands.ConcluirPedido;
 using GerenciadorDePedidos.Application.Commands.DevolverPedido;
 using GerenciadorDePedidos.Application.Validators;
+using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Helpers;
@@ -32,8 +33,9 @@ public class ConcluirEDevolverPedidoCommandHandlerTests
 
 		var uowMock = new Mock<IUnitOfWork>();
 		var cacheMock = new Mock<ICacheService>();
+		var realtimeMock = new Mock<IPedidoRealtimeNotifier>();
 
-		var handler = new ConcluirPedidoCommandHandler(pedidoRepoMock.Object, uowMock.Object, cacheMock.Object);
+		var handler = new ConcluirPedidoCommandHandler(pedidoRepoMock.Object, uowMock.Object, cacheMock.Object, realtimeMock.Object);
 
 		var result = await handler.Handle(new ConcluirPedidoCommand(70), CancellationToken.None);
 
@@ -43,6 +45,13 @@ public class ConcluirEDevolverPedidoCommandHandlerTests
 		uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetPedidoByIdKey(70)), Times.Once);
 		cacheMock.Verify(c => c.Remove(CacheKeyHelper.GetClienteByIdKey(clienteId)), Times.Once);
+		realtimeMock.Verify(n => n.NotificarStatusAtualizadoAsync(
+			It.Is<PedidoStatusAtualizadoDTO>(dto =>
+				dto.PedidoId == 70 &&
+				dto.ClienteId == clienteId &&
+				dto.StatusAnterior == Status.Processado &&
+				dto.StatusAtual == Status.Concluido),
+			It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -53,7 +62,11 @@ public class ConcluirEDevolverPedidoCommandHandlerTests
 		pedidoRepoMock.Setup(r => r.GetByIdWithItensAsync(71, It.IsAny<CancellationToken>())).ReturnsAsync(pedidoPendente);
 
 		var uowMock = new Mock<IUnitOfWork>();
-		var handler = new ConcluirPedidoCommandHandler(pedidoRepoMock.Object, uowMock.Object, new Mock<ICacheService>().Object);
+		var handler = new ConcluirPedidoCommandHandler(
+			pedidoRepoMock.Object,
+			uowMock.Object,
+			new Mock<ICacheService>().Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		await Assert.ThrowsAsync<InvalidOperationException>(() =>
 			handler.Handle(new ConcluirPedidoCommand(71), CancellationToken.None));
@@ -84,6 +97,7 @@ public class ConcluirEDevolverPedidoCommandHandlerTests
 		var movRepoMock = new Mock<IMovimentacaoEstoqueRepository>();
 		var uowMock = new Mock<IUnitOfWork>();
 		var cacheMock = new Mock<ICacheService>();
+		var realtimeMock = new Mock<IPedidoRealtimeNotifier>();
 
 		var handler = new DevolverPedidoCommandHandler(
 			pedidoRepoMock.Object,
@@ -91,7 +105,8 @@ public class ConcluirEDevolverPedidoCommandHandlerTests
 			movRepoMock.Object,
 			uowMock.Object,
 			CreateAdmin(adminId),
-			cacheMock.Object);
+			cacheMock.Object,
+			realtimeMock.Object);
 
 		var result = await handler.Handle(
 			new DevolverPedidoCommand(80, "Cliente desistiu dentro do prazo de 7 dias", RetornarAoEstoque: true),
@@ -99,6 +114,14 @@ public class ConcluirEDevolverPedidoCommandHandlerTests
 
 		Assert.Equal(80, result.PedidoId);
 		Assert.Equal(Status.Devolvido, result.Status);
+		realtimeMock.Verify(n => n.NotificarStatusAtualizadoAsync(
+			It.Is<PedidoStatusAtualizadoDTO>(dto =>
+				dto.PedidoId == 80 &&
+				dto.ClienteId == clienteId &&
+				dto.StatusAnterior == Status.Concluido &&
+				dto.StatusAtual == Status.Devolvido &&
+				dto.MotivoDevolucao == "Cliente desistiu dentro do prazo de 7 dias"),
+			It.IsAny<CancellationToken>()), Times.Once);
 		Assert.Equal("Cliente desistiu dentro do prazo de 7 dias", result.Motivo);
 		Assert.True(result.EstoqueEstornado);
 		Assert.Equal(2, result.UnidadesEstornadas);
@@ -147,7 +170,8 @@ public class ConcluirEDevolverPedidoCommandHandlerTests
 			movRepoMock.Object,
 			uowMock.Object,
 			CreateAdmin(Guid.NewGuid()),
-			new Mock<ICacheService>().Object);
+			new Mock<ICacheService>().Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		var result = await handler.Handle(
 			new DevolverPedidoCommand(81, "Produto entregue avariado", RetornarAoEstoque: false),
@@ -178,7 +202,8 @@ public class ConcluirEDevolverPedidoCommandHandlerTests
 			new Mock<IMovimentacaoEstoqueRepository>().Object,
 			new Mock<IUnitOfWork>().Object,
 			CreateAdmin(Guid.NewGuid()),
-			new Mock<ICacheService>().Object);
+			new Mock<ICacheService>().Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		await Assert.ThrowsAsync<InvalidOperationException>(() =>
 			handler.Handle(new DevolverPedidoCommand(82, "Motivo válido"), CancellationToken.None));

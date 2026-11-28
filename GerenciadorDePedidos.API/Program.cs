@@ -2,8 +2,11 @@ using System.Net;
 using GerenciadorDePedidos.API.Consumers;
 using GerenciadorDePedidos.API.Extensions;
 using GerenciadorDePedidos.API.Filters;
+using GerenciadorDePedidos.API.Hubs;
 using GerenciadorDePedidos.API.Middleware;
+using GerenciadorDePedidos.API.Realtime;
 using GerenciadorDePedidos.Application;
+using GerenciadorDePedidos.Core.Services;
 using GerenciadorDePedidos.Infrastructure.Extensions;
 using GerenciadorDePedidos.Infrastructure.Persistence;
 using GerenciadorDePedidos.Infrastructure.Persistence.Seeders;
@@ -52,6 +55,9 @@ builder.Services
 	.AddMessaging(builder.Configuration, typeof(PedidoCriadoConsumer).Assembly)
 	.AddAppHealthChecks(builder.Configuration);
 
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IPedidoRealtimeNotifier, SignalRPedidoRealtimeNotifier>();
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
@@ -77,6 +83,7 @@ app.UseAuthorization();
 
 app.MapAppHealthChecks();
 app.MapControllers();
+app.MapHub<PedidosHub>(PedidosHub.Route);
 
 using (var scope = app.Services.CreateScope())
 {

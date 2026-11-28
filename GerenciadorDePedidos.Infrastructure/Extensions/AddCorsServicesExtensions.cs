@@ -28,7 +28,8 @@ public static class AddCorsServicesExtensions
 				{
 					builder.WithOrigins(allowedOrigins)
 						.AllowAnyMethod()
-						.AllowAnyHeader();
+						.AllowAnyHeader()
+						.AllowCredentials();
 				}
 			});
 		});

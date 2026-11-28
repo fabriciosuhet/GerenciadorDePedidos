@@ -47,13 +47,15 @@ public class CreatePedidoCommandHandlerTests
 		var currentUserMock = new Mock<ICurrentUserService>();
 		currentUserMock.Setup(u => u.IsAdmin).Returns(false);
 		currentUserMock.Setup(u => u.ClienteId).Returns(clienteId);
+		var realtimeMock = new Mock<IPedidoRealtimeNotifier>();
 
 		var handler = new CreatePedidoCommandHandler(
 			pedidoRepositoryMock.Object,
 			produtoRepositoryMock.Object,
 			unitOfWorkMock.Object,
 			eventBusMock.Object,
-			currentUserMock.Object);
+			currentUserMock.Object,
+			realtimeMock.Object);
 
 		var result = await handler.Handle(command, CancellationToken.None);
 
@@ -72,6 +74,14 @@ public class CreatePedidoCommandHandlerTests
 		unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
 		eventBusMock.Verify(e => e.PublishAsync(
 			It.Is<PedidoCriadoEvent>(ev => ev.PedidoId == result),
+			It.IsAny<CancellationToken>()), Times.Once);
+		realtimeMock.Verify(n => n.NotificarStatusAtualizadoAsync(
+			It.Is<PedidoStatusAtualizadoDTO>(dto =>
+				dto.PedidoId == result &&
+				dto.ClienteId == clienteId &&
+				dto.StatusAnterior == Status.Pendente &&
+				dto.StatusAtual == Status.Pendente &&
+				dto.Total == 80m),
 			It.IsAny<CancellationToken>()), Times.Once);
 	}
 
@@ -92,7 +102,8 @@ public class CreatePedidoCommandHandlerTests
 			new Mock<IProdutoRepository>().Object,
 			CreateUnitOfWorkMock().Object,
 			new Mock<IEventBus>().Object,
-			currentUserMock.Object);
+			currentUserMock.Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		await Assert.ThrowsAsync<UnauthorizedAccessException>(() => handler.Handle(command, CancellationToken.None));
 	}
@@ -114,7 +125,8 @@ public class CreatePedidoCommandHandlerTests
 			produtoRepositoryMock.Object,
 			unitOfWorkMock.Object,
 			eventBusMock.Object,
-			currentUserMock.Object);
+			currentUserMock.Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal("O pedido deve conter pelo menos um item.", exception.Message);
@@ -148,7 +160,8 @@ public class CreatePedidoCommandHandlerTests
 			produtoRepositoryMock.Object,
 			unitOfWorkMock.Object,
 			eventBusMock.Object,
-			currentUserMock.Object);
+			currentUserMock.Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		var exception = await Assert.ThrowsAsync<ArgumentException>(() => handler.Handle(command, CancellationToken.None));
 		Assert.Equal($"O produto com o ID {produtoId} nao foi encontrado.", exception.Message);

@@ -1,3 +1,5 @@
+using GerenciadorDePedidos.Application.Mappings;
+using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Events;
@@ -15,7 +17,8 @@ public sealed class ProcessarPedidoCommandHandler(
 	IMovimentacaoEstoqueRepository movimentacaoEstoqueRepository,
 	IUnitOfWork unitOfWork,
 	IEventBus eventBus,
-	ICacheService cacheService) : IRequestHandler<ProcessarPedidoCommand, bool>
+	ICacheService cacheService,
+	IPedidoRealtimeNotifier realtimeNotifier) : IRequestHandler<ProcessarPedidoCommand, bool>
 {
 	public async Task<bool> Handle(ProcessarPedidoCommand request, CancellationToken cancellationToken)
 	{
@@ -37,13 +40,24 @@ public sealed class ProcessarPedidoCommandHandler(
 
 		if (!estoqueDisponivel)
 		{
+			var statusAnteriorCancelamento = pedido.Status;
 			pedido.Cancelar();
 			await unitOfWork.SaveChangesAsync(cancellationToken);
 			AppDiagnostics.PedidosCancelados.Add(1, new KeyValuePair<string, object?>("motivo", "estoque_insuficiente"));
 			InvalidarCachePedido(pedido.Id, pedido.ClienteId);
+			await realtimeNotifier.NotificarStatusAtualizadoAsync(
+				new PedidoStatusAtualizadoDTO(
+					pedido.Id,
+					pedido.ClienteId,
+					statusAnteriorCancelamento,
+					pedido.Status,
+					pedido.Total,
+					(pedido.AtualizadoEm ?? DateTime.UtcNow).ToBrasiliaTime()),
+				cancellationToken);
 			return false;
 		}
 
+		var statusAnterior = pedido.Status;
 		pedido.MarcarComoProcessado();
 		var movimentacoes = new List<MovimentacaoEstoque>(itensPorProduto.Count);
 		var eventosEstoqueBaixo = new List<EstoqueBaixoEvent>();
@@ -93,6 +107,16 @@ public sealed class ProcessarPedidoCommandHandler(
 			cacheService.RemoveMany(chavesProdutosAfetados);
 			cacheService.RemoveByPrefix(CacheKeyHelper.AllProdutosPrefix);
 		}
+
+		await realtimeNotifier.NotificarStatusAtualizadoAsync(
+			new PedidoStatusAtualizadoDTO(
+				pedido.Id,
+				pedido.ClienteId,
+				statusAnterior,
+				pedido.Status,
+				pedido.Total,
+				(pedido.AtualizadoEm ?? DateTime.UtcNow).ToBrasiliaTime()),
+			cancellationToken);
 
 		return true;
 	}

@@ -1,5 +1,6 @@
 using GerenciadorDePedidos.Application.Commands.CancelarPedido;
 using GerenciadorDePedidos.Application.Validators;
+using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Helpers;
@@ -46,6 +47,7 @@ public class CancelarPedidoCommandHandlerTests
 		var movimentacaoRepoMock = new Mock<IMovimentacaoEstoqueRepository>();
 		var unitOfWorkMock = new Mock<IUnitOfWork>();
 		var cacheMock = new Mock<ICacheService>();
+		var realtimeMock = new Mock<IPedidoRealtimeNotifier>();
 
 		var handler = new CancelarPedidoCommandHandler(
 			pedidoRepoMock.Object,
@@ -53,12 +55,20 @@ public class CancelarPedidoCommandHandlerTests
 			movimentacaoRepoMock.Object,
 			unitOfWorkMock.Object,
 			CreateUser(clienteId),
-			cacheMock.Object);
+			cacheMock.Object,
+			realtimeMock.Object);
 
 		var result = await handler.Handle(new CancelarPedidoCommand(50), CancellationToken.None);
 
 		Assert.Equal(50, result.PedidoId);
 		Assert.Equal(Status.Cancelado, result.Status);
+		realtimeMock.Verify(n => n.NotificarStatusAtualizadoAsync(
+			It.Is<PedidoStatusAtualizadoDTO>(dto =>
+				dto.PedidoId == 50 &&
+				dto.ClienteId == clienteId &&
+				dto.StatusAnterior == Status.Processado &&
+				dto.StatusAtual == Status.Cancelado),
+			It.IsAny<CancellationToken>()), Times.Once);
 		Assert.True(result.EstoqueEstornado);
 		Assert.Equal(5, result.UnidadesEstornadas);
 		Assert.Equal(10, produto1.Estoque);
@@ -114,7 +124,8 @@ public class CancelarPedidoCommandHandlerTests
 			movimentacaoRepoMock.Object,
 			unitOfWorkMock.Object,
 			CreateUser(clienteId),
-			cacheMock.Object);
+			cacheMock.Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		var result = await handler.Handle(new CancelarPedidoCommand(51), CancellationToken.None);
 
@@ -142,7 +153,8 @@ public class CancelarPedidoCommandHandlerTests
 			new Mock<IMovimentacaoEstoqueRepository>().Object,
 			new Mock<IUnitOfWork>().Object,
 			CreateUser(clienteId),
-			new Mock<ICacheService>().Object);
+			new Mock<ICacheService>().Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		await Assert.ThrowsAsync<InvalidOperationException>(() =>
 			handler.Handle(new CancelarPedidoCommand(52), CancellationToken.None));
@@ -174,7 +186,8 @@ public class CancelarPedidoCommandHandlerTests
 			new Mock<IMovimentacaoEstoqueRepository>().Object,
 			unitOfWorkMock.Object,
 			CreateUser(clienteId, isAdmin: true),
-			new Mock<ICacheService>().Object);
+			new Mock<ICacheService>().Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		await Assert.ThrowsAsync<InvalidOperationException>(() =>
 			handler.Handle(new CancelarPedidoCommand(55), CancellationToken.None));
@@ -199,7 +212,8 @@ public class CancelarPedidoCommandHandlerTests
 			new Mock<IMovimentacaoEstoqueRepository>().Object,
 			new Mock<IUnitOfWork>().Object,
 			CreateUser(Guid.NewGuid(), isAdmin: false),
-			new Mock<ICacheService>().Object);
+			new Mock<ICacheService>().Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
 			handler.Handle(new CancelarPedidoCommand(53), CancellationToken.None));
@@ -217,7 +231,8 @@ public class CancelarPedidoCommandHandlerTests
 			new Mock<IMovimentacaoEstoqueRepository>().Object,
 			new Mock<IUnitOfWork>().Object,
 			CreateUser(Guid.NewGuid(), isAdmin: true),
-			new Mock<ICacheService>().Object);
+			new Mock<ICacheService>().Object,
+			new Mock<IPedidoRealtimeNotifier>().Object);
 
 		await Assert.ThrowsAsync<KeyNotFoundException>(() =>
 			handler.Handle(new CancelarPedidoCommand(999), CancellationToken.None));

@@ -1,5 +1,6 @@
 using GerenciadorDePedidos.Application.Mappings;
 using GerenciadorDePedidos.Application.Models;
+using GerenciadorDePedidos.Core.DTOs;
 using GerenciadorDePedidos.Core.Entities;
 using GerenciadorDePedidos.Core.Enums;
 using GerenciadorDePedidos.Core.Helpers;
@@ -16,13 +17,15 @@ public sealed class DevolverPedidoCommandHandler(
 	IMovimentacaoEstoqueRepository movimentacaoEstoqueRepository,
 	IUnitOfWork unitOfWork,
 	ICurrentUserService currentUserService,
-	ICacheService cacheService) : IRequestHandler<DevolverPedidoCommand, DevolverPedidoViewModel>
+	ICacheService cacheService,
+	IPedidoRealtimeNotifier realtimeNotifier) : IRequestHandler<DevolverPedidoCommand, DevolverPedidoViewModel>
 {
 	public async Task<DevolverPedidoViewModel> Handle(DevolverPedidoCommand request, CancellationToken cancellationToken)
 	{
 		var pedido = await pedidoRepository.GetByIdWithItensAsync(request.PedidoId, cancellationToken)
 			?? throw new KeyNotFoundException("Pedido nao encontrado");
 
+		var statusAnterior = pedido.Status;
 		pedido.Devolver(request.Motivo);
 
 		var unidadesEstornadas = 0;
@@ -83,11 +86,23 @@ public sealed class DevolverPedidoCommandHandler(
 		cacheService.RemoveByPrefix(CacheKeyHelper.GetAllPedidosClientePrefix(pedido.ClienteId));
 		cacheService.Remove(CacheKeyHelper.GetClienteByIdKey(pedido.ClienteId));
 
+		var devolvidoEmBrasilia = pedido.DevolvidoEm!.Value.ToBrasiliaTime();
+		await realtimeNotifier.NotificarStatusAtualizadoAsync(
+			new PedidoStatusAtualizadoDTO(
+				pedido.Id,
+				pedido.ClienteId,
+				statusAnterior,
+				pedido.Status,
+				pedido.Total,
+				devolvidoEmBrasilia,
+				pedido.MotivoDevolucao),
+			cancellationToken);
+
 		return new DevolverPedidoViewModel(
 			pedido.Id,
 			pedido.Status,
 			pedido.MotivoDevolucao!,
-			pedido.DevolvidoEm!.Value.ToBrasiliaTime(),
+			devolvidoEmBrasilia,
 			request.RetornarAoEstoque && unidadesEstornadas > 0,
 			unidadesEstornadas);
 	}
